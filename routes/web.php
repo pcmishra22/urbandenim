@@ -1,0 +1,329 @@
+<?php
+
+use App\Http\Controllers\Auth\AdminAuthController;
+use App\Http\Controllers\Auth\CustomerAuthController;
+use App\Http\Controllers\Auth\VendorAuthController;
+use App\Http\Controllers\DashboardController;
+use Illuminate\Support\Facades\Route;
+
+Route::get('/', function () {
+    return view('front.index');
+});
+
+// =======================================
+// CUSTOMER ROUTES
+// =======================================
+Route::prefix('')->name('customer.')->group(function () {
+    // Login routes (unauthenticated)
+    Route::middleware('guest')->group(function () {
+        Route::get('/login', [CustomerAuthController::class, 'showLogin'])->name('login');
+        Route::post('/login', [CustomerAuthController::class, 'login'])->name('login.submit');
+        Route::get('/register', [CustomerAuthController::class, 'showRegister'])->name('register');
+        Route::post('/register', [CustomerAuthController::class, 'register'])->name('register.submit');
+
+        // Password Reset Routes
+        Route::get('/forgot-password', [CustomerAuthController::class, 'showLinkRequestForm'])->name('password.request');
+        Route::post('/forgot-password', [CustomerAuthController::class, 'sendResetLinkEmail'])->name('password.email');
+        Route::get('/reset-password/{token}', [CustomerAuthController::class, 'showResetForm'])->name('password.reset');
+        Route::post('/reset-password', [CustomerAuthController::class, 'reset'])->name('password.update');
+    });
+
+    // Dashboard routes (authenticated)
+    Route::middleware(['auth', 'verified'])->group(function () {
+        Route::get('/dashboard', [DashboardController::class, 'customerDashboard'])->name('dashboard');
+        Route::post('/logout', [CustomerAuthController::class, 'logout'])->name('logout');
+    });
+    // Email Verification Routes (authenticated, but not verified)
+    Route::get('/email/verify', [CustomerAuthController::class, 'showVerificationNotice'])->middleware('auth')->name('verification.notice');
+    Route::get('/email/verify/{id}/{hash}', [CustomerAuthController::class, 'verify'])->middleware(['auth', 'signed'])->name('verification.verify');
+    Route::post('/email/resend', [CustomerAuthController::class, 'resendVerificationEmail'])->middleware('auth')->name('verification.resend');
+});
+
+// =======================================
+// ADMIN ROUTES
+// =======================================
+Route::prefix('admin')->name('admin.')->group(function () {
+    // Login routes (unauthenticated)
+    Route::middleware('guest')->group(function () {
+        Route::get('/login', [AdminAuthController::class, 'showLogin'])->name('login');
+        Route::post('/login', [AdminAuthController::class, 'login'])->name('login.submit');
+
+        // Password Reset Routes
+        Route::get('/forgot-password', [AdminAuthController::class, 'showLinkRequestForm'])->name('password.request');
+        Route::post('/forgot-password', [AdminAuthController::class, 'sendResetLinkEmail'])->name('password.email');
+        Route::get('/reset-password/{token}', [AdminAuthController::class, 'showResetForm'])->name('password.reset');
+        Route::post('/reset-password', [AdminAuthController::class, 'reset'])->name('password.update');
+    });
+
+    // Dashboard routes (authenticated admin only)
+    Route::middleware(['auth', 'admin', 'verified'])->group(function () {
+        Route::get('/dashboard', [DashboardController::class, 'adminDashboard'])->name('dashboard');
+        Route::get('/register', [AdminAuthController::class, 'showRegister'])->name('register');
+        Route::post('/register', [AdminAuthController::class, 'register'])->name('register.submit');
+        Route::post('/logout', [AdminAuthController::class, 'logout'])->name('logout');
+
+        // Category management
+        Route::resource('categories', \App\Http\Controllers\Admin\CategoryController::class);
+
+        // Customer management
+        Route::get('/customers', [\App\Http\Controllers\Admin\CustomerManagementController::class, 'index'])->name('customers.index');
+        Route::get('/customers/{customer}/orders', [\App\Http\Controllers\Admin\CustomerManagementController::class, 'showOrders'])->name('customers.orders');
+        Route::get('/customers/{customer}/wallet', [\App\Http\Controllers\Admin\CustomerManagementController::class, 'showWallet'])->name('customers.wallet');
+        Route::get('/customers/{customer}/addresses', [\App\Http\Controllers\Admin\CustomerManagementController::class, 'showAddresses'])->name('customers.addresses');
+        Route::post('/customers/{customer}/toggle-block', [\App\Http\Controllers\Admin\CustomerManagementController::class, 'toggleBlock'])->name('customers.toggleBlock');
+
+        // Vendor management
+        Route::resource('vendors', \App\Http\Controllers\Admin\VendorManagementController::class);
+        Route::post('/vendors/{vendor}/approve', [\App\Http\Controllers\Admin\VendorManagementController::class, 'approve'])->name('vendors.approve');
+        Route::post('/vendors/{vendor}/reject', [\App\Http\Controllers\Admin\VendorManagementController::class, 'reject'])->name('vendors.reject');
+
+        // Vendor KYC management
+        Route::post('/vendors/kyc/{kyc}/approve', [\App\Http\Controllers\Admin\VendorManagementController::class, 'approveKyc'])->name('vendors.kyc.approve');
+        Route::post('/vendors/kyc/{kyc}/reject', [\App\Http\Controllers\Admin\VendorManagementController::class, 'rejectKyc'])->name('vendors.kyc.reject');
+
+        // Vendor settlement management
+        Route::post('/vendors/settlements/{settlement}/approve', [\App\Http\Controllers\Admin\VendorManagementController::class, 'approveSettlement'])->name('vendors.settlements.approve');
+
+
+        // Coupon Management
+        Route::resource('coupons', \App\Http\Controllers\Admin\CouponController::class);
+
+        // Order management (Admin)
+        Route::get('/orders', [\App\Http\Controllers\Admin\OrderAdminController::class, 'index'])->name('orders.index');
+        Route::get('/orders/{order}', [\App\Http\Controllers\Admin\OrderAdminController::class, 'show'])->name('orders.show');
+        Route::post('/orders/{order}/status', [\App\Http\Controllers\Admin\OrderAdminController::class, 'updateStatus'])->name('orders.updateStatus');
+        Route::get('/orders/{order}/invoice', [\App\Http\Controllers\Admin\OrderAdminController::class, 'downloadInvoice'])->name('orders.invoice');
+        Route::get('/orders/{order}/shipping-label', [\App\Http\Controllers\Admin\OrderAdminController::class, 'downloadShippingLabel'])->name('orders.shippingLabel');
+
+        // Product management
+        Route::resource('products', \App\Http\Controllers\Admin\ProductController::class);
+
+        // Inventory management (Admin)
+        Route::get('/inventory', [\App\Http\Controllers\Admin\InventoryAdminController::class, 'index'])->name('inventory.index');
+        Route::get('/inventory/alerts', [\App\Http\Controllers\Admin\InventoryAdminController::class, 'alerts'])->name('inventory.alerts');
+        Route::get('/inventory/history', [\App\Http\Controllers\Admin\InventoryAdminController::class, 'history'])->name('inventory.history');
+        Route::get('/inventory/warehouses', [\App\Http\Controllers\Admin\InventoryAdminController::class, 'warehouses'])->name('inventory.warehouses');
+        Route::post('/inventory/adjust', [\App\Http\Controllers\Admin\InventoryAdminController::class, 'adjustStock'])->name('inventory.adjust');
+
+        // Delivery & Logistics Management
+        Route::resource('couriers', \App\Http\Controllers\Admin\CourierController::class);
+        Route::resource('shipping_rules', \App\Http\Controllers\Admin\ShippingRuleController::class);
+        Route::resource('delivery_charges', \App\Http\Controllers\Admin\DeliveryChargeController::class);
+        Route::get('/shipments', [\App\Http\Controllers\Admin\ShipmentController::class, 'index'])->name('shipments.index');
+        Route::get('/shipments/{shipment}/edit', [\App\Http\Controllers\Admin\ShipmentController::class, 'edit'])->name('shipments.edit');
+        Route::put('/shipments/{shipment}', [\App\Http\Controllers\Admin\ShipmentController::class, 'update'])->name('shipments.update');
+
+        // Return & Refund management
+        Route::get('/returns', [\App\Http\Controllers\Admin\ReturnsAdminController::class, 'index'])->name('returns.index');
+        Route::get('/returns/{return}', [\App\Http\Controllers\Admin\ReturnsAdminController::class, 'show'])->name('returns.show');
+
+        Route::post('/returns/{return}/refunds/approve', [\App\Http\Controllers\Admin\ReturnsAdminController::class, 'approveRefund'])->name('returns.refunds.approve');
+        Route::post('/returns/{return}/pickups/request', [\App\Http\Controllers\Admin\ReturnsAdminController::class, 'requestReversePickup'])->name('returns.pickups.request');
+        Route::post('/returns/{return}/exchanges/approve', [\App\Http\Controllers\Admin\ReturnsAdminController::class, 'approveExchange'])->name('returns.exchanges.approve');
+        Route::post('/returns/{return}/wallet/refund', [\App\Http\Controllers\Admin\ReturnsAdminController::class, 'refundToWallet'])->name('returns.wallet.refund');
+
+
+        // Blog management
+        Route::get('/blogs', [\App\Http\Controllers\Admin\BlogPostController::class, 'index'])->name('blogs.index');
+        Route::get('/blogs/create', [\App\Http\Controllers\Admin\BlogPostController::class, 'create'])->name('blogs.create');
+        Route::post('/blogs', [\App\Http\Controllers\Admin\BlogPostController::class, 'store'])->name('blogs.store');
+        Route::get('/blogs/{blog_post}/edit', [\App\Http\Controllers\Admin\BlogPostController::class, 'edit'])->name('blogs.edit');
+        Route::put('/blogs/{blog_post}', [\App\Http\Controllers\Admin\BlogPostController::class, 'update'])->name('blogs.update');
+        Route::delete('/blogs/{blog_post}', [\App\Http\Controllers\Admin\BlogPostController::class, 'destroy'])->name('blogs.destroy');
+
+        Route::get('/blogs/featured', function () {
+            return redirect()->route('admin.blogs.index', ['featured' => 1]);
+        })->name('blogs.featured');
+
+        Route::get('/blogs/seo', function () {
+            return redirect()->route('admin.blogs.index', ['seo' => 1]);
+        })->name('blogs.seo');
+
+
+        // Blog categories
+        Route::get('/blog-categories', [\App\Http\Controllers\Admin\BlogCategoryController::class, 'index'])->name('blog.categories.index');
+        Route::get('/blog-categories/create', [\App\Http\Controllers\Admin\BlogCategoryController::class, 'create'])->name('blog.categories.create');
+        Route::post('/blog-categories', [\App\Http\Controllers\Admin\BlogCategoryController::class, 'store'])->name('blog.categories.store');
+        Route::get('/blog-categories/{blog_category}/edit', [\App\Http\Controllers\Admin\BlogCategoryController::class, 'edit'])->name('blog.categories.edit');
+        Route::put('/blog-categories/{blog_category}', [\App\Http\Controllers\Admin\BlogCategoryController::class, 'update'])->name('blog.categories.update');
+        Route::delete('/blog-categories/{blog_category}', [\App\Http\Controllers\Admin\BlogCategoryController::class, 'destroy'])->name('blog.categories.destroy');
+
+        // Blog tags
+        Route::get('/blog-tags', [\App\Http\Controllers\Admin\BlogTagController::class, 'index'])->name('blog.tags.index');
+        Route::get('/blog-tags/create', [\App\Http\Controllers\Admin\BlogTagController::class, 'create'])->name('blog.tags.create');
+        Route::post('/blog-tags', [\App\Http\Controllers\Admin\BlogTagController::class, 'store'])->name('blog.tags.store');
+        Route::get('/blog-tags/{blog_tag}/edit', [\App\Http\Controllers\Admin\BlogTagController::class, 'edit'])->name('blog.tags.edit');
+        Route::put('/blog-tags/{blog_tag}', [\App\Http\Controllers\Admin\BlogTagController::class, 'update'])->name('blog.tags.update');
+        Route::delete('/blog-tags/{blog_tag}', [\App\Http\Controllers\Admin\BlogTagController::class, 'destroy'])->name('blog.tags.destroy');
+
+
+        // Banner management
+        Route::resource('banners', \App\Http\Controllers\Admin\BannerController::class);
+
+        // Keep the old "banners.index" route name usage working with query filters.
+        // Route::resource('banners', ...) already provides admin.banners.index.
+
+
+        // SEO management
+        Route::get('/seo', function () {
+            return view('admin.seo.index');
+        })->name('seo.index');
+
+        // Homepage management
+        Route::get('/homepage', function () {
+            return view('admin.homepage.index');
+        })->name('homepage.index');
+
+        // Notification management
+        Route::get('/notifications', [\App\Http\Controllers\Admin\AdminNotificationController::class, 'index'])->name('notifications.index');
+        Route::post('/notifications/{id}/read', [\App\Http\Controllers\Admin\AdminNotificationController::class, 'markAsRead'])->name('notifications.markAsRead');
+        Route::post('/notifications/read-all', [\App\Http\Controllers\Admin\AdminNotificationController::class, 'markAllAsRead'])->name('notifications.markAllAsRead');
+        Route::post('/notifications/clear', [\App\Http\Controllers\Admin\AdminNotificationController::class, 'clearAll'])->name('notifications.clearAll');
+
+        // Review management
+        Route::resource('reviews', \App\Http\Controllers\Admin\ReviewController::class);
+        Route::post('/reviews/{review}/approve', [\App\Http\Controllers\Admin\ReviewController::class, 'approve'])->name('reviews.approve');
+        Route::post('/reviews/{review}/reject', [\App\Http\Controllers\Admin\ReviewController::class, 'reject'])->name('reviews.reject');
+        Route::post('/reviews/{review}/spam', [\App\Http\Controllers\Admin\ReviewController::class, 'markSpam'])->name('reviews.markSpam');
+        Route::post('/reviews/{review}/featured', [\App\Http\Controllers\Admin\ReviewController::class, 'toggleFeatured'])->name('reviews.toggleFeatured');
+
+
+        // Settings management
+        Route::get('/settings', function () {
+            return view('admin.settings.index');
+        })->name('settings.index');
+
+        // Audit Logs management
+        Route::get('/audit-logs', function () {
+            return view('admin.audit_logs.index');
+        })->name('auditlogs.index');
+
+        // Brand management
+        Route::get('/brands', [\App\Http\Controllers\Admin\BrandManagementController::class, 'index'])->name('brands.index');
+        Route::get('/brands/create', [\App\Http\Controllers\Admin\BrandManagementController::class, 'create'])->name('brands.create');
+        Route::post('/brands', [\App\Http\Controllers\Admin\BrandManagementController::class, 'store'])->name('brands.store');
+        Route::get('/brands/{brand}/edit', [\App\Http\Controllers\Admin\BrandManagementController::class, 'edit'])->name('brands.edit');
+        Route::put('/brands/{brand}', [\App\Http\Controllers\Admin\BrandManagementController::class, 'update'])->name('brands.update');
+        Route::delete('/brands/{brand}', [\App\Http\Controllers\Admin\BrandManagementController::class, 'destroy'])->name('brands.destroy');
+
+        // CMS Management
+        Route::get('/cms/pages', [\App\Http\Controllers\Admin\CMSManagementController::class, 'pagesIndex'])->name('cms.pages.index');
+        Route::get('/cms/pages/{slug}/edit', [\App\Http\Controllers\Admin\CMSManagementController::class, 'pagesEdit'])->name('cms.pages.edit');
+        Route::put('/cms/pages/{slug}', [\App\Http\Controllers\Admin\CMSManagementController::class, 'pagesUpdate'])->name('cms.pages.update');
+
+        Route::get('/cms/faqs', [\App\Http\Controllers\Admin\CMSManagementController::class, 'faqsIndex'])->name('cms.faqs.index');
+        Route::get('/cms/faqs/create', [\App\Http\Controllers\Admin\CMSManagementController::class, 'faqsCreate'])->name('cms.faqs.create');
+        Route::post('/cms/faqs', [\App\Http\Controllers\Admin\CMSManagementController::class, 'faqsStore'])->name('cms.faqs.store');
+        Route::get('/cms/faqs/{faq}/edit', [\App\Http\Controllers\Admin\CMSManagementController::class, 'faqsEdit'])->name('cms.faqs.edit');
+        Route::put('/cms/faqs/{faq}', [\App\Http\Controllers\Admin\CMSManagementController::class, 'faqsUpdate'])->name('cms.faqs.update');
+        Route::delete('/cms/faqs/{faq}', [\App\Http\Controllers\Admin\CMSManagementController::class, 'faqsDestroy'])->name('cms.faqs.destroy');
+    });
+    // Email Verification Routes (authenticated, but not verified)
+    Route::get('/email/verify', [AdminAuthController::class, 'showVerificationNotice'])->middleware('auth')->name('verification.notice');
+    Route::get('/email/verify/{id}/{hash}', [AdminAuthController::class, 'verify'])->middleware(['auth', 'signed'])->name('verification.verify');
+    Route::post('/email/resend', [AdminAuthController::class, 'resendVerificationEmail'])->middleware('auth')->name('verification.resend');
+
+    // Moved inside admin group for security and consistent prefixing
+    Route::delete('/product-images/{image}', [\App\Http\Controllers\Admin\ProductController::class, 'deleteImage'])->name('products.images.delete');
+});
+
+// =======================================
+// VENDOR ROUTES
+// =======================================
+Route::prefix('vendor')->name('vendor.')->group(function () {
+    // Login routes (unauthenticated)
+    Route::middleware('guest')->group(function () {
+        Route::get('/login', [VendorAuthController::class, 'showLogin'])->name('login');
+        Route::post('/login', [VendorAuthController::class, 'login'])->name('login.submit');
+        Route::get('/register', [VendorAuthController::class, 'showRegister'])->name('register');
+        Route::post('/register', [VendorAuthController::class, 'register'])->name('register.submit');
+
+        // Password Reset Routes
+        Route::get('/forgot-password', [VendorAuthController::class, 'showLinkRequestForm'])->name('password.request');
+        Route::post('/forgot-password', [VendorAuthController::class, 'sendResetLinkEmail'])->name('password.email');
+        Route::get('/reset-password/{token}', [VendorAuthController::class, 'showResetForm'])->name('password.reset');
+        Route::post('/reset-password', [VendorAuthController::class, 'reset'])->name('password.update');
+    });
+
+    // Dashboard routes (authenticated)
+    Route::middleware(['auth', 'verified'])->group(function () {
+        Route::get('/dashboard', [DashboardController::class, 'vendorDashboard'])->name('dashboard');
+        Route::post('/logout', [VendorAuthController::class, 'logout'])->name('logout');
+    });
+    // Email Verification Routes (authenticated, but not verified)
+    Route::get('/email/verify', [VendorAuthController::class, 'showVerificationNotice'])->middleware('auth')->name('verification.notice');
+    Route::get('/email/verify/{id}/{hash}', [VendorAuthController::class, 'verify'])->middleware(['auth', 'signed'])->name('verification.verify');
+    Route::post('/email/resend', [VendorAuthController::class, 'resendVerificationEmail'])->middleware('auth')->name('verification.resend');
+});
+
+// =======================================
+// FRONTEND PAGES (CozaStore)
+// =======================================
+
+Route::get('/products', [\App\Http\Controllers\Front\ProductsController::class, 'index'])->name('products.index');
+
+Route::get('/products/category/{slug}', [\App\Http\Controllers\Front\CategoryProductsController::class, 'show'])
+    ->name('products.category');
+
+Route::get('/products/{slug}', [\App\Http\Controllers\Front\ProductDetailController::class, 'show'])
+    ->name('products.detail');
+
+Route::get('/checkout', [\App\Http\Controllers\Front\CheckoutController::class, 'index'])->name('checkout.index');
+Route::post('/checkout', [\App\Http\Controllers\Front\CheckoutController::class, 'store'])->name('checkout.store');
+
+Route::get('/cart', [\App\Http\Controllers\Front\CartController::class, 'index'])->name('cart.index');
+Route::post('/cart/add', [\App\Http\Controllers\Front\CartController::class, 'add'])->name('cart.add');
+Route::post('/cart/update', [\App\Http\Controllers\Front\CartController::class, 'update'])->name('cart.update');
+Route::post('/cart/remove', [\App\Http\Controllers\Front\CartController::class, 'remove'])->name('cart.remove');
+Route::post('/cart/clear', [\App\Http\Controllers\Front\CartController::class, 'clear'])->name('cart.clear');
+Route::get('/cart/count', [\App\Http\Controllers\Front\CartController::class, 'getCount'])->name('cart.count');
+
+Route::middleware('auth')->group(function () {
+    Route::get('/wishlist', [\App\Http\Controllers\Front\WishlistController::class, 'index'])->name('wishlist.index');
+    Route::post('/wishlist/add', [\App\Http\Controllers\Front\WishlistController::class, 'add'])->name('wishlist.add');
+    Route::post('/wishlist/remove', [\App\Http\Controllers\Front\WishlistController::class, 'remove'])->name('wishlist.remove');
+    Route::post('/wishlist/move-to-cart', [\App\Http\Controllers\Front\WishlistController::class, 'moveToCart'])->name('wishlist.move-to-cart');
+    Route::get('/wishlist/count', [\App\Http\Controllers\Front\WishlistController::class, 'getCount'])->name('wishlist.count');
+    Route::post('/wishlist/is-in-wishlist', [\App\Http\Controllers\Front\WishlistController::class, 'isInWishlist'])->name('wishlist.is-in-wishlist');
+
+    // Profile routes
+    Route::get('/profile', [\App\Http\Controllers\Front\ProfileController::class, 'dashboard'])->name('profile.dashboard');
+    Route::get('/profile/personal-info', [\App\Http\Controllers\Front\ProfileController::class, 'editPersonalInfo'])->name('profile.personal-info');
+    Route::post('/profile/personal-info', [\App\Http\Controllers\Front\ProfileController::class, 'updatePersonalInfo'])->name('profile.update-personal-info');
+    Route::get('/profile/change-password', [\App\Http\Controllers\Front\ProfileController::class, 'changePassword'])->name('profile.change-password');
+    Route::post('/profile/change-password', [\App\Http\Controllers\Front\ProfileController::class, 'updatePassword'])->name('profile.update-password');
+    Route::get('/profile/addresses', [\App\Http\Controllers\Front\ProfileController::class, 'addresses'])->name('profile.addresses');
+    Route::get('/profile/addresses/create', [\App\Http\Controllers\Front\ProfileController::class, 'createAddress'])->name('profile.address.create');
+    Route::post('/profile/addresses', [\App\Http\Controllers\Front\ProfileController::class, 'storeAddress'])->name('profile.address.store');
+    Route::get('/profile/addresses/{id}/edit', [\App\Http\Controllers\Front\ProfileController::class, 'editAddress'])->name('profile.address.edit');
+    Route::post('/profile/addresses/{id}', [\App\Http\Controllers\Front\ProfileController::class, 'updateAddress'])->name('profile.address.update');
+    Route::delete('/profile/addresses/{id}', [\App\Http\Controllers\Front\ProfileController::class, 'deleteAddress'])->name('profile.address.delete');
+    Route::get('/profile/orders', [\App\Http\Controllers\Front\ProfileController::class, 'orders'])->name('profile.orders');
+    Route::get('/profile/orders/{id}', [\App\Http\Controllers\Front\ProfileController::class, 'orderDetails'])->name('profile.order-details');
+});
+
+Route::get('/blog', function () {
+    return view('front.blog');
+});
+Route::get('/blog/{slug?}', function () {
+    return view('front.blog-detail');
+});
+
+Route::get('/about', function () {
+    return view('front.about');
+})->name('about');
+
+Route::post('/products/{id}/review', [\App\Http\Controllers\Front\ProductDetailController::class, 'storeReview'])->middleware('auth')->name('products.review');
+Route::match(['get','post'], '/contact', function (\Illuminate\Http\Request $request) {
+    if ($request->isMethod('post')) {
+        $request->validate([
+            'name'    => 'required|string|max:100',
+            'email'   => 'required|email|max:150',
+            'subject' => 'required|string|max:200',
+            'message' => 'required|string|min:10|max:2000',
+        ]);
+        // TODO: send email via Mail::to('info@eshopper.com')->send(...)
+        return redirect()->route('contact')->with('success', 'Your message has been sent. We will get back to you shortly!');
+    }
+    return view('front.contact');
+})->name('contact');
