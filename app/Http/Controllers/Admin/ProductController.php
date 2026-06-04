@@ -96,11 +96,13 @@ class ProductController extends Controller
 
         if ($request->hasFile('images')) {
             foreach ($request->file('images') as $index => $image) {
-                $path = $image->store('products', 'public');
+                // Store as: storage/products/{product_id}/images/{filename}
+                $stored = $image->store('products/' . $product->id . '/images', 'public');
+                $filename = basename($stored);
 
                 ProductImage::create([
                     'product_id' => $product->id,
-                    'image' => $path,
+                    'image' => $filename,
                     'sort_order' => $index + 1,
                 ]);
             }
@@ -150,11 +152,13 @@ class ProductController extends Controller
             $lastOrder = $product->images()->max('sort_order') ?? 0;
 
             foreach ($request->file('images') as $index => $image) {
-                $path = $image->store('products', 'public');
+                // Store as: storage/products/{product_id}/images/{filename}
+                $stored = $image->store('products/' . $product->id . '/images', 'public');
+                $filename = basename($stored);
 
                 ProductImage::create([
                     'product_id' => $product->id,
-                    'image' => $path,
+                    'image' => $filename,
                     'sort_order' => $lastOrder + $index + 1,
                 ]);
             }
@@ -167,7 +171,8 @@ class ProductController extends Controller
     public function destroy(Product $product)
     {
         foreach ($product->images as $image) {
-            Storage::disk('public')->delete($image->image);
+            $relativePath = 'products/' . $product->id . '/images/' . $image->image;
+            Storage::disk('public')->delete($relativePath);
         }
 
         $product->delete();
@@ -178,7 +183,9 @@ class ProductController extends Controller
 
     public function deleteImage(ProductImage $image)
     {
-        Storage::disk('public')->delete($image->image);
+        // $image->image is now filename only
+        $relativePath = 'products/' . $image->product_id . '/images/' . $image->image;
+        Storage::disk('public')->delete($relativePath);
         $image->delete();
 
         return back()->with('success', 'Product image deleted successfully!');

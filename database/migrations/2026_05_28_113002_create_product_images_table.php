@@ -16,6 +16,9 @@ return new class extends Migration
             $table->foreignId('product_id')
                 ->constrained('products')
                 ->cascadeOnDelete();
+            // PRODUCT images: store only the filename.
+            // Frontend builds full path:
+            // storage/products/{product_id}/images/{filename}
             $table->string('image');
             $table->integer('sort_order')->default(0);
             $table->timestamps();

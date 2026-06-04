@@ -27,15 +27,21 @@
             <div class="col-lg-5 pb-5">
                 <div id="product-carousel" class="carousel slide" data-ride="carousel">
                     <div class="carousel-inner border">
-                        @if($product->images && $product->images->isNotEmpty())
+@if($product->images && $product->images->isNotEmpty())
                             @foreach($product->images as $i => $image)
-                            <div class="carousel-item {{ $i === 0 ? 'active' : '' }}">
-                                <img class="w-100" style="height:400px;object-fit:contain;" src="{{ asset('storage/' . $image->image_path) }}" alt="{{ $product->name }}">
-                            </div>
+                                @php
+                                    $filename = $image->image ?? '';
+                                    $relativePath = 'products/' . $product->id . '/images/' . $filename;
+                                    $publicUrl = asset('storage/' . $relativePath);
+                                    $fallbackUrl = asset('storage/default.jpeg');
+                                @endphp
+                                <div class="carousel-item {{ $i === 0 ? 'active' : '' }}">
+                                    <img class="w-100" style="height:400px;object-fit:contain;" src="{{ file_exists(public_path('storage/' . $relativePath)) ? $publicUrl : $fallbackUrl }}" alt="{{ $product->name }}">
+                                </div>
                             @endforeach
                         @else
                             <div class="carousel-item active">
-                                <img class="w-100" style="height:400px;object-fit:contain;" src="{{ asset('eshopper/img/product-1.jpg') }}" alt="{{ $product->name }}">
+                                <img class="w-100" style="height:400px;object-fit:contain;" src="{{ asset('storage/default.jpeg') }}" alt="{{ $product->name }}">
                             </div>
                         @endif
                     </div>
@@ -52,9 +58,15 @@
                 @if($product->images && $product->images->count() > 1)
                 <div class="d-flex mt-3">
                     @foreach($product->images->take(5) as $i => $image)
-                    <a href="#product-carousel" data-target="#product-carousel" data-slide-to="{{ $i }}" class="mr-2">
-                        <img class="border" style="width:60px;height:60px;object-fit:cover;" src="{{ asset('storage/' . $image->image_path) }}" alt="">
-                    </a>
+                        @php
+                            $filename = $image->image ?? '';
+                            $relativePath = 'products/' . $product->id . '/images/' . $filename;
+                            $publicUrl = asset('storage/' . $relativePath);
+                            $fallbackUrl = asset('storage/default.jpeg');
+                        @endphp
+                        <a href="#product-carousel" data-target="#product-carousel" data-slide-to="{{ $i }}" class="mr-2">
+                            <img class="border" style="width:60px;height:60px;object-fit:cover;" src="{{ file_exists(public_path('storage/' . $relativePath)) ? $publicUrl : $fallbackUrl }}" alt="">
+                        </a>
                     @endforeach
                 </div>
                 @endif
