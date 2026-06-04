@@ -9,7 +9,7 @@
 
 <div class="card">
     <div class="card-body">
-        <form action="{{ route('admin.brands.update', $brand) }}" method="POST">
+        <form action="{{ route('admin.brands.update', $brand) }}" method="POST" enctype="multipart/form-data">
             @csrf
             @method('PUT')
 
@@ -24,11 +24,16 @@
             </div>
 
             <div class="mb-3">
-                <label for="logo_url" class="form-label">Brand Logo URL (Optional)</label>
-                <input type="url" class="form-control @error('logo_url') is-invalid @enderror" 
-                       id="logo_url" name="logo_url" value="{{ old('logo_url', $brand->logo_url) }}"
-                       placeholder="https://example.com/logo.png">
-                @error('logo_url')
+                <label for="logo" class="form-label">Brand Logo</label>
+                <div class="mb-2">
+                    <img src="{{ $brand->logo }}" alt="{{ $brand->name }}"
+                         style="height:60px; width:auto; object-fit:contain; border:1px solid #dee2e6; border-radius:4px; padding:4px;">
+                    <small class="text-muted d-block mt-1">Current logo — upload a new one to replace it.</small>
+                </div>
+                <input type="file" class="form-control @error('logo') is-invalid @enderror" 
+                       id="logo" name="logo" accept="image/*">
+                <div class="form-text">Accepted formats: JPEG, PNG, JPG, GIF, WEBP. Max 2MB. Leave blank to keep current logo.</div>
+                @error('logo')
                     <div class="invalid-feedback">{{ $message }}</div>
                 @enderror
             </div>

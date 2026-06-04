@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\Storage;
 
 class Banner extends Model
 {
@@ -20,7 +21,17 @@ class Banner extends Model
 
     protected $casts = [
         'sort_order' => 'integer',
-        'is_active' => 'boolean',
+        'is_active'  => 'boolean',
     ];
-}
 
+    /**
+     * Get the public URL for the banner image, falling back to default.
+     */
+    public function getImageAttribute(): string
+    {
+        if ($this->image_url && Storage::disk('public')->exists($this->image_url)) {
+            return Storage::disk('public')->url($this->image_url);
+        }
+        return asset('storage/default.jpeg');
+    }
+}

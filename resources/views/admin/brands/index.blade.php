@@ -36,11 +36,7 @@
                         <td>{{ $brand->name }}</td>
                         <td><code>{{ $brand->slug }}</code></td>
                         <td>
-                            @if($brand->logo_url)
-                                <img src="{{ $brand->logo_url }}" alt="{{ $brand->name }}" style="height:40px; width:auto; object-fit:contain;" />
-                            @else
-                                <span class="text-muted">-</span>
-                            @endif
+                            <img src="{{ $brand->logo }}" alt="{{ $brand->name }}" style="height:40px; width:auto; object-fit:contain;" />
                         </td>
                         <td>
                             @if($brand->is_featured)

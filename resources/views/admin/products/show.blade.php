@@ -237,19 +237,18 @@
                 <div class="card-header">
                     <span>Images ({{ $images->count() }})</span>
                 </div>
-                <div class="list-group list-group-flush">
-                    @foreach($images as $image)
-                        <div class="list-group-item">
-                            <div class="d-flex justify-content-between align-items-center">
-                                <div>
-                                    <small class="text-muted">Image {{ $image->sort_order }}</small>
-                                    <br>
-                                    <strong>{{ basename($image->image) }}</strong>
-                                </div>
-                                <i class="fas fa-image text-muted"></i>
+                <div class="card-body">
+                    <div class="d-flex flex-wrap gap-2">
+                        @foreach($images as $image)
+                            <div class="text-center">
+                                <img src="{{ $image->url }}"
+                                     alt="{{ $product->name }}"
+                                     style="width:80px; height:80px; object-fit:cover; border-radius:4px; border:1px solid #dee2e6;">
+                                <br>
+                                <small class="text-muted">{{ $image->sort_order }}</small>
                             </div>
-                        </div>
-                    @endforeach
+                        @endforeach
+                    </div>
                 </div>
             </div>
         @endif

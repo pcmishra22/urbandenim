@@ -36,6 +36,7 @@
             <thead>
                 <tr>
                     <th>ID</th>
+                    <th>Image</th>
                     <th>Name</th>
                     <th>Slug</th>
                     <th>Parent</th>
@@ -49,6 +50,10 @@
                 @forelse($categories as $category)
                     <tr>
                         <td><strong>#{{ $category->id }}</strong></td>
+                        <td>
+                            <img src="{{ $category->image }}" alt="{{ $category->name }}"
+                                 style="height:40px; width:40px; object-fit:cover; border-radius:4px;">
+                        </td>
                         <td>{{ $category->name }}</td>
                         <td><code>{{ $category->slug }}</code></td>
                         <td>
@@ -96,6 +101,10 @@
                     @foreach($category->children as $subcategory)
                         <tr style="background-color: #f5f5f5;">
                             <td><strong>#{{ $subcategory->id }}</strong></td>
+                            <td>
+                                <img src="{{ $subcategory->image }}" alt="{{ $subcategory->name }}"
+                                     style="height:40px; width:40px; object-fit:cover; border-radius:4px;">
+                            </td>
                             <td style="padding-left: 40px;">
                                 <i class="fas fa-arrow-right text-muted"></i> {{ $subcategory->name }}
                             </td>
@@ -131,7 +140,7 @@
                     @endforeach
                 @empty
                     <tr>
-                        <td colspan="8" class="text-center text-muted py-4">
+                        <td colspan="9" class="text-center text-muted py-4">
                             <i class="fas fa-inbox"></i> No categories found
                         </td>
                     </tr>

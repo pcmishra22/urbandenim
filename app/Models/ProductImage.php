@@ -27,4 +27,17 @@ class ProductImage extends Model
     {
         return $this->belongsTo(Product::class);
     }
+
+    /**
+     * Get the public URL for this image, falling back to default.
+     */
+    public function getUrlAttribute(): string
+    {
+        $relative = 'products/' . $this->product_id . '/images/' . $this->image;
+        if (\Illuminate\Support\Facades\Storage::disk('public')->exists($relative)) {
+            return \Illuminate\Support\Facades\Storage::disk('public')->url($relative);
+        }
+        return asset('storage/default.jpeg');
+    }
 }
+// (accessor appended below)

@@ -55,11 +55,7 @@
                         <td><code>{{ $banner->type }}</code></td>
                         <td>{{ $banner->title ?? '-' }}</td>
                         <td>
-                            @if($banner->image_url)
-                                <img src="{{ $banner->image_url }}" alt="{{ $banner->title ?? 'banner' }}" style="height:50px; width:auto; object-fit:contain;" />
-                            @else
-                                <span class="text-muted">-</span>
-                            @endif
+                            <img src="{{ $banner->image }}" alt="{{ $banner->title ?? 'banner' }}" style="height:50px; width:auto; object-fit:contain;" />
                         </td>
                         <td>
                             @if($banner->link_url)

@@ -9,7 +9,7 @@
 
 <div class="card">
     <div class="card-body">
-        <form action="{{ route('admin.brands.store') }}" method="POST">
+        <form action="{{ route('admin.brands.store') }}" method="POST" enctype="multipart/form-data">
             @csrf
 
             <div class="mb-3">
@@ -23,11 +23,11 @@
             </div>
 
             <div class="mb-3">
-                <label for="logo_url" class="form-label">Brand Logo URL (Optional)</label>
-                <input type="url" class="form-control @error('logo_url') is-invalid @enderror" 
-                       id="logo_url" name="logo_url" value="{{ old('logo_url') }}"
-                       placeholder="https://example.com/logo.png">
-                @error('logo_url')
+                <label for="logo" class="form-label">Brand Logo (Optional)</label>
+                <input type="file" class="form-control @error('logo') is-invalid @enderror" 
+                       id="logo" name="logo" accept="image/*">
+                <div class="form-text">Accepted formats: JPEG, PNG, JPG, GIF, WEBP. Max 2MB.</div>
+                @error('logo')
                     <div class="invalid-feedback">{{ $message }}</div>
                 @enderror
             </div>

@@ -9,14 +9,14 @@
 
 <div class="card">
     <div class="card-body">
-        <form action="{{ route('admin.categories.update', $category) }}" method="POST">
+        <form action="{{ route('admin.categories.update', $category) }}" method="POST" enctype="multipart/form-data">
             @csrf
             @method('PUT')
 
             <div class="mb-3">
                 <label for="name" class="form-label">Category Name <span class="text-danger">*</span></label>
-                <input type="text" class="form-control @error('name') is-invalid @enderror" 
-                       id="name" name="name" value="{{ old('name', $category->name) }}" 
+                <input type="text" class="form-control @error('name') is-invalid @enderror"
+                       id="name" name="name" value="{{ old('name', $category->name) }}"
                        placeholder="e.g., Designer Jeans" required>
                 @error('name')
                     <div class="invalid-feedback">{{ $message }}</div>
@@ -25,8 +25,8 @@
 
             <div class="mb-3">
                 <label for="slug" class="form-label">Slug <span class="text-danger">*</span></label>
-                <input type="text" class="form-control @error('slug') is-invalid @enderror" 
-                       id="slug" name="slug" value="{{ old('slug', $category->slug) }}" 
+                <input type="text" class="form-control @error('slug') is-invalid @enderror"
+                       id="slug" name="slug" value="{{ old('slug', $category->slug) }}"
                        placeholder="e.g., designer-jeans" required>
                 @error('slug')
                     <div class="invalid-feedback">{{ $message }}</div>
@@ -35,8 +35,8 @@
 
             <div class="mb-3">
                 <label for="description" class="form-label">Description</label>
-                <textarea class="form-control @error('description') is-invalid @enderror" 
-                          id="description" name="description" rows="4" 
+                <textarea class="form-control @error('description') is-invalid @enderror"
+                          id="description" name="description" rows="4"
                           placeholder="Category description...">{{ old('description', $category->description) }}</textarea>
                 @error('description')
                     <div class="invalid-feedback">{{ $message }}</div>
@@ -45,7 +45,7 @@
 
             <div class="mb-3">
                 <label for="parent_id" class="form-label">Parent Category (Optional)</label>
-                <select class="form-select @error('parent_id') is-invalid @enderror" 
+                <select class="form-select @error('parent_id') is-invalid @enderror"
                         id="parent_id" name="parent_id">
                     <option value="">-- No Parent (Main Category) --</option>
                     @foreach($parentCategories as $cat)
@@ -59,12 +59,36 @@
                 @enderror
             </div>
 
+            {{-- Category Image --}}
+            <div class="mb-3">
+                <label for="image" class="form-label">Category Image</label>
+                @if($category->image_url)
+                    <div class="mb-2">
+                        <img src="{{ $category->image }}" alt="{{ $category->name }}"
+                             style="height:80px; width:auto; object-fit:contain; border:1px solid #dee2e6; border-radius:4px; padding:4px;">
+                        <small class="text-muted d-block mt-1">Current image — upload a new one to replace it.</small>
+                    </div>
+                @else
+                    <div class="mb-2">
+                        <img src="{{ asset('storage/default.jpeg') }}" alt="Default"
+                             style="height:80px; width:auto; object-fit:contain; border:1px solid #dee2e6; border-radius:4px; padding:4px; opacity:.5;">
+                        <small class="text-muted d-block mt-1">No image set — using default.</small>
+                    </div>
+                @endif
+                <input type="file" class="form-control @error('image') is-invalid @enderror"
+                       id="image" name="image" accept="image/*">
+                <div class="form-text">Accepted formats: JPEG, PNG, JPG, GIF, WEBP. Max 2MB.</div>
+                @error('image')
+                    <div class="invalid-feedback">{{ $message }}</div>
+                @enderror
+            </div>
+
             <div class="row">
                 <div class="col-md-6">
                     <div class="mb-3">
                         <label for="sort_order" class="form-label">Sort Order</label>
-                        <input type="number" class="form-control @error('sort_order') is-invalid @enderror" 
-                               id="sort_order" name="sort_order" value="{{ old('sort_order', $category->sort_order ?? 0) }}" 
+                        <input type="number" class="form-control @error('sort_order') is-invalid @enderror"
+                               id="sort_order" name="sort_order" value="{{ old('sort_order', $category->sort_order ?? 0) }}"
                                placeholder="0">
                         @error('sort_order')
                             <div class="invalid-feedback">{{ $message }}</div>
@@ -74,7 +98,7 @@
                 <div class="col-md-6">
                     <div class="mb-3">
                         <label for="is_active" class="form-label">Status</label>
-                        <select class="form-select @error('is_active') is-invalid @enderror" 
+                        <select class="form-select @error('is_active') is-invalid @enderror"
                                 id="is_active" name="is_active">
                             <option value="1" @selected(old('is_active', $category->is_active) == 1)>Active</option>
                             <option value="0" @selected(old('is_active', $category->is_active) == 0)>Inactive</option>
