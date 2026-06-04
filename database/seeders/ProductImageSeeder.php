@@ -20,9 +20,10 @@ class ProductImageSeeder extends Seeder
         foreach ($products as $product) {
             ProductImage::create([
                 'product_id' => $product->id,
-                'image' => 'products/sample-' . Str::random(6) . '.jpg',
+                'image' => 'sample-' . Str::random(6) . '.jpg',
                 'sort_order' => 1,
             ]);
         }
     }
 }
+
