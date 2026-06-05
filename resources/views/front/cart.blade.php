@@ -56,7 +56,7 @@
                             <td class="align-middle">
                                 <div class="d-flex align-items-center justify-content-center">
                                     @if($product->images && $product->images->isNotEmpty())
-                                        <img src="{{ asset('storage/' . $product->images->first()->image_path) }}" alt="" style="width: 50px; height: 50px; object-fit: cover;">
+                                        <img src="{{ $product->images->first()->url }}" alt="" style="width: 50px; height: 50px; object-fit: cover;">
                                     @else
                                         <img src="{{ asset('eshopper/img/product-1.jpg') }}" alt="" style="width: 50px;">
                                     @endif

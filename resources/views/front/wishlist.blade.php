@@ -43,7 +43,7 @@
                 <div class="card product-item border-0 mb-4">
                     <div class="card-header product-img position-relative overflow-hidden bg-transparent border p-0">
                         @if($product && $product->images && $product->images->isNotEmpty())
-                            <img class="img-fluid w-100" src="{{ asset('storage/' . $product->images->first()->image_path) }}" alt="{{ $product->name }}">
+                            <img class="img-fluid w-100" src="{{ $product->images->first()->url }}" alt="{{ $product->name }}">
                         @else
                             <img class="img-fluid w-100" src="{{ asset('eshopper/img/product-1.jpg') }}" alt="">
                         @endif

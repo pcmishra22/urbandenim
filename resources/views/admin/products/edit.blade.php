@@ -9,7 +9,7 @@
 
 <div class="card">
     <div class="card-body">
-        <form action="{{ route('admin.products.update', $product) }}" method="POST">
+        <form action="{{ route('admin.products.update', $product) }}" method="POST" enctype="multipart/form-data">
             @csrf
             @method('PUT')
 
@@ -18,8 +18,8 @@
 
             <div class="mb-3">
                 <label for="name" class="form-label">Product Name <span class="text-danger">*</span></label>
-                <input type="text" class="form-control @error('name') is-invalid @enderror" 
-                       id="name" name="name" value="{{ old('name', $product->name) }}" 
+                <input type="text" class="form-control @error('name') is-invalid @enderror"
+                       id="name" name="name" value="{{ old('name', $product->name) }}"
                        placeholder="e.g., Blue Slim Fit Jeans" required>
                 @error('name')
                     <div class="invalid-feedback">{{ $message }}</div>
@@ -29,10 +29,10 @@
             <div class="row">
                 <div class="col-md-6">
                     <div class="mb-3">
-                        <label for="slug" class="form-label">Slug <span class="text-danger">*</span></label>
-                        <input type="text" class="form-control @error('slug') is-invalid @enderror" 
-                               id="slug" name="slug" value="{{ old('slug', $product->slug) }}" 
-                               placeholder="e.g., blue-slim-fit-jeans" required>
+                        <label for="slug" class="form-label">Slug</label>
+                        <input type="text" class="form-control @error('slug') is-invalid @enderror"
+                               id="slug" name="slug" value="{{ old('slug', $product->slug) }}"
+                               placeholder="Auto-generated if empty">
                         @error('slug')
                             <div class="invalid-feedback">{{ $message }}</div>
                         @enderror
@@ -41,8 +41,8 @@
                 <div class="col-md-6">
                     <div class="mb-3">
                         <label for="sku" class="form-label">SKU</label>
-                        <input type="text" class="form-control @error('sku') is-invalid @enderror" 
-                               id="sku" name="sku" value="{{ old('sku', $product->sku) }}" 
+                        <input type="text" class="form-control @error('sku') is-invalid @enderror"
+                               id="sku" name="sku" value="{{ old('sku', $product->sku) }}"
                                placeholder="e.g., BLUE-SLIM-001">
                         @error('sku')
                             <div class="invalid-feedback">{{ $message }}</div>
@@ -53,8 +53,8 @@
 
             <div class="mb-3">
                 <label for="short_description" class="form-label">Short Description</label>
-                <textarea class="form-control @error('short_description') is-invalid @enderror" 
-                          id="short_description" name="short_description" rows="2" 
+                <textarea class="form-control @error('short_description') is-invalid @enderror"
+                          id="short_description" name="short_description" rows="2"
                           placeholder="Brief product description...">{{ old('short_description', $product->short_description) }}</textarea>
                 @error('short_description')
                     <div class="invalid-feedback">{{ $message }}</div>
@@ -63,8 +63,8 @@
 
             <div class="mb-3">
                 <label for="description" class="form-label">Description</label>
-                <textarea class="form-control @error('description') is-invalid @enderror" 
-                          id="description" name="description" rows="4" 
+                <textarea class="form-control @error('description') is-invalid @enderror"
+                          id="description" name="description" rows="4"
                           placeholder="Full product description...">{{ old('description', $product->description) }}</textarea>
                 @error('description')
                     <div class="invalid-feedback">{{ $message }}</div>
@@ -78,7 +78,7 @@
                 <div class="col-md-6">
                     <div class="mb-3">
                         <label for="category_id" class="form-label">Category <span class="text-danger">*</span></label>
-                        <select class="form-select @error('category_id') is-invalid @enderror" 
+                        <select class="form-select @error('category_id') is-invalid @enderror"
                                 id="category_id" name="category_id" required>
                             <option value="">-- Select Category --</option>
                             @foreach($categories as $category)
@@ -95,7 +95,7 @@
                 <div class="col-md-6">
                     <div class="mb-3">
                         <label for="brand_id" class="form-label">Brand</label>
-                        <select class="form-select @error('brand_id') is-invalid @enderror" 
+                        <select class="form-select @error('brand_id') is-invalid @enderror"
                                 id="brand_id" name="brand_id">
                             <option value="">-- Select Brand --</option>
                             @foreach($brands as $brand)
@@ -120,8 +120,8 @@
                         <label for="price" class="form-label">Price <span class="text-danger">*</span></label>
                         <div class="input-group">
                             <span class="input-group-text">₹</span>
-                            <input type="number" step="0.01" class="form-control @error('price') is-invalid @enderror" 
-                                   id="price" name="price" value="{{ old('price', $product->price) }}" 
+                            <input type="number" step="0.01" class="form-control @error('price') is-invalid @enderror"
+                                   id="price" name="price" value="{{ old('price', $product->price) }}"
                                    placeholder="0.00" required>
                         </div>
                         @error('price')
@@ -134,8 +134,8 @@
                         <label for="sale_price" class="form-label">Sale Price</label>
                         <div class="input-group">
                             <span class="input-group-text">₹</span>
-                            <input type="number" step="0.01" class="form-control @error('sale_price') is-invalid @enderror" 
-                                   id="sale_price" name="sale_price" value="{{ old('sale_price', $product->sale_price) }}" 
+                            <input type="number" step="0.01" class="form-control @error('sale_price') is-invalid @enderror"
+                                   id="sale_price" name="sale_price" value="{{ old('sale_price', $product->sale_price) }}"
                                    placeholder="0.00">
                         </div>
                         @error('sale_price')
@@ -149,74 +149,82 @@
             <h5 class="mb-3 border-bottom pb-2"><i class="fas fa-sliders-h"></i> Attributes</h5>
 
             <div class="row">
-                <div class="col-md-3">
+                <div class="col-md-4">
                     <div class="mb-3">
                         <label for="gender" class="form-label">Gender</label>
-                        <select class="form-select @error('gender') is-invalid @enderror" 
-                                id="gender" name="gender">
+                        <select class="form-select" id="gender" name="gender">
                             <option value="">-- Select --</option>
-                            <option value="men" @selected(old('gender', $product->gender) == 'men')>Men</option>
-                            <option value="women" @selected(old('gender', $product->gender) == 'women')>Women</option>
-                            <option value="boys" @selected(old('gender', $product->gender) == 'boys')>Boys</option>
-                            <option value="girls" @selected(old('gender', $product->gender) == 'girls')>Girls</option>
+                            <option value="men"    @selected(old('gender', $product->gender) == 'men')>Men</option>
+                            <option value="women"  @selected(old('gender', $product->gender) == 'women')>Women</option>
+                            <option value="boys"   @selected(old('gender', $product->gender) == 'boys')>Boys</option>
+                            <option value="girls"  @selected(old('gender', $product->gender) == 'girls')>Girls</option>
                             <option value="unisex" @selected(old('gender', $product->gender) == 'unisex')>Unisex</option>
                         </select>
-                        @error('gender')
-                            <div class="invalid-feedback">{{ $message }}</div>
-                        @enderror
                     </div>
                 </div>
-                <div class="col-md-3">
+                <div class="col-md-4">
                     <div class="mb-3">
                         <label for="age_group" class="form-label">Age Group</label>
-                        <select class="form-select @error('age_group') is-invalid @enderror" 
-                                id="age_group" name="age_group">
+                        <select class="form-select" id="age_group" name="age_group">
                             <option value="">-- Select --</option>
-                            <option value="kids" @selected(old('age_group', $product->age_group) == 'kids')>Kids</option>
-                            <option value="teen" @selected(old('age_group', $product->age_group) == 'teen')>Teen</option>
+                            <option value="kids"  @selected(old('age_group', $product->age_group) == 'kids')>Kids</option>
+                            <option value="teen"  @selected(old('age_group', $product->age_group) == 'teen')>Teen</option>
                             <option value="adult" @selected(old('age_group', $product->age_group) == 'adult')>Adult</option>
                         </select>
-                        @error('age_group')
-                            <div class="invalid-feedback">{{ $message }}</div>
-                        @enderror
                     </div>
                 </div>
-                <div class="col-md-3">
-                    <div class="mb-3">
-                        <label for="fit_type" class="form-label">Fit Type</label>
-                        <select class="form-select @error('fit_type') is-invalid @enderror" 
-                                id="fit_type" name="fit_type">
-                            <option value="">-- Select --</option>
-                            <option value="slim" @selected(old('fit_type', $product->fit_type) == 'slim')>Slim</option>
-                            <option value="regular" @selected(old('fit_type', $product->fit_type) == 'regular')>Regular</option>
-                            <option value="baggy" @selected(old('fit_type', $product->fit_type) == 'baggy')>Baggy</option>
-                            <option value="skinny" @selected(old('fit_type', $product->fit_type) == 'skinny')>Skinny</option>
-                            <option value="straight" @selected(old('fit_type', $product->fit_type) == 'straight')>Straight</option>
-                        </select>
-                        @error('fit_type')
-                            <div class="invalid-feedback">{{ $message }}</div>
-                        @enderror
-                    </div>
-                </div>
-                <div class="col-md-3">
+                <div class="col-md-4">
                     <div class="mb-3">
                         <label for="color_family" class="form-label">Color Family</label>
-                        <select class="form-select @error('color_family') is-invalid @enderror" 
-                                id="color_family" name="color_family">
+                        <select class="form-select" id="color_family" name="color_family">
                             <option value="">-- Select --</option>
                             <option value="black" @selected(old('color_family', $product->color_family) == 'black')>Black</option>
-                            <option value="blue" @selected(old('color_family', $product->color_family) == 'blue')>Blue</option>
+                            <option value="blue"  @selected(old('color_family', $product->color_family) == 'blue')>Blue</option>
                             <option value="white" @selected(old('color_family', $product->color_family) == 'white')>White</option>
-                            <option value="navy" @selected(old('color_family', $product->color_family) == 'navy')>Navy</option>
-                            <option value="gray" @selected(old('color_family', $product->color_family) == 'gray')>Gray</option>
+                            <option value="navy"  @selected(old('color_family', $product->color_family) == 'navy')>Navy</option>
+                            <option value="gray"  @selected(old('color_family', $product->color_family) == 'gray')>Gray</option>
                             <option value="other" @selected(old('color_family', $product->color_family) == 'other')>Other</option>
                         </select>
-                        @error('color_family')
-                            <div class="invalid-feedback">{{ $message }}</div>
-                        @enderror
                     </div>
                 </div>
             </div>
+
+            <!-- Product Images -->
+            <h5 class="mb-3 border-bottom pb-2"><i class="fas fa-images"></i> Product Images</h5>
+
+            @if($product->images->isNotEmpty())
+            <div class="mb-3">
+                <label class="form-label">Current Images</label>
+                <div class="d-flex flex-wrap gap-3">
+                    @foreach($product->images as $img)
+                    <div class="text-center" style="position:relative;">
+                        <img src="{{ $img->url }}" alt="Product image"
+                             style="width:100px;height:100px;object-fit:cover;border-radius:6px;border:1px solid #ddd;">
+                        <div class="mt-1">
+                            <label class="d-flex align-items-center justify-content-center gap-1 small text-danger" style="cursor:pointer;">
+                                <input type="checkbox" name="delete_images[]" value="{{ $img->id }}">
+                                Delete
+                            </label>
+                        </div>
+                    </div>
+                    @endforeach
+                </div>
+                <div class="form-text text-muted">Check the box under an image to delete it on save.</div>
+            </div>
+            @endif
+
+            <div class="mb-3">
+                <label for="images" class="form-label">Add More Images</label>
+                <input type="file" class="form-control @error('images.*') is-invalid @enderror"
+                       id="images" name="images[]" multiple accept="image/jpg,image/jpeg,image/png,image/webp">
+                <div class="form-text">Max 2MB each. Accepted: JPG, PNG, WEBP.
+                    Saved to <code>storage/products/{{ $product->id }}/images/</code></div>
+                @error('images.*')
+                    <div class="invalid-feedback">{{ $message }}</div>
+                @enderror
+            </div>
+
+            <div id="image-preview" class="d-flex flex-wrap gap-2 mb-3"></div>
 
             <!-- Status -->
             <h5 class="mb-3 border-bottom pb-2"><i class="fas fa-cog"></i> Status</h5>
@@ -255,4 +263,24 @@
         </form>
     </div>
 </div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    document.getElementById('images').addEventListener('change', function () {
+        const preview = document.getElementById('image-preview');
+        preview.innerHTML = '';
+        Array.from(this.files).forEach(file => {
+            const reader = new FileReader();
+            reader.onload = e => {
+                const img = document.createElement('img');
+                img.src = e.target.result;
+                img.style.cssText = 'width:100px;height:100px;object-fit:cover;border-radius:6px;border:2px dashed #0d6efd;';
+                img.title = file.name;
+                preview.appendChild(img);
+            };
+            reader.readAsDataURL(file);
+        });
+    });
+});
+</script>
 @endsection

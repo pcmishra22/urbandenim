@@ -93,8 +93,8 @@
                 <div class="cat-item d-flex flex-column border mb-4" style="padding: 30px;">
                     <p class="text-right">{{ $category->products_count }} Products</p>
                     <a href="{{ route('products.index', ['category' => $category->id]) }}" class="cat-img position-relative overflow-hidden mb-3">
-                        @if($category->image_url)
-                            <img class="img-fluid" src="{{ $category->image }}" alt="{{ $category->name }}">
+                        @if($category->image)
+                            <img class="img-fluid" src="{{ asset('storage/' . $category->image) }}" alt="{{ $category->name }}">
                         @else
                             <img class="img-fluid" src="{{ asset('eshopper/img/cat-1.jpg') }}" alt="{{ $category->name }}">
                         @endif

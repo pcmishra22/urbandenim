@@ -42,7 +42,7 @@
                                 <div class="product-item bg-light">
                                     <div class="product-img position-relative overflow-hidden">
                                         @if($product->images && $product->images->count() > 0)
-                                            <img class="img-fluid w-100" src="{{ asset('storage/' . $product->images->first()->image_path) }}" alt="{{ $product->name }}">
+                                            <img class="img-fluid w-100" src="{{ $product->images->first()->url }}" alt="{{ $product->name }}">
                                         @else
                                             <img class="img-fluid w-100" src="{{ asset('eshopper/img/product-1.jpg') }}" alt="{{ $product->name }}">
                                         @endif
