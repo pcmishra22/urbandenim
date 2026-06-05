@@ -42,6 +42,18 @@ class CheckoutController extends Controller
     }
 
     /**
+     * Show the order confirmation / thank-you page.
+     */
+    public function confirmation($orderId)
+    {
+        $order = Order::with('products.images', 'user')
+            ->where('user_id', auth()->id())
+            ->findOrFail($orderId);
+
+        return view('front.checkout-confirmation', compact('order'));
+    }
+
+    /**
      * Process and place the order.
      */
     public function store(Request $request)
@@ -141,7 +153,7 @@ class CheckoutController extends Controller
             // Notification failure should not block the user
         }
 
-        return redirect()->route('profile.order-details', $order->id)
+        return redirect()->route('checkout.confirmation', $order->id)
             ->with('success', "Order #{$order->id} placed successfully!");
     }
 

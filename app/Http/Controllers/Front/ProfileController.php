@@ -177,7 +177,7 @@ class ProfileController extends Controller
     public function orders()
     {
         $user = auth()->user();
-        $orders = $user->orders()->with('items', 'shipments')->paginate(10);
+        $orders = $user->orders()->with('products', 'shipments')->latest()->paginate(10);
 
         return view('front.profile.orders', compact('orders'));
     }
@@ -187,7 +187,7 @@ class ProfileController extends Controller
      */
     public function orderDetails($id)
     {
-        $order = auth()->user()->orders()->with('items', 'shipments')->findOrFail($id);
+        $order = auth()->user()->orders()->with('products.images', 'shipments')->findOrFail($id);
         return view('front.profile.order-details', compact('order'));
     }
 

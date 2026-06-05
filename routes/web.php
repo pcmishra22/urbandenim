@@ -270,6 +270,7 @@ Route::get('/products/{slug}', [\App\Http\Controllers\Front\ProductDetailControl
 
 Route::get('/checkout', [\App\Http\Controllers\Front\CheckoutController::class, 'index'])->name('checkout.index');
 Route::post('/checkout', [\App\Http\Controllers\Front\CheckoutController::class, 'store'])->name('checkout.store');
+Route::get('/checkout/confirmation/{orderId}', [\App\Http\Controllers\Front\CheckoutController::class, 'confirmation'])->name('checkout.confirmation')->middleware('auth');
 
 Route::get('/cart', [\App\Http\Controllers\Front\CartController::class, 'index'])->name('cart.index');
 Route::post('/cart/add', [\App\Http\Controllers\Front\CartController::class, 'add'])->name('cart.add');
