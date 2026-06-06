@@ -206,6 +206,9 @@
                                 <input type="radio" class="custom-control-input" name="payment_method" id="pay_upi" value="upi"
                                        form="checkout-form" {{ old('payment_method') === 'upi' ? 'checked' : '' }}>
                                 <label class="custom-control-label" for="pay_upi">
+                                    <i class="fa fa-university text-success mr-2"></i>
+                                    UPI / Net Banking / Cards (Razorpay)
+                                    <small class="d-block text-muted">Pay securely via Razorpay — UPI, IMPS, Credit/Debit Cards, Net Banking</small>
                                     <i class="fa fa-mobile-alt text-primary mr-1"></i> UPI / Net Banking
                                 </label>
                             </div>
@@ -258,6 +261,85 @@
     </div>
     <!-- Checkout End -->
 
+
+@push('scripts')
+{{-- Razorpay integration --}}
+@if(config('services.razorpay.key'))
+<script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+<script>
+document.getElementById('checkout-form')?.addEventListener('submit', function(e) {
+    var method = document.querySelector('input[name=payment_method]:checked')?.value;
+    if (method === 'upi' || method === 'card') {
+        e.preventDefault();
+        // First submit form data to create the order, then open Razorpay
+        fetch('{{ route("payment.create-order") }}', {
+            method: 'POST',
+            headers: {'Content-Type':'application/json','X-CSRF-TOKEN':'{{ csrf_token() }}'},
+            body: JSON.stringify({
+                cart_subtotal: {{ $subtotal }},
+                shipping: {{ $shipping }},
+                discount: {{ $discount }},
+                coupon_code: '{{ $couponCode }}',
+                // Also pass shipping fields
+                shipping_full_name: document.querySelector('[name=shipping_full_name]')?.value,
+                shipping_phone: document.querySelector('[name=shipping_phone]')?.value,
+                shipping_street: document.querySelector('[name=shipping_street]')?.value,
+                shipping_city: document.querySelector('[name=shipping_city]')?.value,
+                shipping_state: document.querySelector('[name=shipping_state]')?.value,
+                shipping_postal_code: document.querySelector('[name=shipping_postal_code]')?.value,
+                shipping_country: document.querySelector('[name=shipping_country]')?.value,
+                notes: document.querySelector('[name=notes]')?.value,
+                payment_method: method,
+            })
+        })
+        .then(r => r.json())
+        .then(data => {
+            if (data.error) { alert(data.error); return; }
+            var options = {
+                key: data.key,
+                amount: data.amount,
+                currency: data.currency,
+                name: data.name,
+                description: data.description,
+                order_id: data.razorpay_order_id,
+                prefill: data.prefill,
+                theme: { color: '#2c3e50' },
+                handler: function(response) {
+                    // Post verification to our server
+                    var form = document.createElement('form');
+                    form.method = 'POST';
+                    form.action = '{{ route("payment.verify") }}';
+                    var fields = {
+                        '_token': '{{ csrf_token() }}',
+                        'razorpay_order_id': response.razorpay_order_id,
+                        'razorpay_payment_id': response.razorpay_payment_id,
+                        'razorpay_signature': response.razorpay_signature,
+                        'order_id': data.order_id,
+                    };
+                    Object.keys(fields).forEach(k => {
+                        var input = document.createElement('input');
+                        input.type = 'hidden'; input.name = k; input.value = fields[k];
+                        form.appendChild(input);
+                    });
+                    document.body.appendChild(form);
+                    form.submit();
+                },
+                modal: {
+                    ondismiss: function() {
+                        console.log('Payment cancelled by user');
+                    }
+                }
+            };
+            var rzp = new Razorpay(options);
+            rzp.open();
+        })
+        .catch(err => { console.error(err); alert('Error initiating payment. Please try COD or refresh.'); });
+    }
+    // COD proceeds normally
+});
+</script>
+@endif
+@endpush
 @endsection
 
 @push('scripts')

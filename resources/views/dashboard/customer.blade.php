@@ -1,88 +1,63 @@
-@extends('layouts.dashboard')
-
-@section('title', 'Customer Dashboard')
-
+@extends('layouts.eshopper')
+@section('title', 'My Dashboard - EShopper')
 @section('content')
-<h1 class="page-title"><i class="fas fa-home"></i> Welcome, {{ Auth::user()->name }}!</h1>
-
-<div class="row mb-4">
-    <div class="col-md-4">
-        <div class="stat-card">
-            <h6>Total Orders</h6>
-            <div class="value">{{ $orders->total() }}</div>
+    @include('front.partials.page-banner', ['title' => 'My Account', 'breadcrumb' => 'Dashboard'])
+    <div class="container-fluid pt-5 pb-5">
+        <div class="row px-xl-5">
+            @include('front.partials.profile-sidebar')
+            <div class="col-lg-9 mb-5">
+                <h5 class="font-weight-semi-bold mb-4">Welcome, {{ Auth::user()->name }}!</h5>
+                <div class="row mb-4">
+                    <div class="col-md-4 mb-3">
+                        <div class="border rounded p-4 text-center">
+                            <i class="fa fa-shopping-bag fa-2x text-primary mb-2"></i>
+                            <h3 class="font-weight-bold">{{ $orders->total() }}</h3>
+                            <p class="text-muted mb-0">Total Orders</p>
+                        </div>
+                    </div>
+                    <div class="col-md-4 mb-3">
+                        <div class="border rounded p-4 text-center">
+                            <i class="fa fa-clock fa-2x text-warning mb-2"></i>
+                            <h3 class="font-weight-bold">{{ \App\Models\Order::where('user_id',Auth::id())->whereIn('status',['pending','processing'])->count() }}</h3>
+                            <p class="text-muted mb-0">Active Orders</p>
+                        </div>
+                    </div>
+                    <div class="col-md-4 mb-3">
+                        <div class="border rounded p-4 text-center">
+                            <i class="fa fa-rupee-sign fa-2x text-success mb-2"></i>
+                            <h3 class="font-weight-bold">₹{{ number_format(\App\Models\Order::where('user_id',Auth::id())->whereNotIn('status',['cancelled'])->sum('total_price'),0) }}</h3>
+                            <p class="text-muted mb-0">Total Spent</p>
+                        </div>
+                    </div>
+                </div>
+                <h6 class="font-weight-semi-bold mb-3">Recent Orders</h6>
+                @if($orders->isEmpty())
+                    <div class="text-center py-5 bg-light rounded">
+                        <i class="fa fa-shopping-bag fa-3x text-muted mb-3"></i>
+                        <h5 class="text-muted">No orders yet</h5>
+                        <a href="{{ route('products.index') }}" class="btn btn-primary mt-2">Start Shopping</a>
+                    </div>
+                @else
+                    <div class="table-responsive">
+                        <table class="table table-bordered text-center">
+                            <thead class="bg-secondary"><tr><th>Order #</th><th>Date</th><th>Total</th><th>Status</th><th>Action</th></tr></thead>
+                            <tbody>
+                                @foreach($orders as $order)
+                                @php $bm=['pending'=>'warning','processing'=>'info','shipped'=>'primary','delivered'=>'success','cancelled'=>'danger']; @endphp
+                                <tr>
+                                    <td><strong>#{{ $order->id }}</strong></td>
+                                    <td>{{ $order->created_at->format('d M Y') }}</td>
+                                    <td>₹{{ number_format($order->total_price,2) }}</td>
+                                    <td><span class="badge badge-{{ $bm[$order->status]??'secondary' }} text-capitalize">{{ $order->status }}</span></td>
+                                    <td><a href="{{ route('profile.order-details',$order->id) }}" class="btn btn-sm btn-outline-primary">View</a></td>
+                                </tr>
+                                @endforeach
+                            </tbody>
+                        </table>
+                    </div>
+                    <div class="mt-3">{{ $orders->links() }}</div>
+                @endif
+            </div>
         </div>
     </div>
-    <div class="col-md-4">
-        <div class="stat-card">
-            <h6>Pending Orders</h6>
-            <div class="value">{{ \App\Models\Order::where('user_id', Auth::id())->where('status', 'pending')->count() }}</div>
-        </div>
-    </div>
-    <div class="col-md-4">
-        <div class="stat-card">
-            <h6>Total Spent</h6>
-            <div class="value">${{ number_format(\App\Models\Order::where('user_id', Auth::id())->sum('total_price'), 2) }}</div>
-        </div>
-    </div>
-</div>
-
-<div class="card">
-    <div class="card-header">
-        <i class="fas fa-shopping-bag"></i> Recent Orders
-    </div>
-    <div class="table-responsive">
-        <table class="table table-hover mb-0">
-            <thead>
-                <tr>
-                    <th>Order ID</th>
-                    <th>Date</th>
-                    <th>Items</th>
-                    <th>Total</th>
-                    <th>Status</th>
-                    <th>Action</th>
-                </tr>
-            </thead>
-            <tbody>
-                @forelse($orders as $order)
-                    <tr>
-                        <td>#{{ $order->id }}</td>
-                        <td>{{ $order->created_at->format('M d, Y') }}</td>
-                        <td>
-                            <span class="badge bg-info">
-                                {{ $order->products->count() }} items
-                            </span>
-                        </td>
-                        <td>${{ number_format($order->total_price, 2) }}</td>
-                        <td>
-                            <span class="badge badge-{{ strtolower($order->status) }}">
-                                {{ ucfirst($order->status) }}
-                            </span>
-                        </td>
-                        <td>
-                            <button class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#orderModal{{ $order->id }}">
-                                View Details
-                            </button>
-                        </td>
-                    </tr>
-                @empty
-                    <tr>
-                        <td colspan="6" class="text-center py-4">
-                            <i class="fas fa-inbox"></i> No orders yet. Start shopping!
-                        </td>
-                    </tr>
-                @endforelse
-            </tbody>
-        </table>
-    </div>
-</div>
-
-<div class="mt-4">
-    {{ $orders->links('pagination::bootstrap-4') }}
-</div>
-
-<div style="margin-top: 30px;">
-    <a href="{{ route('customer.login') }}" class="btn btn-outline-secondary">
-        <i class="fas fa-plus"></i> Browse Products
-    </a>
-</div>
 @endsection

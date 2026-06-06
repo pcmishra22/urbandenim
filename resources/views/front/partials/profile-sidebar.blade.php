@@ -9,22 +9,32 @@
             <small class="text-muted">{{ auth()->user()->email }}</small>
         </div>
         <div class="d-flex flex-column">
-            <a href="{{ route('profile.dashboard') }}" class="btn {{ request()->routeIs('profile.dashboard') ? 'btn-primary' : 'btn-outline-dark' }} mb-2">
+            <a href="{{ route('profile.dashboard') }}"
+               class="btn {{ request()->routeIs('profile.dashboard') ? 'btn-primary' : 'btn-outline-dark' }} mb-2">
                 <i class="fa fa-tachometer-alt mr-2"></i>Dashboard
             </a>
-            <a href="{{ route('profile.personal-info') }}" class="btn {{ request()->routeIs('profile.personal-info') ? 'btn-primary' : 'btn-outline-dark' }} mb-2">
+            <a href="{{ route('profile.personal-info') }}"
+               class="btn {{ request()->routeIs('profile.personal-info') ? 'btn-primary' : 'btn-outline-dark' }} mb-2">
                 <i class="fa fa-user mr-2"></i>Personal Info
             </a>
-            <a href="{{ route('profile.addresses') }}" class="btn {{ request()->routeIs('profile.addresses') || request()->routeIs('profile.address.*') ? 'btn-primary' : 'btn-outline-dark' }} mb-2">
+            <a href="{{ route('profile.addresses') }}"
+               class="btn {{ request()->routeIs('profile.addresses') || request()->routeIs('profile.address.*') ? 'btn-primary' : 'btn-outline-dark' }} mb-2">
                 <i class="fa fa-map-marker-alt mr-2"></i>Addresses
             </a>
-            <a href="{{ route('profile.orders') }}" class="btn {{ request()->routeIs('profile.orders') || request()->routeIs('profile.order-details') ? 'btn-primary' : 'btn-outline-dark' }} mb-2">
+            <a href="{{ route('profile.orders') }}"
+               class="btn {{ request()->routeIs('profile.orders') || request()->routeIs('profile.order-details') ? 'btn-primary' : 'btn-outline-dark' }} mb-2">
                 <i class="fa fa-shopping-bag mr-2"></i>My Orders
             </a>
-            <a href="{{ route('wishlist.index') }}" class="btn btn-outline-dark mb-2">
+            <a href="{{ route('profile.reviews') }}"
+               class="btn {{ request()->routeIs('profile.reviews') ? 'btn-primary' : 'btn-outline-dark' }} mb-2">
+                <i class="fa fa-star mr-2"></i>My Reviews
+            </a>
+            <a href="{{ route('wishlist.index') }}"
+               class="btn {{ request()->routeIs('wishlist.*') ? 'btn-primary' : 'btn-outline-dark' }} mb-2">
                 <i class="fa fa-heart mr-2"></i>Wishlist
             </a>
-            <a href="{{ route('profile.change-password') }}" class="btn {{ request()->routeIs('profile.change-password') ? 'btn-primary' : 'btn-outline-dark' }} mb-2">
+            <a href="{{ route('profile.change-password') }}"
+               class="btn {{ request()->routeIs('profile.change-password') ? 'btn-primary' : 'btn-outline-dark' }} mb-2">
                 <i class="fa fa-lock mr-2"></i>Change Password
             </a>
             <form method="POST" action="{{ route('customer.logout') }}">

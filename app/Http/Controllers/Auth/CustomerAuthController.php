@@ -2,40 +2,33 @@
 
 namespace App\Http\Controllers\Auth;
 
+use App\Mail\NewUserAdminMail;
+use App\Mail\WelcomeMail;
 use App\Models\User;
-use Illuminate\Http\Request;
 use Illuminate\Auth\Events\Verified;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Mail;
 use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\Password;
 use Illuminate\Support\Str;
 
 class CustomerAuthController extends Controller
 {
-    /**
-     * Show customer login form
-     */
+    protected $redirectTo = '/dashboard';
+
     public function showLogin()
     {
-        if (Auth::check()) {
-            return redirect()->route('customer.dashboard');
-        }
+        if (Auth::check()) return redirect()->route('customer.dashboard');
         return view('auth.customer.login');
     }
 
-    /**
-     * Where to redirect users after login / registration / password reset / email verification.
-     */
-    protected $redirectTo = '/dashboard';
-
-    /**
-     * Handle customer login
-     */
     public function login(Request $request)
     {
         $credentials = $request->validate([
-            'email' => 'required|email',
+            'email'    => 'required|email',
             'password' => 'required|min:6',
         ]);
 
@@ -44,57 +37,47 @@ class CustomerAuthController extends Controller
             return redirect()->route('customer.dashboard')->with('success', 'Welcome back!');
         }
 
-        return back()->withErrors([
-            'email' => 'Invalid credentials or not a customer account.',
-        ])->onlyInput('email');
+        return back()->withErrors(['email' => 'Invalid credentials or not a customer account.'])->onlyInput('email');
     }
 
-    /**
-     * Get the guard to be used during authentication.
-     *
-     * @return \Illuminate\Contracts\Auth\StatefulGuard
-     */
-    protected function guard()
-    {
-        return Auth::guard('web'); // Assuming 'web' is the default guard for customers
-    }
+    protected function guard() { return Auth::guard('web'); }
 
-    /**
-     * Show customer registration form
-     */
     public function showRegister()
     {
-        if (Auth::check()) {
-            return redirect()->route('customer.dashboard');
-        }
+        if (Auth::check()) return redirect()->route('customer.dashboard');
         return view('auth.customer.register');
     }
 
-    /**
-     * Handle customer registration
-     */
     public function register(Request $request)
     {
         $validated = $request->validate([
-            'name' => 'required|string|max:255',
-            'email' => 'required|email|unique:users,email',
+            'name'     => 'required|string|max:255',
+            'email'    => 'required|email|unique:users,email',
             'password' => 'required|min:6|confirmed',
         ]);
 
         $user = User::create([
-            'name' => $validated['name'],
-            'email' => $validated['email'],
+            'name'     => $validated['name'],
+            'email'    => $validated['email'],
             'password' => Hash::make($validated['password']),
-            'role' => 'customer',
+            'role'     => 'customer',
         ]);
 
         Auth::login($user);
-        return redirect()->route('customer.dashboard')->with('success', 'Account created successfully!');
+
+        // Welcome email to user
+        try { Mail::to($user->email)->send(new WelcomeMail($user)); }
+        catch (\Throwable $e) { Log::warning('Welcome email failed', ['error' => $e->getMessage()]); }
+
+        // Notify all admins
+        try {
+            $adminEmails = User::where('role', 'admin')->pluck('email')->toArray();
+            if ($adminEmails) Mail::to($adminEmails)->send(new NewUserAdminMail($user));
+        } catch (\Throwable $e) { Log::warning('New user admin email failed', ['error' => $e->getMessage()]); }
+
+        return redirect()->route('customer.dashboard')->with('success', 'Account created! Check your email.');
     }
 
-    /**
-     * Logout customer
-     */
     public function logout(Request $request)
     {
         Auth::logout();
@@ -103,135 +86,57 @@ class CustomerAuthController extends Controller
         return redirect()->route('customer.login')->with('success', 'Logged out successfully.');
     }
 
-    /**
-     * Show the email verification notice.
-     *
-     * @param  \Illuminate\Http\Request  $request
-     * @return \Illuminate\Http\RedirectResponse|\Illuminate\View\View
-     */
     public function showVerificationNotice(Request $request)
     {
         return $request->user()->hasVerifiedEmail()
-                    ? redirect($this->redirectPath())
-                    : view('auth.customer.verify'); // You'll need to create this view
+            ? redirect($this->redirectTo) : view('auth.customer.verify');
     }
 
-    /**
-     * Mark the authenticated user's email address as verified.
-     *
-     * @param  \Illuminate\Http\Request  $request
-     * @return \Illuminate\Http\RedirectResponse
-     */
     public function verify(Request $request)
     {
-        if ($request->route('id') == $request->user()->getKey() &&
-            $request->user()->hasVerifiedEmail()) {
-            return redirect($this->redirectPath());
+        if ($request->route('id') == $request->user()->getKey() && $request->user()->hasVerifiedEmail()) {
+            return redirect($this->redirectTo);
         }
-
-        if ($request->user()->markEmailAsVerified()) {
-            event(new Verified($request->user()));
-        }
-
-        return redirect($this->redirectPath())->with('verified', true);
+        if ($request->user()->markEmailAsVerified()) event(new Verified($request->user()));
+        return redirect($this->redirectTo)->with('verified', true);
     }
 
-    /**
-     * Resend the email verification notification.
-     *
-     * @param  \Illuminate\Http\Request  $request
-     * @return \Illuminate\Http\RedirectResponse
-     */
-    public function resendVerificationEmail(Request $request)
+    public function resendVerification(Request $request)
     {
+        if ($request->user()->hasVerifiedEmail()) return redirect($this->redirectTo);
         $request->user()->sendEmailVerificationNotification();
-
-        return back()->with('resent', true);
+        return back()->with('status', 'Verification link sent!');
     }
 
-    /**
-     * Display the form to request a password reset link.
-     */
-    public function showLinkRequestForm()
-    {
-        return view('auth.customer.passwords.email');
-    }
+    public function showForgotPassword() { return view('auth.customer.forgot-password'); }
 
-    /**
-     * Send a reset link to the given user.
-     */
-    public function sendResetLinkEmail(Request $request)
+    public function sendResetLink(Request $request)
     {
         $request->validate(['email' => 'required|email']);
-
-        $response = $this->broker()->sendResetLink(
-            $request->only('email')
-        );
-
-        return $response == Password::RESET_LINK_SENT
-                    ? $this->sendResetLinkResponse($request, $response)
-                    : $this->sendResetLinkFailedResponse($request, $response);
+        $status = Password::sendResetLink($request->only('email'));
+        return $status === Password::RESET_LINK_SENT
+            ? back()->with('status', __($status))
+            : back()->withErrors(['email' => __($status)]);
     }
 
-    /**
-     * Get the broker to be used during password reset.
-     */
-    public function broker()
+    public function showResetPassword(Request $request, string $token)
     {
-        return Password::broker('users');
+        return view('auth.customer.reset-password', ['token' => $token, 'email' => $request->email]);
     }
 
-    /**
-     * Get the response for a successful password reset link.
-     */
-    protected function sendResetLinkResponse(Request $request, $response)
+    public function resetPassword(Request $request)
     {
-        return back()->with('status', __($response));
-    }
-
-    /**
-     * Get the response for a failed password reset link.
-     */
-    protected function sendResetLinkFailedResponse(Request $request, $response)
-    {
-        return back()->withErrors(['email' => __($response)]);
-    }
-
-    /**
-     * Display the password reset view for the given token.
-     */
-    public function showResetForm(Request $request, $token = null)
-    {
-        return view('auth.customer.passwords.reset')->with(
-            ['token' => $token, 'email' => $request->email]
-        );
-    }
-
-    /**
-     * Handle a password reset request for the application.
-     */
-    public function reset(Request $request)
-    {
-        $request->validate([
-            'token' => 'required',
-            'email' => 'required|email',
-            'password' => 'required|min:6|confirmed',
-        ]);
-
-        $response = $this->broker()->reset(
-            $request->only('email', 'password', 'password_confirmation', 'token'),
-            function ($user, $password) {
-                $user->forceFill([
-                    'password' => Hash::make($password),
-                    'remember_token' => Str::random(60),
-                ])->save();
-
+        $request->validate(['token'=>'required','email'=>'required|email','password'=>'required|min:6|confirmed']);
+        $status = Password::reset(
+            $request->only('email','password','password_confirmation','token'),
+            function (User $user, string $password) {
+                $user->forceFill(['password' => Hash::make($password)])->setRememberToken(Str::random(60));
+                $user->save();
                 event(new \Illuminate\Auth\Events\PasswordReset($user));
             }
         );
-
-        return $response == Password::PASSWORD_RESET
-            ? redirect($this->redirectTo)->with('status', __($response))
-            : back()->withErrors(['email' => __($response)]);
+        return $status === Password::PASSWORD_RESET
+            ? redirect()->route('customer.login')->with('status', __($status))
+            : back()->withErrors(['email' => [__($status)]]);
     }
 }

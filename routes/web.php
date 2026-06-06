@@ -182,6 +182,13 @@ Route::prefix('admin')->name('admin.')->group(function () {
 
         // Review management
         Route::resource('reviews', \App\Http\Controllers\Admin\ReviewController::class);
+        // Site settings & social links
+        Route::get('/settings', [\App\Http\Controllers\Admin\SiteSettingsController::class, 'index'])->name('admin.settings.index');
+        Route::put('/settings', [\App\Http\Controllers\Admin\SiteSettingsController::class, 'update'])->name('admin.settings.update');
+        // Newsletter subscribers
+        Route::get('/newsletter', [\App\Http\Controllers\Admin\SiteSettingsController::class, 'newsletters'])->name('admin.newsletter.index');
+        Route::post('/newsletter/{subscriber}/toggle', [\App\Http\Controllers\Admin\SiteSettingsController::class, 'toggleSubscriber'])->name('admin.newsletter.toggle');
+        Route::delete('/newsletter/{subscriber}', [\App\Http\Controllers\Admin\SiteSettingsController::class, 'destroySubscriber'])->name('admin.newsletter.destroy');
         Route::post('/reviews/{review}/approve', [\App\Http\Controllers\Admin\ReviewController::class, 'approve'])->name('reviews.approve');
         Route::post('/reviews/{review}/reject', [\App\Http\Controllers\Admin\ReviewController::class, 'reject'])->name('reviews.reject');
         Route::post('/reviews/{review}/spam', [\App\Http\Controllers\Admin\ReviewController::class, 'markSpam'])->name('reviews.markSpam');
@@ -270,7 +277,6 @@ Route::get('/products/{slug}', [\App\Http\Controllers\Front\ProductDetailControl
 
 Route::get('/checkout', [\App\Http\Controllers\Front\CheckoutController::class, 'index'])->name('checkout.index');
 Route::post('/checkout', [\App\Http\Controllers\Front\CheckoutController::class, 'store'])->name('checkout.store');
-Route::get('/checkout/confirmation/{orderId}', [\App\Http\Controllers\Front\CheckoutController::class, 'confirmation'])->name('checkout.confirmation')->middleware('auth');
 
 Route::get('/cart', [\App\Http\Controllers\Front\CartController::class, 'index'])->name('cart.index');
 Route::post('/cart/add', [\App\Http\Controllers\Front\CartController::class, 'add'])->name('cart.add');
@@ -328,3 +334,22 @@ Route::match(['get','post'], '/contact', function (\Illuminate\Http\Request $req
     }
     return view('front.contact');
 })->name('contact');
+
+// ── Front: FAQ, Help, Newsletter ──────────────────────────
+Route::get('/faq', [\App\Http\Controllers\Front\FaqController::class, 'index'])->name('faq');
+Route::get('/help', [\App\Http\Controllers\Front\FaqController::class, 'help'])->name('help');
+Route::post('/newsletter/subscribe', [\App\Http\Controllers\Front\FaqController::class, 'newsletter'])->name('newsletter.subscribe');
+
+// ── Front: Payment gateway (Razorpay) ──────────────────────
+Route::post('/payment/create-order', [\App\Http\Controllers\Front\PaymentController::class, 'createOrder'])->name('payment.create-order')->middleware('auth');
+Route::post('/payment/verify', [\App\Http\Controllers\Front\PaymentController::class, 'verify'])->name('payment.verify')->middleware('auth');
+
+// ── Front: Profile extras ──────────────────────────────────
+Route::middleware('auth')->group(function () {
+    Route::patch('/profile/orders/{id}/cancel', [\App\Http\Controllers\Front\ProfileController::class, 'cancelOrder'])->name('profile.cancel-order');
+    Route::post('/profile/orders/{id}/reorder', [\App\Http\Controllers\Front\ProfileController::class, 'reorder'])->name('profile.reorder');
+    Route::get('/profile/reviews', [\App\Http\Controllers\Front\ProfileController::class, 'reviews'])->name('profile.reviews');
+    Route::post('/coupon/apply', [\App\Http\Controllers\Front\CouponController::class, 'apply'])->name('coupon.apply');
+    Route::post('/coupon/remove', [\App\Http\Controllers\Front\CouponController::class, 'remove'])->name('coupon.remove');
+    Route::get('/checkout/confirmation/{orderId}', [\App\Http\Controllers\Front\CheckoutController::class, 'confirmation'])->name('checkout.confirmation');
+});

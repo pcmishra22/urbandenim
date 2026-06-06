@@ -11,12 +11,8 @@ class Banner extends Model
     use HasFactory;
 
     protected $fillable = [
-        'type',
-        'title',
-        'image_url',
-        'link_url',
-        'sort_order',
-        'is_active',
+        'type', 'title', 'heading', 'subtitle',
+        'image_url', 'link_url', 'sort_order', 'is_active',
     ];
 
     protected $casts = [
@@ -24,9 +20,6 @@ class Banner extends Model
         'is_active'  => 'boolean',
     ];
 
-    /**
-     * Get the public URL for the banner image, falling back to default.
-     */
     public function getImageAttribute(): string
     {
         if ($this->image_url && Storage::disk('public')->exists($this->image_url)) {

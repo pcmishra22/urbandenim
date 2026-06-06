@@ -3,87 +3,84 @@
 namespace App\Http\Controllers\Front;
 
 use App\Http\Controllers\Controller;
+use App\Mail\NewOrderAdminMail;
+use App\Mail\OrderConfirmedMail;
 use App\Models\Order;
 use App\Models\User;
-use App\Notifications\OrderAlert;
-use App\Notifications\PaymentAlert;
 use App\Services\CartService;
 use App\Services\CouponService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Notification;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\Schema;
 
 class CheckoutController extends Controller
 {
-    protected CartService $cartService;
-    protected CouponService $couponService;
+    public function __construct(
+        protected CartService $cartService,
+        protected CouponService $couponService
+    ) {}
 
-    public function __construct(CartService $cartService, CouponService $couponService)
-    {
-        $this->cartService   = $cartService;
-        $this->couponService = $couponService;
-    }
-
-    /**
-     * Display the checkout page with cart summary and saved addresses.
-     */
     public function index()
     {
         $cartItems = $this->cartService->getCartWithProducts();
-
         if (empty($cartItems)) {
             return redirect()->route('cart.index')->with('error', 'Your cart is empty.');
         }
 
         $subtotal  = $this->cartService->getSubtotal();
-        $addresses = auth()->check() ? auth()->user()->addresses()->get() : collect();
+        $shipping  = $subtotal >= 500 ? 0 : 50;
+        $discount  = session('coupon_discount', 0);
+        $couponCode = session('coupon_code');
+        $grandTotal = max(0, $subtotal + $shipping - $discount);
 
-        return view('front.checkout', compact('cartItems', 'subtotal', 'addresses'));
+        $addresses = collect();
+        if (auth()->check() && Schema::hasTable('customer_addresses')) {
+            $addresses = auth()->user()->addresses()->get();
+        }
+
+        return view('front.checkout', compact(
+            'cartItems', 'subtotal', 'shipping', 'discount', 'couponCode', 'grandTotal', 'addresses'
+        ));
     }
 
-    /**
-     * Show the order confirmation / thank-you page.
-     */
     public function confirmation($orderId)
     {
-        $order = Order::with('products.images', 'user')
+        $order = Order::with('products.images')
             ->where('user_id', auth()->id())
             ->findOrFail($orderId);
 
         return view('front.checkout-confirmation', compact('order'));
     }
 
-    /**
-     * Process and place the order.
-     */
     public function store(Request $request)
     {
         $cartItems = $this->cartService->getCartWithProducts();
-
         if (empty($cartItems)) {
             return redirect()->route('cart.index')->with('error', 'Your cart is empty.');
         }
 
         $request->validate([
-            'shipping_full_name' => 'required|string|max:255',
-            'shipping_phone'     => 'required|string|max:20',
-            'shipping_street'    => 'required|string|max:255',
-            'shipping_city'      => 'required|string|max:255',
-            'shipping_state'     => 'required|string|max:255',
+            'shipping_full_name'   => 'required|string|max:255',
+            'shipping_phone'       => 'required|string|max:20',
+            'shipping_street'      => 'required|string|max:255',
+            'shipping_city'        => 'required|string|max:255',
+            'shipping_state'       => 'required|string|max:255',
             'shipping_postal_code' => 'required|string|max:20',
-            'shipping_country'   => 'required|string|max:255',
-            'payment_method'     => 'required|in:cod,card,upi',
-            'coupon_code'        => 'nullable|string|max:50',
-            'notes'              => 'nullable|string|max:500',
+            'shipping_country'     => 'required|string|max:255',
+            'payment_method'       => 'required|in:cod,card,upi',
+            'coupon_code'          => 'nullable|string|max:50',
+            'notes'                => 'nullable|string|max:500',
         ]);
 
         $subtotal     = $this->cartService->getSubtotal();
-        $shippingCost = $this->calculateShipping($subtotal);
-        $discount     = 0;
-        $couponCode   = null;
+        $shipping     = $subtotal >= 500 ? 0 : 50;
+        $discount     = session('coupon_discount', 0);
+        $couponCode   = session('coupon_code');
 
-        // Validate and apply coupon
-        if ($request->filled('coupon_code')) {
+        // Re-validate coupon from request if session is empty
+        if (!$discount && $request->filled('coupon_code') && Schema::hasTable('coupons')) {
             $coupon = \App\Models\Coupon::where('code', strtoupper($request->coupon_code))->first();
             if ($coupon && $coupon->isValidForUser(auth()->user())) {
                 $discount   = $this->couponService->calculateDiscount($coupon, $subtotal);
@@ -92,15 +89,14 @@ class CheckoutController extends Controller
             }
         }
 
-        $total = max(0, $subtotal + $shippingCost - $discount);
+        $total = max(0, $subtotal + $shipping - $discount);
 
         DB::beginTransaction();
         try {
-            // Create the order
             $order = Order::create([
                 'user_id'              => auth()->id(),
                 'subtotal'             => $subtotal,
-                'shipping_cost'        => $shippingCost,
+                'shipping_cost'        => $shipping,
                 'discount_amount'      => $discount,
                 'coupon_code'          => $couponCode,
                 'total_price'          => $total,
@@ -117,49 +113,50 @@ class CheckoutController extends Controller
                 'notes'                => $request->notes,
             ]);
 
-            // Attach order items
             foreach ($cartItems as $item) {
                 $product = $item['product'];
                 $order->products()->attach($product->id, [
                     'quantity' => $item['quantity'],
-                    'price'    => $product->price,
+                    'price'    => $product->sale_price ?? $product->price,
                 ]);
             }
 
             DB::commit();
         } catch (\Throwable $e) {
             DB::rollBack();
-            return redirect()->back()->with('error', 'Could not place order. Please try again.');
+            Log::error('Order placement failed', ['error' => $e->getMessage(), 'trace' => $e->getTraceAsString()]);
+            return redirect()->back()->withInput()
+                ->with('error', 'Could not place your order: ' . $e->getMessage());
         }
 
-        // Clear cart
+        // Clear cart + coupon session
         $this->cartService->clear();
+        session()->forget(['coupon_code', 'coupon_discount']);
 
-        // Notify admins
+        // Reload with relations for emails
+        $order->load('products', 'user');
+
+        // Email: user confirmation
         try {
-            $admins = User::where('role', 'admin')->get();
-            Notification::send($admins, new OrderAlert($order, 'new_order'));
+            Mail::to($order->user->email)->send(new OrderConfirmedMail($order));
+        } catch (\Throwable $e) {
+            Log::warning('Order confirmation email failed', ['order_id' => $order->id, 'error' => $e->getMessage()]);
+        }
 
-            if ($order->payment_status === 'paid') {
-                Notification::send($admins, new PaymentAlert([
-                    'order_id' => $order->id,
-                    'amount'   => $order->total_price,
-                    'currency' => 'INR',
-                    'status'   => 'completed',
-                    'message'  => "Payment completed for Order #{$order->id}.",
-                ]));
+        // Email: admin notification
+        try {
+            $adminEmails = User::where('role', 'admin')->pluck('email')->toArray();
+            if ($adminEmails) {
+                Mail::to($adminEmails)->send(new NewOrderAdminMail($order));
             }
         } catch (\Throwable $e) {
-            // Notification failure should not block the user
+            Log::warning('Admin order email failed', ['order_id' => $order->id, 'error' => $e->getMessage()]);
         }
 
         return redirect()->route('checkout.confirmation', $order->id)
             ->with('success', "Order #{$order->id} placed successfully!");
     }
 
-    /**
-     * Simple shipping calculation — free above ₹500.
-     */
     protected function calculateShipping(float $subtotal): float
     {
         return $subtotal >= 500 ? 0.0 : 50.0;

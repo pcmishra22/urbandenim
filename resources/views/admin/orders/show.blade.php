@@ -9,83 +9,152 @@
         <a class="btn btn-outline-primary" href="{{ route('admin.orders.invoice', $order) }}">
             <i class="fas fa-file-invoice"></i> Invoice
         </a>
-        <a class="btn btn-outline-secondary" href="{{ route('admin.orders.shippingLabel', $order) }}">
-            <i class="fas fa-map"></i> Shipping Label
+        <a class="btn btn-outline-secondary" href="{{ route('admin.orders.shippingLabel', $order) }}" target="_blank">
+            <i class="fas fa-print"></i> Shipping Label
+        </a>
+        <a class="btn btn-outline-dark" href="{{ route('admin.orders.index') }}">
+            <i class="fas fa-arrow-left"></i> Back
         </a>
     </div>
 </div>
 
-<div class="row">
-    <div class="col-md-7">
-        <div class="card">
-            <div class="card-header">Order Details</div>
-            <div class="card-body">
-                <p><strong>Customer:</strong> {{ $order->user->name ?? '-' }}</p>
-                <p><strong>Total:</strong> {{ $order->total_price }}</p>
-                <p><strong>Status:</strong> <span class="badge bg-info">{{ $order->status }}</span></p>
-            </div>
-        </div>
+@if(session('success'))
+    <div class="alert alert-success alert-dismissible fade show mt-3">{{ session('success') }}<button type="button" class="btn-close" data-bs-dismiss="alert"></button></div>
+@endif
 
-        <div class="card mt-3">
-            <div class="card-header">Items</div>
+<div class="row mt-3">
+    {{-- Left: Order details + items --}}
+    <div class="col-md-7">
+
+        {{-- Summary --}}
+        <div class="card mb-3">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <span><i class="fas fa-info-circle me-2"></i>Order Summary</span>
+                @php
+                    $badgeMap = ['pending'=>'warning','processing'=>'info','shipped'=>'primary','delivered'=>'success','cancelled'=>'danger'];
+                    $badge = $badgeMap[$order->status] ?? 'secondary';
+                @endphp
+                <span class="badge bg-{{ $badge }} text-capitalize fs-6">{{ $order->status }}</span>
+            </div>
             <div class="card-body">
-                <div class="table-responsive">
-                    <table class="table table-bordered">
-                        <thead>
-                            <tr>
-                                <th>Product</th>
-                                <th>Qty</th>
-                                <th>Price</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            @foreach($order->products as $product)
-                                <tr>
-                                    <td>{{ $product->name ?? '-' }}</td>
-                                    <td>{{ $product->pivot->quantity ?? '-' }}</td>
-                                    <td>{{ $product->pivot->price ?? '-' }}</td>
-                                </tr>
-                            @endforeach
-                        </tbody>
-                    </table>
+                <div class="row">
+                    <div class="col-6"><p class="mb-2"><strong>Order #:</strong> {{ $order->id }}</p></div>
+                    <div class="col-6"><p class="mb-2"><strong>Date:</strong> {{ $order->created_at?->format('d M Y, h:i A') }}</p></div>
+                    <div class="col-6"><p class="mb-2"><strong>Customer:</strong> {{ $order->user?->name ?? '—' }}</p></div>
+                    <div class="col-6"><p class="mb-2"><strong>Email:</strong> {{ $order->user?->email ?? '—' }}</p></div>
+                    <div class="col-6"><p class="mb-2"><strong>Payment:</strong>
+                        @if($order->payment_method==='cod') Cash on Delivery
+                        @elseif($order->payment_method==='upi') UPI / Net Banking
+                        @else Card @endif
+                    </p></div>
+                    <div class="col-6"><p class="mb-2"><strong>Payment Status:</strong>
+                        <span class="badge {{ $order->payment_status==='paid' ? 'bg-success' : 'bg-warning' }} text-capitalize">{{ $order->payment_status ?? 'pending' }}</span>
+                    </p></div>
+                    @if($order->notes)
+                    <div class="col-12"><p class="mb-0"><strong>Notes:</strong> {{ $order->notes }}</p></div>
+                    @endif
                 </div>
             </div>
         </div>
+
+        {{-- Items --}}
+        <div class="card mb-3">
+            <div class="card-header"><i class="fas fa-box me-2"></i>Items Ordered</div>
+            <div class="table-responsive">
+                <table class="table table-bordered mb-0">
+                    <thead class="table-light">
+                        <tr><th>Product</th><th class="text-center">Qty</th><th class="text-end">Price</th><th class="text-end">Subtotal</th></tr>
+                    </thead>
+                    <tbody>
+                        @foreach($order->products as $product)
+                        <tr>
+                            <td class="align-middle">
+                                <div class="d-flex align-items-center gap-2">
+                                    @if($product->images && $product->images->isNotEmpty())
+                                        <img src="{{ $product->images->first()->url }}" style="width:40px;height:40px;object-fit:cover;border-radius:4px;">
+                                    @endif
+                                    <span>{{ $product->name }}</span>
+                                </div>
+                            </td>
+                            <td class="text-center align-middle">{{ $product->pivot->quantity }}</td>
+                            <td class="text-end align-middle">₹{{ number_format($product->pivot->price, 2) }}</td>
+                            <td class="text-end align-middle">₹{{ number_format($product->pivot->quantity * $product->pivot->price, 2) }}</td>
+                        </tr>
+                        @endforeach
+                    </tbody>
+                    <tfoot class="table-light">
+                        @if($order->subtotal)
+                        <tr><td colspan="3" class="text-end">Subtotal</td><td class="text-end">₹{{ number_format($order->subtotal,2) }}</td></tr>
+                        @endif
+                        <tr><td colspan="3" class="text-end">Shipping</td>
+                            <td class="text-end">@if(!$order->shipping_cost)<span class="text-success">Free</span>@else ₹{{ number_format($order->shipping_cost,2) }}@endif</td></tr>
+                        @if($order->discount_amount > 0)
+                        <tr><td colspan="3" class="text-end text-success">Discount @if($order->coupon_code)<small>({{ $order->coupon_code }})</small>@endif</td>
+                            <td class="text-end text-success">- ₹{{ number_format($order->discount_amount,2) }}</td></tr>
+                        @endif
+                        <tr><td colspan="3" class="text-end fw-bold">Grand Total</td>
+                            <td class="text-end fw-bold">₹{{ number_format($order->total_price,2) }}</td></tr>
+                    </tfoot>
+                </table>
+            </div>
+        </div>
+
+        {{-- Shipping Address --}}
+        @if($order->shipping_full_name)
+        <div class="card mb-3">
+            <div class="card-header"><i class="fas fa-map-marker-alt me-2"></i>Shipping Address</div>
+            <div class="card-body">
+                <p class="mb-1"><strong>{{ $order->shipping_full_name }}</strong> &nbsp; 📞 {{ $order->shipping_phone }}</p>
+                <p class="mb-1">{{ $order->shipping_street }}</p>
+                <p class="mb-0">{{ $order->shipping_city }}, {{ $order->shipping_state }} — {{ $order->shipping_postal_code }}, {{ $order->shipping_country }}</p>
+            </div>
+        </div>
+        @endif
+
     </div>
 
+    {{-- Right: Status + Shipments --}}
     <div class="col-md-5">
-        <div class="card">
-            <div class="card-header">Order Status Flow</div>
+
+        {{-- Update Status --}}
+        <div class="card mb-3">
+            <div class="card-header"><i class="fas fa-sync me-2"></i>Update Status</div>
             <div class="card-body">
                 <form method="POST" action="{{ route('admin.orders.updateStatus', $order) }}">
                     @csrf
                     <div class="mb-3">
-                        <label class="form-label">Current status</label>
-                        <input type="text" class="form-control" value="{{ $order->status }}" disabled>
+                        <label class="form-label">Current Status</label>
+                        <input type="text" class="form-control" value="{{ ucfirst($order->status) }}" disabled>
                     </div>
-
                     <div class="mb-3">
-                        <label class="form-label">Update status</label>
+                        <label class="form-label">Update To</label>
                         <select name="status" class="form-select" required>
-                            <option value="confirmed">Confirmed</option>
-                            <option value="packed">Packed</option>
-                            <option value="shipped">Shipped</option>
-                            <option value="delivered">Delivered</option>
-                            <option value="cancelled">Cancelled</option>
+                            <option value="">-- Select --</option>
+                            @foreach(['pending','processing','shipped','delivered','cancelled'] as $s)
+                                <option value="{{ $s }}" @selected($order->status === $s)>{{ ucfirst($s) }}</option>
+                            @endforeach
                         </select>
                     </div>
-
-                    <button type="submit" class="btn btn-primary w-100">
-                        <i class="fas fa-sync"></i> Update
-                    </button>
+                    <button type="submit" class="btn btn-primary w-100"><i class="fas fa-sync me-1"></i>Update Status</button>
                 </form>
-
-                <div class="mt-3 text-muted" style="font-size: 0.9rem;">
-                    Flow enforced: Pending → Confirmed → Packed → Shipped → Delivered
-                </div>
             </div>
         </div>
+
+        {{-- Shipments --}}
+        @if($order->shipments && $order->shipments->count() > 0)
+        <div class="card mb-3">
+            <div class="card-header"><i class="fas fa-truck me-2"></i>Shipment Info</div>
+            <div class="card-body">
+                @foreach($order->shipments as $shipment)
+                <p class="mb-1"><strong>Courier:</strong> {{ $shipment->courier?->name ?? '—' }}</p>
+                <p class="mb-1"><strong>Tracking #:</strong> <code>{{ $shipment->tracking_number ?? '—' }}</code></p>
+                <p class="mb-1"><strong>Shipped:</strong> {{ $shipment->shipped_at?->format('d M Y') ?? '—' }}</p>
+                <p class="mb-0"><strong>Status:</strong> {{ ucfirst($shipment->status ?? '—') }}</p>
+                @endforeach
+            </div>
+        </div>
+        @endif
+
     </div>
 </div>
 @endsection
-
