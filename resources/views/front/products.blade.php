@@ -115,7 +115,13 @@
                         <div class="card product-item border-0 mb-4">
                             <div class="card-header product-img position-relative overflow-hidden bg-transparent border p-0">
                                 @if($product->images && $product->images->isNotEmpty())
-                                    <img class="img-fluid w-100" src="{{ $product->images->first()->url }}" alt="{{ $product->name }}">
+                                    @php
+                                        $img = $product->images->first();
+                                        $relativePath = 'products/' . $product->id . '/images/' . ($img->image ?? '');
+                                        $publicUrl = asset('storage/' . $relativePath);
+                                        $fallbackUrl = asset('storage/default.jpeg');
+                                    @endphp
+                                    <img class="img-fluid w-100" src="{{ file_exists(public_path('storage/' . $relativePath)) ? $publicUrl : $fallbackUrl }}" alt="{{ $product->name }}">
                                 @else
                                     <img class="img-fluid w-100" src="{{ asset('eshopper/img/product-1.jpg') }}" alt="{{ $product->name }}">
                                 @endif
