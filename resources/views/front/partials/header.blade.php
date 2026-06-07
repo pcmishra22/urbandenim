@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="utf-8">
-    <title>@yield('title', 'EShopper')</title>
+<title>@yield('title', 'Jeanzo')</title>
     <meta content="width=device-width, initial-scale=1.0" name="viewport">
     <link href="{{ asset('eshopper/img/favicon.ico') }}" rel="icon">
     <link rel="preconnect" href="https://fonts.gstatic.com">
@@ -27,18 +27,19 @@
             </div>
             <div class="col-lg-6 text-center text-lg-right">
                 <div class="d-inline-flex align-items-center">
-                    <a class="text-dark px-2" href="#"><i class="fab fa-facebook-f"></i></a>
-                    <a class="text-dark px-2" href="#"><i class="fab fa-twitter"></i></a>
-                    <a class="text-dark px-2" href="#"><i class="fab fa-linkedin-in"></i></a>
-                    <a class="text-dark px-2" href="#"><i class="fab fa-instagram"></i></a>
-                    <a class="text-dark pl-2" href="#"><i class="fab fa-youtube"></i></a>
+                    @php $ss = \App\Models\SiteSetting::all_settings(); @endphp
+                    @if(!empty($ss['facebook_url']))<a class="text-dark px-2" href="{{ $ss['facebook_url'] }}" target="_blank" rel="noopener"><i class="fab fa-facebook-f"></i></a>@endif
+                    @if(!empty($ss['twitter_url']))<a class="text-dark px-2" href="{{ $ss['twitter_url'] }}" target="_blank" rel="noopener"><i class="fab fa-twitter"></i></a>@endif
+                    @if(!empty($ss['linkedin_url']))<a class="text-dark px-2" href="{{ $ss['linkedin_url'] }}" target="_blank" rel="noopener"><i class="fab fa-linkedin-in"></i></a>@endif
+                    @if(!empty($ss['instagram_url']))<a class="text-dark px-2" href="{{ $ss['instagram_url'] }}" target="_blank" rel="noopener"><i class="fab fa-instagram"></i></a>@endif
+                    @if(!empty($ss['youtube_url']))<a class="text-dark pl-2" href="{{ $ss['youtube_url'] }}" target="_blank" rel="noopener"><i class="fab fa-youtube"></i></a>@endif
                 </div>
             </div>
         </div>
         <div class="row align-items-center py-3 px-xl-5">
             <div class="col-lg-3 d-none d-lg-block">
                 <a href="{{ url('/') }}" class="text-decoration-none">
-                    <h1 class="m-0 display-5 font-weight-semi-bold"><span class="text-primary font-weight-bold border px-3 mr-1">E</span>Shopper</h1>
+                    <h1 class="m-0 display-5 font-weight-semi-bold"><span class="text-primary font-weight-bold border px-3 mr-1">J</span>eanzo</h1>
                 </a>
             </div>
             <div class="col-lg-6 col-6 text-left">
@@ -70,7 +71,7 @@
     <!-- Topbar End -->
 
     <!-- Navbar Start -->
-    <div class="container-fluid{{ request()->is('/') ? ' mb-5' : '' }}">
+    <div class="container-fluid">
         <div class="row border-top px-xl-5">
             <div class="col-lg-3 d-none d-lg-block">
                 <a class="btn shadow-none d-flex align-items-center justify-content-between bg-primary text-white w-100"
@@ -78,8 +79,8 @@
                     <h6 class="m-0">Categories</h6>
                     <i class="fa fa-angle-down text-dark"></i>
                 </a>
-                <nav class="collapse{{ request()->is('/') ? ' show' : '' }} position-absolute navbar navbar-vertical navbar-light align-items-start p-0 border border-top-0 border-bottom-0 bg-light" id="navbar-vertical" style="width: calc(100% - 30px); z-index: 999;">
-                    <div class="navbar-nav w-100 overflow-hidden" style="height: 410px">
+                <nav class="collapse{{ request()->is('/') ? ' show' : '' }} position-absolute navbar navbar-vertical navbar-light align-items-start p-0 border border-top-0 border-bottom-0 bg-light" id="navbar-vertical" style="width:calc(100% - 30px);z-index:999;">
+                    <div class="navbar-nav w-100 overflow-hidden" style="height:410px">
                         @php $navCategories = \App\Models\Category::where('is_active', true)->take(10)->get(); @endphp
                         @forelse($navCategories as $cat)
                             <a href="{{ route('products.index', ['category' => $cat->id]) }}" class="nav-item nav-link">{{ $cat->name }}</a>
@@ -92,7 +93,7 @@
             <div class="col-lg-9">
                 <nav class="navbar navbar-expand-lg bg-light navbar-light py-3 py-lg-0 px-0">
                     <a href="{{ url('/') }}" class="text-decoration-none d-block d-lg-none">
-                        <h1 class="m-0 display-5 font-weight-semi-bold"><span class="text-primary font-weight-bold border px-3 mr-1">E</span>Shopper</h1>
+                        <h1 class="m-0 display-5 font-weight-semi-bold"><span class="text-primary font-weight-bold border px-3 mr-1">J</span>eanzo</h1>
                     </a>
                     <button type="button" class="navbar-toggler" data-toggle="collapse" data-target="#navbarCollapse">
                         <span class="navbar-toggler-icon"></span>
@@ -101,17 +102,13 @@
                         <div class="navbar-nav mr-auto py-0">
                             <a href="{{ url('/') }}" class="nav-item nav-link {{ request()->is('/') ? 'active' : '' }}">Home</a>
                             <a href="{{ route('products.index') }}" class="nav-item nav-link {{ request()->routeIs('products.*') ? 'active' : '' }}">Shop</a>
-                            <div class="nav-item dropdown">
-                                <a href="#" class="nav-link dropdown-toggle" data-toggle="dropdown">Pages</a>
-                                <div class="dropdown-menu rounded-0 m-0">
-                                    <a href="{{ route('cart.index') }}" class="dropdown-item">Shopping Cart</a>
-                                    <a href="{{ route('checkout.index') }}" class="dropdown-item">Checkout</a>
-                                    @auth
-                                    <a href="{{ route('profile.dashboard') }}" class="dropdown-item">My Account</a>
-                                    <a href="{{ route('profile.orders') }}" class="dropdown-item">My Orders</a>
-                                    @endauth
-                                </div>
-                            </div>
+
+                            <a href="{{ route('cart.index') }}" class="nav-item nav-link {{ request()->routeIs('cart.*') ? 'active' : '' }}">Shopping Cart</a>
+                            <a href="{{ route('checkout.index') }}" class="nav-item nav-link {{ request()->routeIs('checkout.*') ? 'active' : '' }}">Checkout</a>
+                              @auth
+                            <a href="{{ route('profile.dashboard') }}" class="nav-item nav-link {{ request()->routeIs('products.*') ? 'active' : '' }}">My Account</a>
+                            <a href="{{ route('profile.orders') }}" class="nav-item nav-link {{ request()->routeIs('products.*') ? 'active' : '' }}">My Orders</a>
+                            @endauth
                             <a href="{{ route('contact') }}" class="nav-item nav-link {{ request()->routeIs('contact') ? 'active' : '' }}">Contact</a>
                         </div>
                         <div class="navbar-nav ml-auto py-0">
@@ -143,3 +140,4 @@
         </div>
     </div>
     <!-- Navbar End -->
+

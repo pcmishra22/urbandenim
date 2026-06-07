@@ -1,18 +1,8 @@
 @extends('layouts.eshopper')
 
 @section('content')
-    <!-- Page Header Start -->
-    <div class="container-fluid bg-secondary mb-5">
-        <div class="d-flex flex-column align-items-center justify-content-center" style="min-height: 300px">
-            <h1 class="font-weight-semi-bold text-uppercase mb-3">Personal Information</h1>
-            <div class="d-inline-flex">
-                <p class="m-0"><a href="{{ url('/') }}">Home</a></p>
-                <p class="m-0 px-2">-</p>
-                <p class="m-0"><a href="{{ route('profile.dashboard') }}">My Account</a></p>
-                <p class="m-0 px-2">-</p>
-                <p class="m-0">Personal Info</p>
-            </div>
-        </div>
+    @include('front.partials.page-banner', ['title' => 'Personal Info', 'breadcrumb' => 'Personal Info'])
+</div>
     </div>
     <!-- Page Header End -->
 

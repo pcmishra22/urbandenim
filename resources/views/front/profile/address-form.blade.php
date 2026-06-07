@@ -1,17 +1,8 @@
 @extends('layouts.eshopper')
 
 @section('content')
-    <div class="container-fluid bg-secondary mb-5">
-        <div class="d-flex flex-column align-items-center justify-content-center" style="min-height: 300px">
-            <h1 class="font-weight-semi-bold text-uppercase mb-3">{{ isset($address) ? 'Edit Address' : 'Add Address' }}</h1>
-            <div class="d-inline-flex">
-                <p class="m-0"><a href="{{ url('/') }}">Home</a></p>
-                <p class="m-0 px-2">-</p>
-                <p class="m-0"><a href="{{ route('profile.addresses') }}">Addresses</a></p>
-                <p class="m-0 px-2">-</p>
-                <p class="m-0">{{ isset($address) ? 'Edit' : 'Add' }}</p>
-            </div>
-        </div>
+    @include('front.partials.page-banner', ['title' => 'Address', 'breadcrumb' => 'Address'])
+</div>
     </div>
 
     <div class="container-fluid pt-5 pb-5">
