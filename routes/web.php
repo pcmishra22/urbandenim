@@ -277,6 +277,8 @@ Route::get('/products/{slug}', [\App\Http\Controllers\Front\ProductDetailControl
 
 Route::get('/checkout', [\App\Http\Controllers\Front\CheckoutController::class, 'index'])->name('checkout.index');
 Route::post('/checkout', [\App\Http\Controllers\Front\CheckoutController::class, 'store'])->name('checkout.store');
+Route::post('/checkout/pending', [\App\Http\Controllers\Front\CheckoutController::class, 'storePending'])->name('checkout.store-pending')->middleware('auth');
+Route::get('/checkout/confirmation/{orderId}', [\App\Http\Controllers\Front\CheckoutController::class, 'confirmation'])->name('checkout.confirmation')->middleware('auth');
 
 Route::get('/cart', [\App\Http\Controllers\Front\CartController::class, 'index'])->name('cart.index');
 Route::post('/cart/add', [\App\Http\Controllers\Front\CartController::class, 'add'])->name('cart.add');
@@ -341,8 +343,8 @@ Route::get('/help', [\App\Http\Controllers\Front\FaqController::class, 'help'])-
 Route::post('/newsletter/subscribe', [\App\Http\Controllers\Front\FaqController::class, 'newsletter'])->name('newsletter.subscribe');
 
 // ── Front: Payment gateway (Razorpay) ──────────────────────
-Route::post('/payment/create-order', [\App\Http\Controllers\Front\PaymentController::class, 'createOrder'])->name('payment.create-order')->middleware('auth');
-Route::post('/payment/verify', [\App\Http\Controllers\Front\PaymentController::class, 'verify'])->name('payment.verify')->middleware('auth');
+Route::post('/payment/create-order', [\App\Http\Controllers\PaymentController::class, 'createOrder'])->name('payment.create-order')->middleware('auth');
+Route::post('/payment/verify', [\App\Http\Controllers\PaymentController::class, 'verify'])->name('payment.verify')->middleware('auth');
 
 // ── Front: Profile extras ──────────────────────────────────
 Route::middleware('auth')->group(function () {
@@ -351,5 +353,5 @@ Route::middleware('auth')->group(function () {
     Route::get('/profile/reviews', [\App\Http\Controllers\Front\ProfileController::class, 'reviews'])->name('profile.reviews');
     Route::post('/coupon/apply', [\App\Http\Controllers\Front\CouponController::class, 'apply'])->name('coupon.apply');
     Route::post('/coupon/remove', [\App\Http\Controllers\Front\CouponController::class, 'remove'])->name('coupon.remove');
-    Route::get('/checkout/confirmation/{orderId}', [\App\Http\Controllers\Front\CheckoutController::class, 'confirmation'])->name('checkout.confirmation');
+
 });

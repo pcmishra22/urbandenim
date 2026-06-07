@@ -29,9 +29,9 @@ class CheckoutController extends Controller
             return redirect()->route('cart.index')->with('error', 'Your cart is empty.');
         }
 
-        $subtotal  = $this->cartService->getSubtotal();
-        $shipping  = $this->calculateShipping($subtotal);
-        $discount  = session('coupon_discount', 0);
+        $subtotal   = $this->cartService->getSubtotal();
+        $shipping   = $this->calculateShipping($subtotal);
+        $discount   = session('coupon_discount', 0);
         $couponCode = session('coupon_code');
         $grandTotal = max(0, $subtotal + $shipping - $discount);
 
@@ -54,6 +54,10 @@ class CheckoutController extends Controller
         return view('front.checkout-confirmation', compact('order'));
     }
 
+    /**
+     * COD: save order + items, clear cart, send emails, redirect to confirmation.
+     * UPI/Card: handled via storePending → PaymentController → verify.
+     */
     public function store(Request $request)
     {
         $cartItems = $this->cartService->getCartWithProducts();
@@ -74,7 +78,7 @@ class CheckoutController extends Controller
             'notes'                => 'nullable|string|max:500',
         ]);
 
-        // Only COD hits this route directly.
+        // Only COD hits this route directly — UPI/card go through storePending
         if ($request->payment_method !== 'cod') {
             return redirect()->back()->with('error', 'Please use the online payment option properly.');
         }
@@ -93,21 +97,36 @@ class CheckoutController extends Controller
 
     /**
      * Called via AJAX for UPI/card payments.
-     * Creates the order in DB with payment_status = 'awaiting_payment'.
+     * Creates the order in DB with payment_status = 'awaiting_payment',
+     * returns order_id as JSON so the frontend can open Razorpay.
      */
     public function storePending(Request $request)
     {
         Log::info('storePending called', [
             'payment_method' => $request->input('payment_method'),
+            'expectsJson' => $request->expectsJson(),
+            'isAjax' => $request->ajax(),
             'user_id' => auth()->check() ? auth()->id() : null,
         ]);
+
+        // Accept even if headers don't mark it as ajax/JSON; many frontends don't set them.
+        if (!$request->expectsJson() && !$request->ajax()) {
+            Log::warning('storePending header mismatch (continuing anyway)', [
+                'expectsJson' => $request->expectsJson(),
+                'isAjax' => $request->ajax(),
+                'payment_method' => $request->input('payment_method'),
+                'user_id' => auth()->check() ? auth()->id() : null,
+            ]);
+        }
+
+
 
         $cartItems = $this->cartService->getCartWithProducts();
         if (empty($cartItems)) {
             return response()->json(['error' => 'Your cart is empty.'], 400);
         }
 
-        $request->validate([
+        $validated = $request->validate([
             'shipping_full_name'   => 'required|string|max:255',
             'shipping_phone'       => 'required|string|max:20',
             'shipping_street'      => 'required|string|max:255',
@@ -132,26 +151,25 @@ class CheckoutController extends Controller
             return response()->json(['error' => 'Could not create order: ' . $e->getMessage()], 500);
         }
 
+
         return response()->json([
-            'success' => true,
+            'success'  => true,
             'order_id' => $order->id,
-            'total' => $order->total_price,
+            'total'    => $order->total_price,
         ]);
     }
 
+    /* ── Shared helpers ─────────────────────────────────── */
+
     protected function createOrder(Request $request, string $paymentStatus): Order
     {
-        $cartItems = $this->cartService->getCartWithProducts();
-        $subtotal  = $this->cartService->getSubtotal();
-        $shipping  = $this->calculateShipping($subtotal);
-        $discount  = session('coupon_discount', 0);
+        $cartItems  = $this->cartService->getCartWithProducts();
+        $subtotal   = $this->cartService->getSubtotal();
+        $shipping   = $this->calculateShipping($subtotal);
+        $discount   = session('coupon_discount', 0);
         $couponCode = session('coupon_code');
 
-        if (
-            (!$discount)
-            && $request->filled('coupon_code')
-            && Schema::hasTable('coupons')
-        ) {
+        if (!$discount && $request->filled('coupon_code') && Schema::hasTable('coupons')) {
             $coupon = \App\Models\Coupon::where('code', strtoupper($request->coupon_code))->first();
             if ($coupon && $coupon->isValidForUser(auth()->user())) {
                 $discount   = $this->couponService->calculateDiscount($coupon, $subtotal);
@@ -223,5 +241,4 @@ class CheckoutController extends Controller
     {
         return $subtotal >= 500 ? 0.0 : 50.0;
     }
-
 }

@@ -6,10 +6,10 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Order extends Model
 {
-    /** @use HasFactory<\Database\Factories\OrderFactory> */
     use HasFactory;
 
     protected $fillable = [
@@ -30,6 +30,8 @@ class Order extends Model
         'shipping_postal_code',
         'shipping_country',
         'notes',
+        'razorpay_order_id',   // ← added
+        'razorpay_payment_id', // ← added
     ];
 
     protected $casts = [
@@ -41,26 +43,20 @@ class Order extends Model
         'updated_at'      => 'datetime',
     ];
 
-    /**
-     * Get the user who placed the order.
-     */
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
     }
 
-    /**
-     * Get the products in this order.
-     */
     public function products(): BelongsToMany
     {
         return $this->belongsToMany(Product::class, 'order_items')
-                    ->withPivot('quantity', 'price');
+            ->withPivot('quantity', 'price')
+            ->withTimestamps();
     }
 
-    public function shipments()
+    public function shipments(): HasMany
     {
         return $this->hasMany(OrderShipment::class, 'order_id');
     }
 }
-
