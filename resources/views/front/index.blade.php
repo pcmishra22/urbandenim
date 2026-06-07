@@ -152,7 +152,7 @@
             <h2 class="section-title px-5"><span class="px-2">Trending Products</span></h2>
         </div>
         <div class="row px-xl-5 pb-3">
-            @php $featuredProducts = \App\Models\Product::with('images')->where('is_active', true)->where('is_featured', true)->take(8)->get(); @endphp
+            @php $featuredProducts = \App\Models\Product::with('images')->withCount(['reviews as reviews_count' => fn($q) => $q->where('is_approved',true)])->withAvg(['reviews as reviews_avg_rating' => fn($q) => $q->where('is_approved',true)],'rating')->where('is_active', true)->where('is_featured', true)->take(8)->get(); @endphp
             @forelse($featuredProducts as $product)
             @include('front.partials.product-card', ['product' => $product])
             @empty
@@ -168,9 +168,11 @@
                             <h6>$123.00</h6>
                         </div>
                     </div>
-                    <div class="card-footer d-flex justify-content-between bg-light border">
-                        <a href="{{ route('products.index') }}" class="btn btn-sm text-dark p-0"><i class="fas fa-eye text-primary mr-1"></i>View Detail</a>
-                        <a href="{{ route('products.index') }}" class="btn btn-sm text-dark p-0"><i class="fas fa-shopping-cart text-primary mr-1"></i>Add To Cart</a>
+                    <div class="card-footer d-flex justify-content-between align-items-center bg-light border">
+                        <div class="text-warning" style="font-size:13px;">
+                            <i class="far fa-star"></i><i class="far fa-star"></i><i class="far fa-star"></i><i class="far fa-star"></i><i class="far fa-star"></i>
+                        </div>
+                        <small class="text-muted">No reviews yet</small>
                     </div>
                 </div>
             </div>
@@ -207,7 +209,7 @@
             <h2 class="section-title px-5"><span class="px-2">Just Arrived</span></h2>
         </div>
         <div class="row px-xl-5 pb-3">
-            @php $newProducts = \App\Models\Product::with('images')->where('is_active', true)->latest()->take(8)->get(); @endphp
+            @php $newProducts = \App\Models\Product::with('images')->withCount(['reviews as reviews_count' => fn($q) => $q->where('is_approved',true)])->withAvg(['reviews as reviews_avg_rating' => fn($q) => $q->where('is_approved',true)],'rating')->where('is_active', true)->latest()->take(8)->get(); @endphp
             @forelse($newProducts as $product)
             @include('front.partials.product-card', ['product' => $product])
             @empty
@@ -223,9 +225,11 @@
                             <h6>$123.00</h6>
                         </div>
                     </div>
-                    <div class="card-footer d-flex justify-content-between bg-light border">
-                        <a href="{{ route('products.index') }}" class="btn btn-sm text-dark p-0"><i class="fas fa-eye text-primary mr-1"></i>View Detail</a>
-                        <a href="{{ route('products.index') }}" class="btn btn-sm text-dark p-0"><i class="fas fa-shopping-cart text-primary mr-1"></i>Add To Cart</a>
+                    <div class="card-footer d-flex justify-content-between align-items-center bg-light border">
+                        <div class="text-warning" style="font-size:13px;">
+                            <i class="far fa-star"></i><i class="far fa-star"></i><i class="far fa-star"></i><i class="far fa-star"></i><i class="far fa-star"></i>
+                        </div>
+                        <small class="text-muted">No reviews yet</small>
                     </div>
                 </div>
             </div>

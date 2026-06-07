@@ -1,21 +1,37 @@
+@php
+    $reviewCount = $product->reviews_count ?? $product->reviews->count();
+    $avgRating   = $product->reviews_avg_rating ?? ($product->reviews->avg('rating') ?? 0);
+    $avgRating   = round($avgRating, 1);
+    $detailUrl   = route('products.detail', $product->slug);
+@endphp
+
 <div class="col-lg-3 col-md-6 col-sm-12 pb-1">
     <div class="card product-item border-0 mb-4">
+
+        {{-- Image — clickable --}}
         <div class="card-header product-img position-relative overflow-hidden bg-transparent border p-0">
-@if($product->images && $product->images->isNotEmpty())
-                @php
-                    $img = $product->images->first();
-                    $filename = $img->image ?? '';
-                    $relativePath = 'products/' . $product->id . '/images/' . $filename;
-                    $publicUrl = asset('storage/' . $relativePath);
-                    $fallbackUrl = asset('storage/default.jpeg');
-                @endphp
-                <img class="img-fluid w-100" src="{{ file_exists(public_path('storage/' . $relativePath)) ? $publicUrl : $fallbackUrl }}" alt="{{ $product->name }}">
-            @else
-                <img class="img-fluid w-100" src="{{ asset('storage/default.jpeg') }}" alt="{{ $product->name }}">
-            @endif
+            <a href="{{ $detailUrl }}">
+                @if($product->images && $product->images->isNotEmpty())
+                    @php
+                        $img          = $product->images->first();
+                        $relativePath = 'products/' . $product->id . '/images/' . ($img->image ?? '');
+                        $publicUrl    = asset('storage/' . $relativePath);
+                        $fallbackUrl  = asset('storage/default.jpeg');
+                    @endphp
+                    <img class="img-fluid w-100"
+                         src="{{ file_exists(public_path('storage/' . $relativePath)) ? $publicUrl : $fallbackUrl }}"
+                         alt="{{ $product->name }}">
+                @else
+                    <img class="img-fluid w-100" src="{{ asset('eshopper/img/product-1.jpg') }}" alt="{{ $product->name }}">
+                @endif
+            </a>
         </div>
+
+        {{-- Name + Price — title clickable --}}
         <div class="card-body border-left border-right text-center p-0 pt-4 pb-3">
-            <h6 class="text-truncate mb-3">{{ $product->name }}</h6>
+            <a href="{{ $detailUrl }}" class="text-dark text-decoration-none">
+                <h6 class="text-truncate mb-3">{{ $product->name }}</h6>
+            </a>
             <div class="d-flex justify-content-center">
                 <h6>₹{{ number_format($product->sale_price ?? $product->price, 2) }}</h6>
                 @if($product->sale_price && $product->sale_price < $product->price)
@@ -23,18 +39,32 @@
                 @endif
             </div>
         </div>
-        <div class="card-footer d-flex justify-content-between bg-light border">
-            <a href="{{ route('products.detail', $product->slug) }}" class="btn btn-sm text-dark p-0">
-                <i class="fas fa-eye text-primary mr-1"></i>View Detail
-            </a>
-            <form method="POST" action="{{ route('cart.add') }}" class="d-inline">
-                @csrf
-                <input type="hidden" name="product_id" value="{{ $product->id }}">
-                <input type="hidden" name="quantity" value="1">
-                <button type="submit" class="btn btn-sm text-dark p-0">
-                    <i class="fas fa-shopping-cart text-primary mr-1"></i>Add To Cart
-                </button>
-            </form>
+
+        {{-- Footer: Star rating + review count (no Add to Cart) --}}
+        <div class="card-footer d-flex justify-content-between align-items-center bg-light border">
+            {{-- Stars --}}
+            <div class="text-warning" style="font-size:13px; letter-spacing:1px;">
+                @for($s = 1; $s <= 5; $s++)
+                    @if($avgRating >= $s)
+                        <i class="fas fa-star"></i>
+                    @elseif($avgRating >= $s - 0.5)
+                        <i class="fas fa-star-half-alt"></i>
+                    @else
+                        <i class="far fa-star"></i>
+                    @endif
+                @endfor
+            </div>
+            {{-- Review count --}}
+            <small class="text-muted">
+                @if($reviewCount > 0)
+                    <a href="{{ $detailUrl }}#reviews" class="text-muted text-decoration-none">
+                        {{ $reviewCount }} {{ Str::plural('review', $reviewCount) }}
+                    </a>
+                @else
+                    No reviews yet
+                @endif
+            </small>
         </div>
+
     </div>
 </div>

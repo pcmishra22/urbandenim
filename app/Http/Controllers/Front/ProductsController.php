@@ -12,7 +12,10 @@ class ProductsController extends Controller
 {
     public function index(Request $request)
     {
-        $query = Product::where('is_active', true)->with(['category', 'images', 'brand', 'variants']);
+        $query = Product::where('is_active', true)
+            ->with(['category', 'images', 'brand', 'variants'])
+            ->withCount(['reviews as reviews_count' => fn($q) => $q->where('is_approved', true)])
+            ->withAvg(['reviews as reviews_avg_rating' => fn($q) => $q->where('is_approved', true)], 'rating');
 
         // Sorting
         switch ($request->get('sort', 'latest')) {
