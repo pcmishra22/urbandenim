@@ -138,10 +138,10 @@
                 @endif
 
                 <!-- Add to Cart -->
-                <form method="POST" action="{{ route('cart.add') }}" id="add-to-cart-form">
-                    @csrf
-                    <input type="hidden" name="product_id" value="{{ $product->id }}">
-                    <div class="d-flex align-items-center mb-4 pt-2">
+                <div class="d-flex align-items-center mb-4 pt-2">
+                    <form method="POST" action="{{ route('cart.add') }}" id="add-to-cart-form" class="d-flex align-items-center">
+                        @csrf
+                        <input type="hidden" name="product_id" value="{{ $product->id }}">
                         <div class="input-group quantity mr-3" style="width: 130px;">
                             <div class="input-group-btn">
                                 <button type="button" class="btn btn-primary btn-minus"><i class="fa fa-minus"></i></button>
@@ -154,17 +154,17 @@
                         <button type="submit" class="btn btn-primary px-3">
                             <i class="fa fa-shopping-cart mr-1"></i> Add To Cart
                         </button>
-                        @auth
-                        <form method="POST" action="{{ route('wishlist.add') }}" class="ml-3">
-                            @csrf
-                            <input type="hidden" name="product_id" value="{{ $product->id }}">
-                            <button type="submit" class="btn btn-outline-secondary px-3">
-                                <i class="far fa-heart mr-1"></i> Wishlist
-                            </button>
-                        </form>
-                        @endauth
-                    </div>
-                </form>
+                    </form>
+                    @auth
+                    <form method="POST" action="{{ route('wishlist.add') }}" class="ml-3">
+                        @csrf
+                        <input type="hidden" name="product_id" value="{{ $product->id }}">
+                        <button type="submit" class="btn btn-outline-primary px-3 text-dark">
+                            <i class="far fa-heart mr-1"></i> Wishlist
+                        </button>
+                    </form>
+                    @endauth
+                </div>
 
                 <!-- Share -->
                 <div class="d-flex pt-2">
