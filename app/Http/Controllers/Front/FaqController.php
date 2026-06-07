@@ -10,7 +10,7 @@ class FaqController extends Controller
 {
     public function index()
     {
-        $faqs = Faq::where('is_active', true)->orderBy('sort_order')->orderBy('id')->get();
+        $faqs = Faq::where('is_active', true)->orderBy('id')->get();
         return view('front.faq', compact('faqs'));
     }
 

@@ -18,9 +18,9 @@
         <div class="row bg-secondary py-2 px-xl-5">
             <div class="col-lg-6 d-none d-lg-block">
                 <div class="d-inline-flex align-items-center">
-                    <a class="text-dark" href="#">FAQs</a>
+                    <a class="text-dark" href="{{ route('faq') }}">FAQs</a>
                     <span class="text-muted px-2">|</span>
-                    <a class="text-dark" href="#">Help</a>
+                    <a class="text-dark" href="{{ route('help') }}">Help</a>
                     <span class="text-muted px-2">|</span>
                     <a class="text-dark" href="{{ route('contact') }}">Support</a>
                 </div>
@@ -70,7 +70,7 @@
     <!-- Topbar End -->
 
     <!-- Navbar Start -->
-    <div class="container-fluid mb-5">
+    <div class="container-fluid{{ request()->is('/') ? ' mb-5' : '' }}">
         <div class="row border-top px-xl-5">
             <div class="col-lg-3 d-none d-lg-block">
                 <a class="btn shadow-none d-flex align-items-center justify-content-between bg-primary text-white w-100"
@@ -78,7 +78,7 @@
                     <h6 class="m-0">Categories</h6>
                     <i class="fa fa-angle-down text-dark"></i>
                 </a>
-                <nav class="collapse show navbar navbar-vertical navbar-light align-items-start p-0 border border-top-0 border-bottom-0" id="navbar-vertical">
+                <nav class="collapse{{ request()->is('/') ? ' show' : '' }} position-absolute navbar navbar-vertical navbar-light align-items-start p-0 border border-top-0 border-bottom-0 bg-light" id="navbar-vertical" style="width: calc(100% - 30px); z-index: 999;">
                     <div class="navbar-nav w-100 overflow-hidden" style="height: 410px">
                         @php $navCategories = \App\Models\Category::where('is_active', true)->take(10)->get(); @endphp
                         @forelse($navCategories as $cat)
