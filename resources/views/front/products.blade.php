@@ -52,7 +52,7 @@
                         <div class="custom-control custom-checkbox d-flex align-items-center justify-content-between mb-3">
                             <input type="radio" class="custom-control-input" id="price-{{ $loop->index }}"
                                    name="price_range" value="{{ $key }}"
-                                   {{ (request('price_min','').'-'.request('price_max','')) == $key || ($key === '' && !request('price_min')) ? 'checked' : '' }}
+                                   {{ (request('price_range', '') === $key) ? 'checked' : '' }}
                                    onchange="this.form.submit()">
                             <label class="custom-control-label" for="price-{{ $loop->index }}">{{ $range['label'] }}</label>
                         </div>
