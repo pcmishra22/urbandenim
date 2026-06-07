@@ -53,20 +53,23 @@ class ProductManagementController extends Controller
             'stretch' => 'nullable|string|max:100',
         ]);
 
-        \$validated['title'] = \$validated['name'];
-        unset(\$validated['name']);
-        \$product = Product::create(\$validated);
+        $product = Product::create($validated);
 
-        if (\$request->has('variants')) {
-            foreach (\$request->variants as \$variant) {
-                if (!empty(\$variant['size'])) {
-                    \$product->variants()->create([
-                        'size' => \$variant['size'],
-                        'color' => \$variant['color'] ?? null,
-                        'quantity' => \$variant['stock'] ?? 0,
-                        'stock' => \$variant['stock'] ?? 0,
-                        'price' => \$variant['price'] ?? \$product->price,
-                        'sku' => \$variant['sku'] ?? uniqid('VAR-'),
+        if ($request->has('variants')) {
+            foreach ($request->variants as $variant) {
+                // Check for both 'waist_size' and 'size' to be flexible with the frontend
+                $size = $variant['waist_size'] ?? $variant['size'] ?? null;
+
+                if (!empty($size)) {
+                    $quantity = $variant['quantity'] ?? $variant['stock'] ?? 0;
+
+                    $product->variants()->create([
+                        'waist_size' => $size,
+                        'color' => $variant['color'] ?? null,
+                        'quantity' => $quantity,
+                        'price' => $variant['price'] ?? $product->price,
+                        'sku' => $variant['sku'] ?? uniqid('VAR-'),
+                        'is_active' => true,
                     ]);
                 }
             }
@@ -104,21 +107,23 @@ class ProductManagementController extends Controller
             'stretch' => 'nullable|string|max:100',
         ]);
 
-        \$validated['title'] = \$validated['name'];
-        unset(\$validated['name']);
-        \$product->update(\$validated);
+        $product->update($validated);
 
-        \$product->variants()->delete();
-        if (\$request->has('variants')) {
-            foreach (\$request->variants as \$variant) {
-                if (!empty(\$variant['size'])) {
-                    \$product->variants()->create([
-                        'size' => \$variant['size'],
-                        'color' => \$variant['color'] ?? null,
-                        'quantity' => \$variant['stock'] ?? 0,
-                        'stock' => \$variant['stock'] ?? 0,
-                        'price' => \$variant['price'] ?? \$product->price,
-                        'sku' => \$variant['sku'] ?? uniqid('VAR-'),
+        $product->variants()->delete();
+        if ($request->has('variants')) {
+            foreach ($request->variants as $variant) {
+                $size = $variant['waist_size'] ?? $variant['size'] ?? null;
+
+                if (!empty($size)) {
+                    $quantity = $variant['quantity'] ?? $variant['stock'] ?? 0;
+
+                    $product->variants()->create([
+                        'waist_size' => $size,
+                        'color' => $variant['color'] ?? null,
+                        'quantity' => $quantity,
+                        'price' => $variant['price'] ?? $product->price,
+                        'sku' => $variant['sku'] ?? uniqid('VAR-'),
+                        'is_active' => true,
                     ]);
                 }
             }

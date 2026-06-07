@@ -10,6 +10,7 @@ use App\Models\User;
 use App\Services\CartService;
 use App\Services\CouponService;
 use Illuminate\Http\Request;
+use App\Models\ProductVariant;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
@@ -204,10 +205,17 @@ class CheckoutController extends Controller
 
             foreach ($cartItems as $item) {
                 $product = $item['product'];
+                $variantId = $item['variant_id'] ?? ($item['options']['variant_id'] ?? null);
+
                 $order->products()->attach($product->id, [
-                    'quantity' => $item['quantity'],
-                    'price'    => $product->sale_price ?? $product->price,
+                    'product_variant_id' => $variantId,
+                    'quantity'           => $item['quantity'],
+                    'price'              => $product->sale_price ?? $product->price,
                 ]);
+
+                if ($variantId) {
+                    ProductVariant::where('id', $variantId)->decrement('quantity', $item['quantity']);
+                }
             }
 
             DB::commit();

@@ -51,25 +51,47 @@
                 </div>
             </div>
             <div class="col-lg-5 mb-5">
+                @php
+                    use App\Models\SiteSetting;
+                    $s = SiteSetting::all_settings();
+                @endphp
+
                 <h5 class="font-weight-semi-bold mb-3">Get In Touch</h5>
                 <p>We'd love to hear from you. Send us a message and we'll respond as soon as possible — usually within 24 hours.</p>
+
                 <div class="d-flex flex-column mb-4">
                     <h5 class="font-weight-semi-bold mb-3">Head Office</h5>
-                    <p class="mb-2"><i class="fa fa-map-marker-alt text-primary mr-3"></i>123 Street, New York, USA</p>
-                    <p class="mb-2"><i class="fa fa-envelope text-primary mr-3"></i>info@eshopper.com</p>
-                    <p class="mb-2"><i class="fa fa-phone-alt text-primary mr-3"></i>+012 345 67890</p>
-                    <p class="mb-0"><i class="fa fa-clock text-primary mr-3"></i>Mon – Sat, 9am – 6pm</p>
+                    <p class="mb-2"><i class="fa fa-map-marker-alt text-primary mr-3"></i>{{ $s['store_address'] ?? '123 Street, New York, USA' }}</p>
+                    <p class="mb-2"><i class="fa fa-envelope text-primary mr-3"></i>{{ $s['store_email'] ?? 'info@eshopper.com' }}</p>
+                    <p class="mb-2"><i class="fa fa-phone-alt text-primary mr-3"></i>{{ $s['store_phone'] ?? '+012 345 67890' }}</p>
+                    <p class="mb-0"><i class="fa fa-clock text-primary mr-3"></i>{{ $s['store_hours'] ?? 'Mon – Sat, 9am – 6pm' }}</p>
                 </div>
+
                 <div class="d-flex flex-column mb-4">
                     <h5 class="font-weight-semi-bold mb-3">Support</h5>
-                    <p class="mb-2"><i class="fa fa-envelope text-primary mr-3"></i>support@eshopper.com</p>
-                    <p class="mb-0"><i class="fa fa-phone-alt text-primary mr-3"></i>+012 345 67891</p>
+                    <p class="mb-2"><i class="fa fa-envelope text-primary mr-3"></i>{{ $s['support_email'] ?? ($s['store_email'] ?? 'support@eshopper.com') }}</p>
+                    <p class="mb-0"><i class="fa fa-phone-alt text-primary mr-3"></i>{{ $s['support_phone'] ?? ($s['store_phone'] ?? '+012 345 67891') }}</p>
                 </div>
+
                 <div class="d-flex mt-2">
-                    <a class="btn btn-primary btn-square mr-2" href="#"><i class="fab fa-twitter"></i></a>
-                    <a class="btn btn-primary btn-square mr-2" href="#"><i class="fab fa-facebook-f"></i></a>
-                    <a class="btn btn-primary btn-square mr-2" href="#"><i class="fab fa-linkedin-in"></i></a>
-                    <a class="btn btn-primary btn-square" href="#"><i class="fab fa-instagram"></i></a>
+                    @if(!empty($s['twitter_url']))
+                        <a class="btn btn-primary btn-square mr-2" href="{{ $s['twitter_url'] }}" target="_blank" rel="noopener"><i class="fab fa-twitter"></i></a>
+                    @endif
+                    @if(!empty($s['facebook_url']))
+                        <a class="btn btn-primary btn-square mr-2" href="{{ $s['facebook_url'] }}" target="_blank" rel="noopener"><i class="fab fa-facebook-f"></i></a>
+                    @endif
+                    @if(!empty($s['linkedin_url']))
+                        <a class="btn btn-primary btn-square mr-2" href="{{ $s['linkedin_url'] }}" target="_blank" rel="noopener"><i class="fab fa-linkedin-in"></i></a>
+                    @endif
+                    @if(!empty($s['instagram_url']))
+                        <a class="btn btn-primary btn-square" href="{{ $s['instagram_url'] }}" target="_blank" rel="noopener"><i class="fab fa-instagram"></i></a>
+                    @endif
+                    @if(empty($s['twitter_url']) && empty($s['facebook_url']) && empty($s['linkedin_url']) && empty($s['instagram_url']))
+                        <a class="btn btn-primary btn-square mr-2" href="#"><i class="fab fa-twitter"></i></a>
+                        <a class="btn btn-primary btn-square mr-2" href="#"><i class="fab fa-facebook-f"></i></a>
+                        <a class="btn btn-primary btn-square mr-2" href="#"><i class="fab fa-linkedin-in"></i></a>
+                        <a class="btn btn-primary btn-square" href="#"><i class="fab fa-instagram"></i></a>
+                    @endif
                 </div>
             </div>
         </div>

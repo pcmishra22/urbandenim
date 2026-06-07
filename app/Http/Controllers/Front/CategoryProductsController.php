@@ -24,7 +24,7 @@ class CategoryProductsController extends Controller
 
         $query = Product::where('category_id', $category->id)
             ->where('is_active', true)
-            ->with(['category', 'images', 'brand']);
+            ->with(['category', 'images', 'brand', 'variants']);
 
         // Sorting
         $sortBy = $request->get('sort_by', 'newest');
@@ -62,7 +62,7 @@ class CategoryProductsController extends Controller
         if ($request->filled('size')) {
             $sizes = is_array($request->size) ? $request->size : explode(',', $request->size);
             $query->whereHas('variants', function ($q) use ($sizes) {
-                $q->whereIn('size', $sizes);
+                $q->whereIn('waist_size', $sizes);
             });
         }
 
@@ -78,7 +78,7 @@ class CategoryProductsController extends Controller
         if ($request->filled('search')) {
             $search = $request->search;
             $query->where(function ($q) use ($search) {
-                $q->where('title', 'like', "%$search%")
+                $q->where('name', 'like', "%$search%")
                   ->orWhere('description', 'like', "%$search%")
                   ->orWhere('sku', 'like', "%$search%");
             });
@@ -91,8 +91,8 @@ class CategoryProductsController extends Controller
         $sizes = \DB::table('product_variants')
             ->join('products', 'product_variants.product_id', '=', 'products.id')
             ->where('products.category_id', $category->id)
-            ->distinct('size')
-            ->pluck('size')
+            ->distinct('waist_size')
+            ->pluck('waist_size')
             ->filter()
             ->values();
         

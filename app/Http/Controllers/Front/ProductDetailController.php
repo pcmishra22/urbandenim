@@ -20,7 +20,9 @@ class ProductDetailController extends Controller
         // Fetch the product by slug with all necessary relationships
         $product = Product::where('slug', $slug)
             ->where('is_active', true)
-            ->with(['category', 'brand', 'variants', 'images'])
+            ->with(['category', 'brand', 'images', 'variants' => function($q) {
+                $q->where('is_active', true)->where('quantity', '>', 0);
+            }])
             ->firstOrFail();
 
         // Fetch related products (same category, excluding the current product)

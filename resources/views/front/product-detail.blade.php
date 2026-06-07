@@ -117,33 +117,20 @@
                 @endif
 
                 <!-- Variants -->
-                @php
-                    $sizes = $product->variants ? $product->variants->pluck('size')->filter()->unique()->values() : collect();
-                    $colors = $product->variants ? $product->variants->pluck('color')->filter()->unique()->values() : collect();
-                @endphp
-
-                @if($sizes->isNotEmpty())
+                @if($product->variants->isNotEmpty())
                 <div class="d-flex mb-3">
-                    <p class="text-dark font-weight-medium mb-0 mr-3">Sizes:</p>
-                    <div>
-                        @foreach($sizes as $size)
+                    <p class="text-dark font-weight-medium mb-0 mr-3">Select Size:</p>
+                    <div class="d-flex flex-wrap gap-2">
+                        @foreach($product->variants as $variant)
                         <div class="custom-control custom-radio custom-control-inline">
-                            <input type="radio" class="custom-control-input size-radio" id="size-{{ $size }}" name="selected_size" value="{{ $size }}">
-                            <label class="custom-control-label" for="size-{{ $size }}">{{ $size }}</label>
-                        </div>
-                        @endforeach
-                    </div>
-                </div>
-                @endif
-
-                @if($colors->isNotEmpty())
-                <div class="d-flex mb-4">
-                    <p class="text-dark font-weight-medium mb-0 mr-3">Colors:</p>
-                    <div>
-                        @foreach($colors as $color)
-                        <div class="custom-control custom-radio custom-control-inline">
-                            <input type="radio" class="custom-control-input" id="color-{{ $color }}" name="selected_color" value="{{ $color }}">
-                            <label class="custom-control-label" for="color-{{ $color }}">{{ $color }}</label>
+                            <input type="radio" class="custom-control-input variant-radio" 
+                                   id="variant-{{ $variant->id }}" 
+                                   name="variant_id" 
+                                   value="{{ $variant->id }}" 
+                                   form="add-to-cart-form" required>
+                            <label class="custom-control-label" for="variant-{{ $variant->id }}">
+                                {{ $variant->waist_size }} {{ $variant->color ? '- ' . $variant->color : '' }}
+                            </label>
                         </div>
                         @endforeach
                     </div>
@@ -151,7 +138,7 @@
                 @endif
 
                 <!-- Add to Cart -->
-                <form method="POST" action="{{ route('cart.add') }}">
+                <form method="POST" action="{{ route('cart.add') }}" id="add-to-cart-form">
                     @csrf
                     <input type="hidden" name="product_id" value="{{ $product->id }}">
                     <div class="d-flex align-items-center mb-4 pt-2">

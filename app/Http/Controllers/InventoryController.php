@@ -21,8 +21,8 @@ class InventoryController extends Controller
                 return [
                     'product_name' => $variant->product->name,
                     'sku' => $variant->sku,
-                    'variant' => "{$variant->color} / {$variant->size}",
-                    'stock' => $variant->stock,
+                    'variant' => "{$variant->color} / {$variant->waist_size}",
+                    'stock' => $variant->quantity,
                     'warehouse' => $variant->warehouse->name ?? 'Unassigned',
                 ];
             });
@@ -38,7 +38,7 @@ class InventoryController extends Controller
         $threshold = $request->get('threshold', 10);
         
         $lowStockItems = ProductVariant::with('product')
-            ->where('stock', '<=', $threshold)
+            ->where('quantity', '<=', $threshold)
             ->get();
 
         return response()->json([
@@ -65,7 +65,7 @@ class InventoryController extends Controller
      */
     public function warehouses()
     {
-        $warehouseStock = Warehouse::withSum('variants as total_stock', 'stock')->get();
+        $warehouseStock = Warehouse::withSum('variants as total_stock', 'quantity')->get();
 
         return response()->json($warehouseStock);
     }
@@ -82,11 +82,11 @@ class InventoryController extends Controller
         ]);
 
         $variant = ProductVariant::findOrFail($validated['variant_id']);
-        $oldStock = $variant->stock;
+        $oldStock = $variant->quantity;
         $newStock = $oldStock + $validated['adjustment'];
 
         DB::transaction(function () use ($variant, $newStock, $oldStock, $validated, $request) {
-            $variant->update(['stock' => $newStock]);
+            $variant->update(['quantity' => $newStock]);
 
             InventoryLog::create([
                 'product_variant_id' => $variant->id,

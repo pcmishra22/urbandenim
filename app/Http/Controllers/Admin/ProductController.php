@@ -37,7 +37,7 @@ class ProductController extends Controller
         }
         if ($request->filled('size')) {
             $query->whereHas('variants', function ($q) use ($request) {
-                $q->where('size', $request->input('size'));
+                $q->where('waist_size', $request->input('size'));
             });
         }
         if ($request->filled('search')) {
@@ -87,6 +87,23 @@ class ProductController extends Controller
         $validated['is_active']   = $request->boolean('is_active');
 
         $product = Product::create($validated);
+
+        // Save Product Variants
+        if ($request->has('variants')) {
+            foreach ($request->variants as $variant) {
+                $size = $variant['waist_size'] ?? $variant['size'] ?? null;
+                if (!empty($size)) {
+                    $product->variants()->create([
+                        'waist_size' => $size,
+                        'color'      => $variant['color'] ?? $product->color_family,
+                        'quantity'   => $variant['quantity'] ?? $variant['stock'] ?? 0,
+                        'price'      => $variant['price'] ?? $product->price,
+                        'sku'        => $variant['sku'] ?? $product->sku . '-' . $size . '-' . Str::random(4),
+                        'is_active'  => true,
+                    ]);
+                }
+            }
+        }
 
         if ($request->hasFile('images')) {
             foreach ($request->file('images') as $index => $file) {
@@ -147,6 +164,25 @@ class ProductController extends Controller
         $validated['is_active']   = $request->boolean('is_active');
 
         $product->update($validated);
+
+        // Update Product Variants
+        if ($request->has('variants')) {
+            // Simple approach: delete existing and recreate
+            $product->variants()->delete();
+            foreach ($request->variants as $variant) {
+                $size = $variant['waist_size'] ?? $variant['size'] ?? null;
+                if (!empty($size)) {
+                    $product->variants()->create([
+                        'waist_size' => $size,
+                        'color'      => $variant['color'] ?? $product->color_family,
+                        'quantity'   => $variant['quantity'] ?? $variant['stock'] ?? 0,
+                        'price'      => $variant['price'] ?? $product->price,
+                        'sku'        => $variant['sku'] ?? $product->sku . '-' . $size . '-' . Str::random(4),
+                        'is_active'  => true,
+                    ]);
+                }
+            }
+        }
 
         if ($request->hasFile('images')) {
             $lastOrder = $product->images()->max('sort_order') ?? 0;

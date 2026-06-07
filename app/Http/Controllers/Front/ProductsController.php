@@ -12,7 +12,7 @@ class ProductsController extends Controller
 {
     public function index(Request $request)
     {
-        $query = Product::where('is_active', true)->with(['category', 'images', 'brand']);
+        $query = Product::where('is_active', true)->with(['category', 'images', 'brand', 'variants']);
 
         // Sorting
         switch ($request->get('sort', 'latest')) {

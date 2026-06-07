@@ -242,7 +242,7 @@
             </div>
 
             <div class="d-flex gap-2 mt-4">
-                <button type="submit" class="btn btn-primary">
+                <button type="submit" class="btn btn-primary" id="submit-product">
                     <i class="fas fa-save"></i> Create Product
                 </button>
                 <a href="{{ route('admin.products.index') }}" class="btn btn-secondary">
@@ -289,6 +289,42 @@ document.addEventListener('DOMContentLoaded', function () {
 
     // Variants
     let variantIndex = 0;
+    function ensureVariantsSubmission() {
+        const form = document.querySelector('form');
+        if (!form) return;
+
+        // Remove old hidden inputs (avoid duplicates)
+        form.querySelectorAll('input[type="hidden"][name^="variants"][data-variant-hidden="1"]').forEach(el => el.remove());
+
+        const items = document.querySelectorAll('#variant-wrapper .variant-item');
+        // If variants were not added by JS, do nothing
+        if (!items || items.length === 0) return;
+
+        items.forEach((item, idx) => {
+            const size = item.querySelector('input[name^="variants"][name$="[size]"]')?.value || '';
+            const color = item.querySelector('input[name^="variants"][name$="[color]"]')?.value || '';
+            const stock = item.querySelector('input[name^="variants"][name$="[stock]"]')?.value || '0';
+            const price = item.querySelector('input[name^="variants"][name$="[price]"]')?.value || '';
+            const sku = item.querySelector('input[name^="variants"][name$="[sku]"]')?.value || '';
+
+            // Recreate a consistent variants[index][...] structure
+            const push = (key, val) => {
+                const input = document.createElement('input');
+                input.type = 'hidden';
+                input.name = `variants[${idx}][${key}]`;
+                input.value = val;
+                input.setAttribute('data-variant-hidden', '1');
+                form.appendChild(input);
+            };
+
+            push('size', size);
+            push('color', color);
+            push('stock', stock);
+            push('price', price);
+            push('sku', sku);
+        });
+    }
+
     document.getElementById('add-variant-btn').addEventListener('click', function () {
         const html = `
         <div class="card mb-3 variant-item">

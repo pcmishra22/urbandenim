@@ -13,13 +13,11 @@ class ProductVariant extends Model
         'product_id',
         'sku',
         'waist_size',
-        'size',
         'length',
         'color',
         'stretch_level',
         'price',
         'quantity',
-        'stock',
         'is_active',
     ];
 
