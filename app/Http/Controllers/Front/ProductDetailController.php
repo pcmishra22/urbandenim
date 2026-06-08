@@ -29,7 +29,7 @@ class ProductDetailController extends Controller
         $relatedProducts = Product::where('category_id', $product->category_id)
             ->where('id', '!=', $product->id)
             ->where('is_active', true)
-            ->take(4)
+            ->take(20)
             ->get();
 
         return view('front.product-detail', compact('product', 'relatedProducts'));

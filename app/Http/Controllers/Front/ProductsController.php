@@ -55,7 +55,8 @@ class ProductsController extends Controller
             });
         }
 
-        $products   = $query->paginate(12)->withQueryString();
+        $products   = $query->paginate(24)->withQueryString();
+
         $brands     = Brand::has('products')->get();
         $categories = Category::where('is_active', true)->withCount('products')->get();
 
