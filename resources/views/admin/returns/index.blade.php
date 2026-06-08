@@ -7,10 +7,10 @@
     <h2><i class="fas fa-undo"></i> Return & Refund Management</h2>
 
     <div class="d-flex gap-2">
-        <a href="{{ route('admin.returns.index') }}" class="btn btn-outline-primary {{ $activeTab === 'returns' ? 'active' : '' }}">
+        <a href="{{ route('admin.returns.index') }}" class="btn btn-outline-primary {{ ($activeTab ?? 'returns') === 'returns' ? 'active' : '' }}">
             Return Requests
         </a>
-        <a href="{{ route('admin.returns.index', ['type' => 'exchanges']) }}" class="btn btn-outline-primary {{ $activeTab === 'exchanges' ? 'active' : '' }}">
+        <a href="{{ route('admin.returns.index', ['type' => 'exchanges']) }}" class="btn btn-outline-primary {{ ($activeTab ?? 'returns') === 'exchanges' ? 'active' : '' }}">
             Exchange Requests
         </a>
     </div>

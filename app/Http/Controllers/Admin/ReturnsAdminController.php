@@ -16,10 +16,19 @@ class ReturnsAdminController extends Controller
     /**
      * List all return and exchange requests.
      */
-    public function index()
+    public function index(Request $request)
     {
-        $returns = ReturnRequest::with(['user', 'order'])->latest()->paginate(15);
-        return view('admin.returns.index', compact('returns'));
+        $activeTab = $request->query('type') === 'exchanges' ? 'exchanges' : 'returns';
+
+        $returns = ReturnRequest::with(['user', 'order'])
+            ->latest()
+            ->paginate(15);
+
+        $exchanges = \App\Models\ExchangeRequest::with(['returnRequest.user'])
+            ->latest()
+            ->paginate(15);
+
+        return view('admin.returns.index', compact('returns', 'exchanges', 'activeTab'));
     }
 
     /**

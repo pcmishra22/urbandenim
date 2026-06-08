@@ -12,6 +12,12 @@ class ReturnRequest extends Model
 {
     use HasFactory;
 
+    protected $casts = [
+        'requested_at' => 'datetime',
+        'approved_at'  => 'datetime',
+        'rejected_at'  => 'datetime',
+    ];
+
     protected $fillable = [
         'order_id',
         'user_id',
