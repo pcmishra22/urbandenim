@@ -4,6 +4,8 @@ namespace App\Http\Controllers\Auth;
 
 use App\Mail\NewUserAdminMail;
 use App\Mail\WelcomeMail;
+use App\Mail\VerifyEmailMail;
+use Illuminate\Support\Facades\URL;
 use App\Models\User;
 use Illuminate\Auth\Events\Verified;
 use Illuminate\Http\Request;
@@ -104,7 +106,17 @@ class CustomerAuthController extends Controller
     public function resendVerification(Request $request)
     {
         if ($request->user()->hasVerifiedEmail()) return redirect($this->redirectTo);
-        $request->user()->sendEmailVerificationNotification();
+        $user = $request->user();
+        $verificationUrl = URL::temporarySignedRoute(
+            'verification.verify',
+            now()->addMinutes(60),
+            ['id' => $user->id, 'hash' => sha1($user->email)]
+        );
+        try {
+            Mail::to($user->email)->send(new VerifyEmailMail($user, $verificationUrl));
+        } catch (\Throwable $e) {
+            \Illuminate\Support\Facades\Log::warning('Verify email send failed', ['error' => $e->getMessage()]);
+        }
         return back()->with('status', 'Verification link sent!');
     }
 

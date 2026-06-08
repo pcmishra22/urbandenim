@@ -7,6 +7,9 @@ use App\Models\Order;
 use App\Models\User;
 use App\Notifications\OrderAlert;
 use Illuminate\Support\Facades\Notification;
+use App\Mail\OrderDispatchedMail;
+use App\Mail\OrderDeliveredMail;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Http\Request;
 
 class OrderAdminController extends Controller
@@ -76,8 +79,29 @@ class OrderAdminController extends Controller
 
         $order->update(['status' => $target]);
 
+        // Send email to customer based on new status
+        $order->load('products', 'user');
+        try {
+            if ($target === 'shipped') {
+                // Get tracking info from latest shipment if available
+                $shipment      = $order->shipments()->latest()->first();
+                $trackingNumber = $shipment?->tracking_number;
+                $courierName   = $shipment?->courier?->name;
+                Mail::to($order->user->email)
+                    ->send(new OrderDispatchedMail($order, $trackingNumber, $courierName));
+            } elseif ($target === 'delivered') {
+                Mail::to($order->user->email)->send(new OrderDeliveredMail($order));
+            }
+        } catch (\Throwable $e) {
+            \Illuminate\Support\Facades\Log::warning('Order status email failed', [
+                'order_id' => $order->id,
+                'status'   => $target,
+                'error'    => $e->getMessage(),
+            ]);
+        }
+
         return redirect()->route('admin.orders.show', $order)
-            ->with('success', 'Order status updated successfully.');
+            ->with('success', 'Order status updated to ' . ucfirst($target) . '.');
     }
 
     /**
