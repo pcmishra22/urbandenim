@@ -182,22 +182,16 @@ Route::prefix('admin')->name('admin.')->group(function () {
         // Review management
         Route::resource('reviews', \App\Http\Controllers\Admin\ReviewController::class);
         // Site settings & social links
-        Route::get('/settings', [\App\Http\Controllers\Admin\SiteSettingsController::class, 'index'])->name('admin.settings.index');
-        Route::put('/settings', [\App\Http\Controllers\Admin\SiteSettingsController::class, 'update'])->name('admin.settings.update');
+        Route::get('/settings', [\App\Http\Controllers\Admin\SiteSettingsController::class, 'index'])->name('settings.index');
+        Route::put('/settings', [\App\Http\Controllers\Admin\SiteSettingsController::class, 'update'])->name('settings.update');
         // Newsletter subscribers
-        Route::get('/newsletter', [\App\Http\Controllers\Admin\SiteSettingsController::class, 'newsletters'])->name('admin.newsletter.index');
-        Route::post('/newsletter/{subscriber}/toggle', [\App\Http\Controllers\Admin\SiteSettingsController::class, 'toggleSubscriber'])->name('admin.newsletter.toggle');
-        Route::delete('/newsletter/{subscriber}', [\App\Http\Controllers\Admin\SiteSettingsController::class, 'destroySubscriber'])->name('admin.newsletter.destroy');
+        Route::get('/newsletter', [\App\Http\Controllers\Admin\SiteSettingsController::class, 'newsletters'])->name('newsletter.index');
+        Route::post('/newsletter/{subscriber}/toggle', [\App\Http\Controllers\Admin\SiteSettingsController::class, 'toggleSubscriber'])->name('newsletter.toggle');
+        Route::delete('/newsletter/{subscriber}', [\App\Http\Controllers\Admin\SiteSettingsController::class, 'destroySubscriber'])->name('newsletter.destroy');
         Route::post('/reviews/{review}/approve', [\App\Http\Controllers\Admin\ReviewController::class, 'approve'])->name('reviews.approve');
         Route::post('/reviews/{review}/reject', [\App\Http\Controllers\Admin\ReviewController::class, 'reject'])->name('reviews.reject');
         Route::post('/reviews/{review}/spam', [\App\Http\Controllers\Admin\ReviewController::class, 'markSpam'])->name('reviews.markSpam');
         Route::post('/reviews/{review}/featured', [\App\Http\Controllers\Admin\ReviewController::class, 'toggleFeatured'])->name('reviews.toggleFeatured');
-
-
-        // Settings management
-        Route::get('/settings', function () {
-            return view('admin.settings.index');
-        })->name('settings.index');
 
         // Audit Logs management
         Route::get('/audit-logs', function () {
@@ -225,8 +219,8 @@ Route::prefix('admin')->name('admin.')->group(function () {
         Route::delete('/cms/faqs/{faq}', [\App\Http\Controllers\Admin\CMSManagementController::class, 'faqsDestroy'])->name('cms.faqs.destroy');
     });
     // Email Verification Routes (authenticated, but not verified)
-Route::get('/email/verify', [AdminAuthController::class, 'showVerificationNotice'])->middleware('auth')->name('admin.verification.notice');
-Route::get('/email/verify/{id}/{hash}', [AdminAuthController::class, 'verify'])->middleware(['auth', 'signed'])->name('admin.verification.verify');
+Route::get('/email/verify', [AdminAuthController::class, 'showVerificationNotice'])->middleware('auth')->name('verification.notice');
+Route::get('/email/verify/{id}/{hash}', [AdminAuthController::class, 'verify'])->middleware(['auth', 'signed'])->name('verification.verify');
     Route::post('/email/resend', [AdminAuthController::class, 'resendVerificationEmail'])->middleware('auth')->name('verification.resend');
 
     // Moved inside admin group for security and consistent prefixing

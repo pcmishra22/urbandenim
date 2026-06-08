@@ -1,6 +1,6 @@
 @extends('layouts.eshopper')
 
-@section('title', 'Checkout - EShopper')
+@section('title', 'Checkout - Jeanzo')
 
 @section('content')
 
@@ -447,7 +447,7 @@
                 key:         rzp.key,
                 amount:      rzp.amount,
                 currency:    rzp.currency || 'INR',
-                name:        rzp.name || 'EShopper',
+name:        rzp.name || 'Jeanzo',
                 description: rzp.description || 'Order #' + od.order_id,
                 order_id:    rzp.razorpay_order_id,
                 prefill:     rzp.prefill || {},

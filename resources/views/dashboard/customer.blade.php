@@ -1,5 +1,5 @@
 @extends('layouts.eshopper')
-@section('title', 'My Dashboard - EShopper')
+@section('title', 'My Dashboard - Jeanzo')
 @section('content')
     @include('front.partials.page-banner', ['title' => 'My Account', 'breadcrumb' => 'Dashboard'])
     <div class="container-fluid pt-5 pb-5">

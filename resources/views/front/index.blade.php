@@ -1,6 +1,6 @@
 @extends('layouts.eshopper')
 
-@section('title', 'EShopper - Home')
+@section('title', 'Jeanzo - Home')
 
 @section('navbar-extra')
 <div id="header-carousel" class="carousel slide" data-ride="carousel">

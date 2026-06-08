@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>EShopper</title>
+<title>Jeanzo</title>
 <style>
   *{box-sizing:border-box;margin:0;padding:0;}
   body{font-family:Arial,Helvetica,sans-serif;background:#f0f2f5;color:#333;-webkit-font-smoothing:antialiased;}
@@ -60,14 +60,14 @@
 <div class="outer">
   <div class="card">
     <div class="hdr" style="background:{{ $headerColor ?? '#2c3e50' }};">
-      <div class="logo"><span>E</span>Shopper</div>
+      <div class="logo"><span>J</span>eanzo</div>
       <div class="subtitle">{{ $headerSubtitle ?? 'Your Fashion Destination' }}</div>
     </div>
     <div class="body">
       @yield('content')
     </div>
     <div class="footer">
-      © {{ date('Y') }} EShopper. All rights reserved.<br>
+      © {{ date('Y') }} Jeanzo. All rights reserved.<br>
       <a href="{{ url('/') }}">Visit Store</a> &nbsp;·&nbsp;
       <a href="{{ route('contact') }}">Contact Support</a>
     </div>
