@@ -3,7 +3,7 @@
 @section('title', $product->name . ' - EShopper')
 
 @section('content')
-    @include('front.partials.page-banner', ['title' => 'Shop Detail', 'breadcrumb' => 'Shop Detail'])
+@include('front.partials.page-banner', ['title' => 'product-detail', 'breadcrumb' => 'Shop Detail'])
 </div>
     </div>
     <!-- Page Header End -->

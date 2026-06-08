@@ -4,7 +4,7 @@
 
 @section('content')
 
-    @include('front.partials.page-banner', ['title' => 'Our Shop', 'breadcrumb' => 'Shop'])
+@include('front.partials.page-banner', ['title' => 'shop', 'breadcrumb' => 'Shop'])
 
     <!-- Shop Start -->
     <div class="container-fluid pt-5">

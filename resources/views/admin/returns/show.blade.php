@@ -192,9 +192,23 @@
                     Completes the wallet refund transaction.
                 </div>
             </div>
-            <button class="btn btn-success" type="submit">
+
+            @php
+                $refundDisabled = !in_array($return->status, ['approved', 'refund_completed', 'pickup_requested'], true);
+                $refundHint = $refundDisabled
+                    ? 'Refund to wallet is available only after refund approval.'
+                    : null;
+            @endphp
+
+            <button class="btn btn-success" type="submit" @if($refundDisabled) disabled @endif title="{{ $refundHint }}">
                 <i class="fas fa-wallet"></i> Refund to Wallet
             </button>
+
+            @if($refundDisabled)
+                <div class="text-muted mt-2" style="font-size: 0.9rem;">
+                    {{ $refundHint }}
+                </div>
+            @endif
         </form>
     </div>
 </div>

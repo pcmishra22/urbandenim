@@ -78,14 +78,26 @@ class ReturnsAdminController extends Controller
      */
     public function requestReversePickup(ReturnRequest $return)
     {
-        // Minimal implementation using ReversePickupRequest table.
-        // We also keep ReturnRequest status updated.
         $validated = request()->validate([
             'courier_id' => 'nullable|integer|exists:couriers,id',
             'tracking_id' => 'nullable|string|max:255',
         ]);
 
+        if (!in_array($return->status, ['approved', 'pickup_requested', 'refund_completed', 'approved_for_pickup'], true)) {
+            return redirect()->back()->with('error', 'Reverse pickup can only be requested after refund approval.');
+        }
+
         DB::transaction(function () use ($return, $validated) {
+            // Idempotency: don’t create duplicate requested pickup if one is already in-flight.
+            $existing = $return->pickupRequests()
+                ->whereIn('status', ['requested', 'picked_up', 'received'])
+                ->latest('id')
+                ->first();
+
+            if ($existing) {
+                return;
+            }
+
             $return->pickupRequests()->create([
                 'status' => 'requested',
                 'courier_id' => $validated['courier_id'] ?? null,
@@ -93,9 +105,7 @@ class ReturnsAdminController extends Controller
                 'requested_at' => now(),
             ]);
 
-            $return->update([
-                'status' => 'pickup_requested',
-            ]);
+            $return->update(['status' => 'pickup_requested']);
         });
 
         return redirect()->back()->with('success', 'Reverse pickup has been scheduled.');
@@ -141,9 +151,31 @@ class ReturnsAdminController extends Controller
         $amount = (float) $validated['amount'];
         $currency = strtoupper($validated['currency'] ?? ($return->refund_wallet_currency ?? 'USD'));
 
+        // Guard: refunding should only happen after approval.
+        if ($return->status !== 'approved' && !in_array($return->status, ['refund_completed', 'pickup_requested'], true)) {
+            return redirect()->back()->with('error', 'Refund to wallet can only be done after refund approval.');
+        }
+
         DB::transaction(function () use ($return, $amount, $currency) {
-            // Create the wallet refund transaction record.
-            $tx = WalletRefundTransaction::create([
+            // Idempotency: if already refunded/completed, don’t create duplicates.
+            $alreadyCompleted = WalletRefundTransaction::query()
+                ->where('return_request_id', $return->id)
+                ->where('status', 'completed')
+                ->exists();
+
+            if ($alreadyCompleted) {
+                // Still ensure ReturnRequest reflects values.
+                $return->update([
+                    'refund_wallet_amount' => $amount,
+                    'refund_wallet_currency' => $currency,
+                    'status' => 'refund_completed',
+                    'approved_at' => $return->approved_at ?? now(),
+                ]);
+
+                return;
+            }
+
+            WalletRefundTransaction::create([
                 'user_id' => $return->user_id,
                 'order_id' => $return->order_id,
                 'return_request_id' => $return->id,
@@ -153,24 +185,20 @@ class ReturnsAdminController extends Controller
                 'status' => 'completed',
                 'meta' => [
                     'admin_id' => auth()->id(),
-                    'approved_at' => now()->toISOString(),
+                    'approved_at' => ($return->approved_at ?? now())->toISOString(),
                     'source' => 'admin_returns',
                 ],
                 'created_by_admin_id' => auth()->id(),
             ]);
 
             // NOTE: there is no customer wallet model/balance in the repo.
-            // To keep the system correct, we mark the refund completed via transaction,
-            // and update ReturnRequest status. If you later add a Wallet table, we can
-            // decrement/credit there and keep tx as source of truth.
             $return->update([
                 'refund_wallet_amount' => $amount,
                 'refund_wallet_currency' => $currency,
                 'status' => 'refund_completed',
                 'approved_at' => $return->approved_at ?? now(),
             ]);
-            
-            // Notify all admins about the successful refund (Payment Alert)
+
             $admins = User::where('role', 'admin')->get();
             Notification::send($admins, new PaymentAlert([
                 'order_id' => $return->order_id,
@@ -179,9 +207,6 @@ class ReturnsAdminController extends Controller
                 'status' => 'completed',
                 'message' => "A wallet refund of {$amount} {$currency} was processed for Order #{$return->order_id}."
             ]));
-
-            // Prevent unused variable warning in strict environments.
-            unset($tx);
         });
 
         return redirect()->back()->with('success', 'Wallet refund transaction created and marked completed.');

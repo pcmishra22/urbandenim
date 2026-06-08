@@ -1,6 +1,11 @@
-# TODO
+# TODO - Admin returns/refunds fixes
 
-- [ ] Fix ShipmentController::create() using Order relationship name `shipments` instead of `shipment`.
-- [ ] Verify admin route GET /admin/shipments/create no longer throws Call to undefined method Order::shipment().
-- [ ] Run basic Laravel checks (php artisan route:list / php artisan test if available).
+- [ ] Inspect existing admin returns/refund controllers and views (done)
+- [x] Add validation/state guards + idempotency to `ReturnsAdminController@refundToWallet()`
+- [x] Add validation/state guards for reverse pickup and exchange approval
+- [x] Ensure refund completion sets `approved_at` deterministically
+- [x] Optionally disable refund-to-wallet UI until refund is approved
+- [x] Run quick sanity checks (lint/tests/ route check)
+
+
 
