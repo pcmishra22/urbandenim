@@ -110,11 +110,17 @@
                     @endif
                 </div>
                 @if($product->brand)
-                <div class="mb-4">
+                <div class="mb-2">
                     <span class="text-dark font-weight-medium">Brand:</span>
                     <span class="ml-1">{{ $product->brand->name }}</span>
                 </div>
                 @endif
+
+                {{-- SOLD BY --}}
+                <div class="mb-4">
+                    <span class="text-dark font-weight-medium">SOLD BY:</span>
+                    <span class="ml-1">{{ $product->sold_by ?? 'Not Applicable' }}</span>
+                </div>
 
                 <!-- Variants -->
                 @if($product->variants->isNotEmpty())
@@ -195,19 +201,42 @@
                     </div>
                     <div class="tab-pane fade" id="tab-info">
                         <h4 class="mb-3">Additional Information</h4>
+
                         <div class="row">
+                            {{-- Left column --}}
                             <div class="col-md-6">
                                 <ul class="list-group list-group-flush">
-                                    @if($product->sku)<li class="list-group-item px-0">SKU: {{ $product->sku }}</li>@endif
-                                    @if($product->category)<li class="list-group-item px-0">Category: {{ $product->category->name }}</li>@endif
-                                    @if($product->brand)<li class="list-group-item px-0">Brand: {{ $product->brand->name }}</li>@endif
-                                    @if($product->gender)<li class="list-group-item px-0">Gender: {{ ucfirst($product->gender) }}</li>@endif
+                                    <li class="list-group-item px-0">Wash: {{ $product->wash ?? 'Not Applicable' }}</li>
+                                    <li class="list-group-item px-0">Shade: {{ $product->shade ?? 'Not Applicable' }}</li>
+                                    <li class="list-group-item px-0">Length: {{ $product->length ?? 'Not Applicable' }}</li>
+                                    <li class="list-group-item px-0">Net Quantity (N): {{ $product->net_quantity ?? 'Not Applicable' }}</li>
+                                    <li class="list-group-item px-0">Stretch: {{ $product->stretch ?? 'Not Applicable' }}</li>
+                                    <li class="list-group-item px-0">Waist Rise: {{ $product->waist_rise ?? 'Not Applicable' }}</li>
                                 </ul>
                             </div>
+
+                            {{-- Right column --}}
                             <div class="col-md-6">
                                 <ul class="list-group list-group-flush">
-                                    @if($product->color_family)<li class="list-group-item px-0">Colour: {{ $product->color_family }}</li>@endif
-                                    @if($product->age_group)<li class="list-group-item px-0">Age Group: {{ $product->age_group }}</li>@endif
+                                    <li class="list-group-item px-0">Fabric: {{ $product->fabric ?? 'Not Applicable' }}</li>
+                                    <li class="list-group-item px-0">Surface Styling: {{ $product->surface_styling ?? 'Not Applicable' }}</li>
+                                    <li class="list-group-item px-0">Brand: {{ $product->brand->name ?? ($product->brand_name ?? 'Not Applicable') }}</li>
+                                    <li class="list-group-item px-0">Country of Origin: {{ $product->country_of_origin ?? 'Not Applicable' }}</li>
+
+                                    @if($product->sku)
+                                        <li class="list-group-item px-0">SKU: {{ $product->sku }}</li>
+                                    @endif
+                                    @if($product->gender)
+                                        <li class="list-group-item px-0">Gender: {{ ucfirst($product->gender) }}</li>
+                                    @endif
+
+                                    @if($product->color_family)
+                                        <li class="list-group-item px-0">Colour: {{ $product->color_family }}</li>
+                                    @endif
+                                    @if($product->age_group)
+                                        <li class="list-group-item px-0">Age Group: {{ $product->age_group }}</li>
+                                    @endif
+
                                     <li class="list-group-item px-0">Availability: {{ $product->quantity > 0 ? 'In Stock (' . $product->quantity . ')' : 'Out of Stock' }}</li>
                                 </ul>
                             </div>
