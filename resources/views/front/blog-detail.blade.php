@@ -11,7 +11,7 @@
             <div class="d-inline-flex">
                 <p class="m-0"><a href="{{ url('/') }}">Home</a></p>
                 <p class="m-0 px-2">-</p>
-                <p class="m-0"><a href="/blog">Blog</a></p>
+                <p class="m-0"><a href="{{ route('blog.index') }}">Blog</a></p>
                 <p class="m-0 px-2">-</p>
                 <p class="m-0">Detail</p>
             </div>
@@ -24,12 +24,6 @@
         <div class="row px-xl-5">
             <!-- Main Content -->
             <div class="col-lg-8">
-                @php
-                    $slug = request()->segment(2);
-                    $post = null;
-                    try { $post = \App\Models\BlogPost::where('slug', $slug)->where('status','published')->with('author')->first(); } catch(\Exception $e) {}
-                @endphp
-
                 @if($post)
                     @if($post->featured_image)
                     <img src="{{ asset('storage/' . $post->featured_image) }}" class="img-fluid w-100 mb-4" alt="{{ $post->title }}">
@@ -57,9 +51,11 @@
                 <!-- Tags -->
                 <div class="mt-4 mb-5">
                     <span class="font-weight-semi-bold mr-2">Tags:</span>
-                    <a href="/blog" class="badge badge-secondary mr-1">Fashion</a>
-                    <a href="/blog" class="badge badge-secondary mr-1">Style</a>
-                    <a href="/blog" class="badge badge-secondary mr-1">Trends</a>
+                    @forelse($post->tags ?? [] as $tag)
+                        <a href="{{ route('blog.index', ['tag' => $tag->slug]) }}" class="badge badge-secondary mr-1">{{ $tag->name }}</a>
+                    @empty
+                        <span class="text-muted small">No tags.</span>
+                    @endforelse
                 </div>
 
                 <!-- Comment Form -->
@@ -90,7 +86,7 @@
             <!-- Sidebar -->
             <div class="col-lg-4">
                 <div class="mb-5">
-                    <form action="/blog" method="GET">
+                    <form action="{{ route('blog.index') }}" method="GET">
                         <div class="input-group">
                             <input type="text" name="search" class="form-control" placeholder="Search blog posts">
                             <div class="input-group-append">
@@ -101,12 +97,16 @@
                 </div>
                 <div class="mb-5">
                     <h5 class="font-weight-semi-bold border-bottom pb-2 mb-4">Recent Posts</h5>
-                    @foreach(range(1,4) as $i)
+                    @foreach($recentPosts as $recent)
                     <div class="d-flex mb-3">
-                        <img src="{{ asset('eshopper/img/blog-' . $i . '.jpg') }}" class="img-fluid mr-3" style="width:80px;height:60px;object-fit:cover;" alt="">
+                        @if($recent->featured_image)
+                            <img src="{{ asset('storage/' . $recent->featured_image) }}" class="img-fluid mr-3" style="width:80px;height:60px;object-fit:cover;" alt="">
+                        @else
+                            <img src="{{ asset('eshopper/img/blog-1.jpg') }}" class="img-fluid mr-3" style="width:80px;height:60px;object-fit:cover;" alt="">
+                        @endif
                         <div>
-                            <a href="/blog/post-{{ $i }}" class="text-dark d-block font-weight-semi-bold mb-1">Latest Blog Post {{ $i }}</a>
-                            <small class="text-muted">{{ now()->subDays($i)->format('d M Y') }}</small>
+                            <a href="{{ route('blog.show', $recent->slug) }}" class="text-dark d-block font-weight-semi-bold mb-1">{{ $recent->title }}</a>
+                            <small class="text-muted">{{ ($recent->published_at ?? $recent->created_at)->format('d M Y') }}</small>
                         </div>
                     </div>
                     @endforeach
@@ -114,8 +114,8 @@
                 <div class="mb-5">
                     <h5 class="font-weight-semi-bold border-bottom pb-2 mb-4">Tags</h5>
                     <div class="d-flex flex-wrap">
-                        @foreach(['Fashion','Style','Electronics','Review','Trends','Lifestyle','Summer','Winter'] as $tag)
-                        <a href="/blog?tag={{ strtolower($tag) }}" class="btn btn-outline-secondary btn-sm mr-2 mb-2">{{ $tag }}</a>
+                        @foreach($tags as $tag)
+                        <a href="{{ route('blog.index', ['tag' => $tag->slug]) }}" class="btn btn-outline-secondary btn-sm mr-2 mb-2">{{ $tag->name }}</a>
                         @endforeach
                     </div>
                 </div>

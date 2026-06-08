@@ -3,6 +3,7 @@
 use App\Http\Controllers\Auth\AdminAuthController;
 use App\Http\Controllers\Auth\CustomerAuthController;
 use App\Http\Controllers\Auth\VendorAuthController;
+use App\Http\Controllers\Front\BlogController;
 use App\Http\Controllers\DashboardController;
 use Illuminate\Support\Facades\Route;
 
@@ -109,9 +110,7 @@ Route::prefix('admin')->name('admin.')->group(function () {
         Route::resource('couriers', \App\Http\Controllers\Admin\CourierController::class);
         Route::resource('shipping_rules', \App\Http\Controllers\Admin\ShippingRuleController::class);
         Route::resource('delivery_charges', \App\Http\Controllers\Admin\DeliveryChargeController::class);
-        Route::get('/shipments', [\App\Http\Controllers\Admin\ShipmentController::class, 'index'])->name('shipments.index');
-        Route::get('/shipments/{shipment}/edit', [\App\Http\Controllers\Admin\ShipmentController::class, 'edit'])->name('shipments.edit');
-        Route::put('/shipments/{shipment}', [\App\Http\Controllers\Admin\ShipmentController::class, 'update'])->name('shipments.update');
+        Route::resource('shipments', \App\Http\Controllers\Admin\ShipmentController::class);
 
         // Return & Refund management
         Route::get('/returns', [\App\Http\Controllers\Admin\ReturnsAdminController::class, 'index'])->name('returns.index');
@@ -226,8 +225,8 @@ Route::prefix('admin')->name('admin.')->group(function () {
         Route::delete('/cms/faqs/{faq}', [\App\Http\Controllers\Admin\CMSManagementController::class, 'faqsDestroy'])->name('cms.faqs.destroy');
     });
     // Email Verification Routes (authenticated, but not verified)
-    Route::get('/email/verify', [AdminAuthController::class, 'showVerificationNotice'])->middleware('auth')->name('verification.notice');
-    Route::get('/email/verify/{id}/{hash}', [AdminAuthController::class, 'verify'])->middleware(['auth', 'signed'])->name('verification.verify');
+Route::get('/email/verify', [AdminAuthController::class, 'showVerificationNotice'])->middleware('auth')->name('admin.verification.notice');
+Route::get('/email/verify/{id}/{hash}', [AdminAuthController::class, 'verify'])->middleware(['auth', 'signed'])->name('admin.verification.verify');
     Route::post('/email/resend', [AdminAuthController::class, 'resendVerificationEmail'])->middleware('auth')->name('verification.resend');
 
     // Moved inside admin group for security and consistent prefixing
@@ -258,7 +257,7 @@ Route::prefix('vendor')->name('vendor.')->group(function () {
         Route::post('/logout', [VendorAuthController::class, 'logout'])->name('logout');
     });
     // Email Verification Routes (authenticated, but not verified)
-    Route::get('/email/verify', [VendorAuthController::class, 'showVerificationNotice'])->middleware('auth')->name('verification.notice');
+Route::get('/email/verify', [VendorAuthController::class, 'showVerificationNotice'])->middleware('auth')->name('vendor.verification.notice');
     Route::get('/email/verify/{id}/{hash}', [VendorAuthController::class, 'verify'])->middleware(['auth', 'signed'])->name('verification.verify');
     Route::post('/email/resend', [VendorAuthController::class, 'resendVerificationEmail'])->middleware('auth')->name('verification.resend');
 });
@@ -311,12 +310,8 @@ Route::middleware('auth')->group(function () {
     Route::get('/profile/orders/{id}', [\App\Http\Controllers\Front\ProfileController::class, 'orderDetails'])->name('profile.order-details');
 });
 
-Route::get('/blog', function () {
-    return view('front.blog');
-});
-Route::get('/blog/{slug?}', function () {
-    return view('front.blog-detail');
-});
+Route::get('/blog', [BlogController::class, 'index'])->name('blog.index');
+Route::get('/blog/{slug}', [BlogController::class, 'show'])->name('blog.show');
 
 Route::get('/about', function () {
     return view('front.about');

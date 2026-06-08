@@ -22,11 +22,6 @@
         <div class="row px-xl-5">
             <!-- Blog Posts -->
             <div class="col-lg-8">
-                @php
-                    $posts = \App\Models\BlogPost::where('status','published')
-                        ->orderByDesc('published_at')
-                        ->paginate(6) ?? collect();
-                @endphp
                 @forelse($posts as $post)
                 <div class="d-flex mb-5">
                     <div style="min-width: 250px; max-width: 250px; height: 180px; overflow:hidden;" class="mr-4">
@@ -41,31 +36,18 @@
                             <small class="text-body mr-3"><i class="fa fa-calendar-alt text-primary mr-1"></i>{{ $post->published_at ? $post->published_at->format('d M Y') : $post->created_at->format('d M Y') }}</small>
                             @if($post->author)<small class="text-body"><i class="fa fa-user text-primary mr-1"></i>{{ $post->author }}</small>@endif
                         </div>
-                        <a href="/blog/{{ $post->slug }}" class="h5 d-block mb-2 text-dark font-weight-semi-bold">{{ $post->title }}</a>
+                        <a href="{{ route('blog.show', $post->slug) }}" class="h5 d-block mb-2 text-dark font-weight-semi-bold">{{ $post->title }}</a>
                         <p class="mb-3">{{ Str::limit(strip_tags($post->content ?? $post->excerpt ?? ''), 150) }}</p>
-                        <a href="/blog/{{ $post->slug }}" class="btn btn-sm btn-primary py-1">Read More</a>
+                        <a href="{{ route('blog.show', $post->slug) }}" class="btn btn-sm btn-primary py-1">Read More</a>
                     </div>
                 </div>
                 @empty
-                @foreach(range(1,3) as $i)
-                <div class="d-flex mb-5">
-                    <div style="min-width: 250px; max-width: 250px; height: 180px; overflow:hidden;" class="mr-4">
-                        <img class="img-fluid w-100 h-100" style="object-fit:cover;" src="{{ asset('eshopper/img/blog-' . $i . '.jpg') }}" alt="">
+                    <div class="text-center py-5">
+                        <h4 class="text-muted">No blog posts found.</h4>
                     </div>
-                    <div>
-                        <div class="d-flex mb-2">
-                            <small class="text-body mr-3"><i class="fa fa-calendar-alt text-primary mr-1"></i>{{ now()->subDays($i)->format('d M Y') }}</small>
-                            <small class="text-body"><i class="fa fa-user text-primary mr-1"></i>Admin</small>
-                        </div>
-                        <a href="/blog/post-{{ $i }}" class="h5 d-block mb-2 text-dark font-weight-semi-bold">Latest Fashion Trends You Should Know About</a>
-                        <p class="mb-3">Discover the hottest fashion trends this season. From bold colours to classic minimalism, we cover it all.</p>
-                        <a href="/blog/post-{{ $i }}" class="btn btn-sm btn-primary py-1">Read More</a>
-                    </div>
-                </div>
-                @endforeach
                 @endforelse
 
-                @if(isset($posts) && $posts->hasPages())
+                @if($posts->hasPages())
                 <nav class="mt-2">
                     <ul class="pagination">
                         <li class="page-item {{ $posts->onFirstPage() ? 'disabled' : '' }}">
@@ -88,7 +70,7 @@
             <div class="col-lg-4">
                 <!-- Search -->
                 <div class="mb-5">
-                    <form action="/blog" method="GET">
+                    <form action="{{ route('blog.index') }}" method="GET">
                         <div class="input-group">
                             <input type="text" name="search" class="form-control" placeholder="Search blog posts" value="{{ request('search') }}">
                             <div class="input-group-append">
@@ -100,12 +82,16 @@
                 <!-- Recent Posts -->
                 <div class="mb-5">
                     <h5 class="font-weight-semi-bold border-bottom pb-2 mb-4">Recent Posts</h5>
-                    @foreach(range(1,4) as $i)
+                    @foreach($recentPosts as $recent)
                     <div class="d-flex mb-3">
-                        <img src="{{ asset('eshopper/img/blog-' . $i . '.jpg') }}" class="img-fluid mr-3" style="width:80px;height:60px;object-fit:cover;" alt="">
+                        @if($recent->featured_image)
+                            <img src="{{ asset('storage/' . $recent->featured_image) }}" class="img-fluid mr-3" style="width:80px;height:60px;object-fit:cover;" alt="">
+                        @else
+                            <img src="{{ asset('eshopper/img/blog-1.jpg') }}" class="img-fluid mr-3" style="width:80px;height:60px;object-fit:cover;" alt="">
+                        @endif
                         <div>
-                            <a href="/blog/post-{{ $i }}" class="text-dark d-block font-weight-semi-bold mb-1">Latest Blog Post {{ $i }}</a>
-                            <small class="text-muted">{{ now()->subDays($i)->format('d M Y') }}</small>
+                            <a href="{{ route('blog.show', $recent->slug) }}" class="text-dark d-block font-weight-semi-bold mb-1">{{ $recent->title }}</a>
+                            <small class="text-muted">{{ ($recent->published_at ?? $recent->created_at)->format('d M Y') }}</small>
                         </div>
                     </div>
                     @endforeach
@@ -113,19 +99,13 @@
                 <!-- Categories -->
                 <div class="mb-5">
                     <h5 class="font-weight-semi-bold border-bottom pb-2 mb-4">Categories</h5>
-                    @php $blogCats = \App\Models\BlogCategory::withCount('posts')->take(8)->get() ?? collect(); @endphp
-                    @forelse($blogCats as $cat)
+                    @forelse($categories as $cat)
                     <div class="d-flex justify-content-between mb-2">
-                        <a class="text-dark" href="/blog?category={{ $cat->id }}">{{ $cat->name }}</a>
+                        <a class="text-dark" href="{{ route('blog.index', ['category' => $cat->slug]) }}">{{ $cat->name }}</a>
                         <span class="badge badge-primary">{{ $cat->posts_count }}</span>
                     </div>
                     @empty
-                    @foreach(['Fashion','Style','Lifestyle','Trends','Reviews'] as $cat)
-                    <div class="d-flex justify-content-between mb-2">
-                        <a class="text-dark" href="#">{{ $cat }}</a>
-                        <span class="badge badge-primary">{{ rand(3,15) }}</span>
-                    </div>
-                    @endforeach
+                        <p class="text-muted small">No categories found.</p>
                     @endforelse
                 </div>
             </div>

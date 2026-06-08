@@ -102,8 +102,9 @@
                         <div class="navbar-nav mr-auto py-0">
                             <a href="{{ url('/') }}" class="nav-item nav-link {{ request()->is('/') ? 'active' : '' }}">Home</a>
                             <a href="{{ route('products.index') }}" class="nav-item nav-link {{ request()->routeIs('products.*') ? 'active' : '' }}">Shop</a>
+                            <a href="{{ route('blog.index') }}" class="nav-item nav-link {{ request()->is('blog*') ? 'active' : '' }}">Blog</a>
 
-                            <a href="{{ route('cart.index') }}" class="nav-item nav-link {{ request()->routeIs('cart.*') ? 'active' : '' }}">Shopping Cart</a>
+                            <a href="{{ route('cart.index') }}" class="nav-item nav-link {{ request()->routeIs('cart.*') ? 'active' : '' }}">Cart</a>
                             <a href="{{ route('checkout.index') }}" class="nav-item nav-link {{ request()->routeIs('checkout.*') ? 'active' : '' }}">Checkout</a>
                               @auth
                             <a href="{{ route('profile.dashboard') }}" class="nav-item nav-link {{ request()->routeIs('products.*') ? 'active' : '' }}">My Account</a>
@@ -140,4 +141,3 @@
         </div>
     </div>
     <!-- Navbar End -->
-

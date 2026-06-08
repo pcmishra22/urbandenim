@@ -1,64 +1,71 @@
 @extends('layouts.dashboard')
 
-@section('title', 'Shipments - Admin')
-
 @section('content')
-<div class="page-title d-flex justify-content-between align-items-center">
-    <h2><i class="fas fa-truck-fast"></i> Shipments / Tracking</h2>
-</div>
+<div class="container-fluid">
+    <div class="card">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <h3 class="card-title">Shipment Management</h3>
+            <a href="{{ route('admin.shipments.create') }}" class="btn btn-success">Add New Shipment</a>
+        </div>
+        <div class="card-body">
+            @if (session('success'))
+                <div class="alert alert-success">
+                    {{ session('success') }}
+                </div>
+            @endif
+            @if (session('error'))
+                <div class="alert alert-danger">
+                    {{ session('error') }}
+                </div>
+            @endif
 
-<div class="card">
-    <div class="card-header">
-        <span>All Shipments ({{ $shipments->total() }})</span>
-    </div>
-
-    <div class="table-responsive">
-        <table class="table table-hover mb-0">
-            <thead>
-                <tr>
-                    <th>ID</th>
-                    <th>Order</th>
-                    <th>Courier</th>
-                    <th>Tracking ID</th>
-                    <th>Status</th>
-                    <th>Shipped</th>
-                    <th>Delivered</th>
-                    <th style="width: 160px;">Actions</th>
-                </tr>
-            </thead>
-            <tbody>
-                @forelse($shipments as $shipment)
-                    <tr>
-                        <td><strong>#{{ $shipment->id }}</strong></td>
-                        <td>
-                            #{{ $shipment->order->id }}<br/>
-                            <span class="text-muted" style="font-size:0.85rem;">
-                                {{ $shipment->order->user->name ?? '-' }}
-                            </span>
-                        </td>
-                        <td>{{ $shipment->courier->name ?? '-' }}</td>
-                        <td><code>{{ $shipment->tracking_id ?? '-' }}</code></td>
-                        <td>{{ ucfirst(str_replace('_', ' ', $shipment->status)) }}</td>
-                        <td>{{ $shipment->shipped_at ? $shipment->shipped_at->format('Y-m-d H:i') : '-' }}</td>
-                        <td>{{ $shipment->delivered_at ? $shipment->delivered_at->format('Y-m-d H:i') : '-' }}</td>
-                        <td>
-                            <a href="{{ route('admin.shipments.edit', $shipment) }}" class="btn btn-sm btn-warning">
-                                <i class="fas fa-edit"></i> Update
-                            </a>
-                        </td>
-                    </tr>
-                @empty
-                    <tr>
-                        <td colspan="8" class="text-center text-muted py-4">No shipments found</td>
-                    </tr>
-                @endforelse
-            </tbody>
-        </table>
-    </div>
-
-    <div class="d-flex justify-content-center mt-4">
-        {{ $shipments->links() }}
+            <div class="table-responsive">
+                <table class="table table-bordered table-hover">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Order ID</th>
+                            <th>Customer</th>
+                            <th>Courier</th>
+                            <th>Tracking Number</th>
+                            <th>Status</th>
+                            <th>Shipped At</th>
+                            <th>Delivered At</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @forelse($shipments as $shipment)
+                            <tr>
+                                <td>{{ $shipment->id }}</td>
+                                <td>{{ $shipment->order->id ?? 'N/A' }}</td>
+                                <td>{{ $shipment->order->user->name ?? 'N/A' }}</td>
+                                <td>{{ $shipment->courier->name ?? 'N/A' }}</td>
+                                <td>{{ $shipment->tracking_id ?? 'N/A' }}</td>
+                                <td>{{ ucfirst($shipment->status) }}</td>
+                                <td>{{ $shipment->shipped_at ? \Carbon\Carbon::parse($shipment->shipped_at)->format('Y-m-d H:i') : 'N/A' }}</td>
+                                <td>{{ $shipment->delivered_at ? \Carbon\Carbon::parse($shipment->delivered_at)->format('Y-m-d H:i') : 'N/A' }}</td>
+                                <td>
+                                    <a href="{{ route('admin.shipments.edit', $shipment->id) }}" class="btn btn-sm btn-primary">Edit</a>
+                                    <form action="{{ route('admin.shipments.destroy', $shipment->id) }}" method="POST" onsubmit="return confirm('Are you sure you want to delete this shipment?');" style="display:inline-block;">
+                                        @csrf
+                                        @method('DELETE')
+                                        <button type="submit" class="btn btn-sm btn-danger">Delete</button>
+                                    </form>
+                                </td>
+                            </tr>
+                        @empty
+                            <tr>
+                                <td colspan="9" class="text-center">No shipments found.</td>
+                            </tr>
+                        @endforelse
+                    </tbody>
+                </table>
+            </div>
+            <div class="d-flex justify-content-center">
+                {{ $shipments->links() }}
+            </div>
+        </div>
     </div>
 </div>
 @endsection
-
