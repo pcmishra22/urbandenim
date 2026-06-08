@@ -11,6 +11,13 @@ use App\Mail\OrderDispatchedMail;
 use App\Mail\OrderDeliveredMail;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
+use App\Models\Product;
+use App\Models\ProductVariant;
+use App\Models\InventoryLog;
+use Illuminate\Support\Facades\Log;
+use App\Notifications\LowStockAlert;
+
 
 class OrderAdminController extends Controller
 {
@@ -77,32 +84,96 @@ class OrderAdminController extends Controller
                 ->with('error', 'Invalid status transition from ' . $current . ' to ' . $target);
         }
 
-        $order->update(['status' => $target]);
-
-        // Send email to customer based on new status
-        $order->load('products', 'user');
+        // Keep status update + inventory operations atomic
+        DB::beginTransaction();
         try {
-            if ($target === 'shipped') {
-                // Get tracking info from latest shipment if available
-                $shipment      = $order->shipments()->latest()->first();
-                $trackingNumber = $shipment?->tracking_number;
-                $courierName   = $shipment?->courier?->name;
-                Mail::to($order->user->email)
-                    ->send(new OrderDispatchedMail($order, $trackingNumber, $courierName));
-            } elseif ($target === 'delivered') {
-                Mail::to($order->user->email)->send(new OrderDeliveredMail($order));
+            $order->update(['status' => $target]);
+
+            // Decrement inventory only when order reaches "confirmed" (next stage after pending)
+            // and only once per order status transition.
+            if ($target === 'confirmed') {
+                $this->applyInventoryForOrderStatus($order, $target);
             }
+
+            // Send email to customer based on new status
+            $order->load('products', 'user');
+
+            try {
+                if ($target === 'shipped') {
+                    // Get tracking info from latest shipment if available
+                    $shipment      = $order->shipments()->latest()->first();
+                    $trackingNumber = $shipment?->tracking_number;
+                    $courierName   = $shipment?->courier?->name;
+                    Mail::to($order->user->email)
+                        ->send(new OrderDispatchedMail($order, $trackingNumber, $courierName));
+                } elseif ($target === 'delivered') {
+                    Mail::to($order->user->email)->send(new OrderDeliveredMail($order));
+                }
+            } catch (\Throwable $e) {
+                \Illuminate\Support\Facades\Log::warning('Order status email failed', [
+                    'order_id' => $order->id,
+                    'status'   => $target,
+                    'error'    => $e->getMessage(),
+                ]);
+            }
+
+            DB::commit();
         } catch (\Throwable $e) {
-            \Illuminate\Support\Facades\Log::warning('Order status email failed', [
-                'order_id' => $order->id,
-                'status'   => $target,
-                'error'    => $e->getMessage(),
-            ]);
+            DB::rollBack();
+            throw $e;
         }
 
         return redirect()->route('admin.orders.show', $order)
             ->with('success', 'Order status updated to ' . ucfirst($target) . '.');
     }
+
+    /**
+     * Apply inventory deduction and reorder alert for an order status.
+     * Currently deducts when status becomes "confirmed".
+     */
+    protected function applyInventoryForOrderStatus(Order $order, string $target): void
+    {
+        // Only supported stage
+        if ($target !== 'confirmed') {
+            return;
+        }
+
+        // Ensure pivot data is available
+        $order->load('products');
+
+        $adminUsers = User::where('role', 'admin')->get();
+
+        foreach ($order->products as $product) {
+            // Determine ordered quantity from pivot
+            $orderedQty = (int) ($product->pivot?->quantity ?? 1);
+
+            // Deduct from product quantity (reorder_level lives on products)
+            $product->decrement('quantity', $orderedQty);
+            $product->refresh();
+
+            // Log inventory movement
+            InventoryLog::create([
+                'product_variant_id' => null, // variants are not decremented in this flow
+                'user_id' => $order->user_id,  // best-effort; adjust if you prefer admin id
+                'old_stock' => max(0, $product->quantity + $orderedQty),
+                'new_stock' => $product->quantity,
+                'adjustment' => -$orderedQty,
+                'reason' => 'Order #' . $order->id . ' confirmed',
+            ]);
+
+            // Trigger reorder alert if needed
+            if ((int) $product->quantity <= (int) $product->reorder_level) {
+                // If you later add a dedicated LowStockAlert notification, this call will work.
+                if (class_exists(LowStockAlert::class)) {
+                    \Illuminate\Support\Facades\Notification::send(
+                        $adminUsers,
+                        new LowStockAlert($product)
+                    );
+                }
+            }
+        }
+    }
+
 
     /**
      * Invoice download.
