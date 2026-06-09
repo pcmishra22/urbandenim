@@ -1,6 +1,6 @@
 @extends('layouts.eshopper')
 
-@section('title', 'Shop - EShopper')
+@section('title', 'Shop - Jeanzo')
 
 @section('content')
 

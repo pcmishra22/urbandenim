@@ -5,6 +5,8 @@ use App\Http\Controllers\Auth\CustomerAuthController;
 use App\Http\Controllers\Auth\VendorAuthController;
 use App\Http\Controllers\Front\BlogController;
 use App\Http\Controllers\DashboardController;
+use Illuminate\Foundation\Auth\EmailVerificationRequest;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
@@ -29,16 +31,30 @@ Route::prefix('')->name('customer.')->group(function () {
         Route::post('/reset-password', [CustomerAuthController::class, 'reset'])->name('password.update');
     });
 
-    // Dashboard routes (authenticated)
-    Route::middleware(['auth', 'verified'])->group(function () {
-        Route::get('/dashboard', [DashboardController::class, 'customerDashboard'])->name('dashboard');
+    // Authenticated routes
+    Route::middleware('auth')->group(function () {
         Route::post('/logout', [CustomerAuthController::class, 'logout'])->name('logout');
+
+        Route::middleware('verified')->group(function () {
+            Route::get('/dashboard', [DashboardController::class, 'customerDashboard'])->name('dashboard');
+        });
     });
-    // Email Verification Routes (authenticated, but not verified)
-    Route::get('/email/verify', [CustomerAuthController::class, 'showVerificationNotice'])->middleware('auth')->name('verification.notice');
-    Route::get('/email/verify/{id}/{hash}', [CustomerAuthController::class, 'verify'])->middleware(['auth', 'signed'])->name('verification.verify');
-    Route::post('/email/resend', [CustomerAuthController::class, 'resendVerificationEmail'])->middleware('auth')->name('verification.resend');
 });
+
+// Global Email Verification Routes (Required for 'verified' middleware)
+Route::get('/email/verify', function () {
+    return view('auth.customer.verify');
+})->middleware('auth')->name('verification.notice');
+
+Route::get('/email/verify/{id}/{hash}', function (EmailVerificationRequest $request) {
+    $request->fulfill();
+    return redirect()->route('customer.dashboard');
+})->middleware(['auth', 'signed'])->name('verification.verify');
+
+Route::post('/email/resend', function (Request $request) {
+    $request->user()->sendEmailVerificationNotification();
+    return back()->with('status', 'verification-link-sent');
+})->middleware(['auth', 'throttle:6,1'])->name('verification.resend');
 
 // =======================================
 // ADMIN ROUTES
@@ -57,11 +73,15 @@ Route::prefix('admin')->name('admin.')->group(function () {
     });
 
     // Dashboard routes (authenticated admin only)
-    Route::middleware(['auth', 'admin', 'verified'])->group(function () {
-        Route::get('/dashboard', [DashboardController::class, 'adminDashboard'])->name('dashboard');
+    Route::middleware(['auth', 'admin'])->group(function () {
+        Route::post('/logout', [AdminAuthController::class, 'logout'])->name('logout');
+
+        Route::middleware('verified')->group(function () {
+            Route::get('/dashboard', [DashboardController::class, 'adminDashboard'])->name('dashboard');
+        });
+
         Route::get('/register', [AdminAuthController::class, 'showRegister'])->name('register');
         Route::post('/register', [AdminAuthController::class, 'register'])->name('register.submit');
-        Route::post('/logout', [AdminAuthController::class, 'logout'])->name('logout');
 
         // Category management
         Route::resource('categories', \App\Http\Controllers\Admin\CategoryController::class);
@@ -218,11 +238,6 @@ Route::prefix('admin')->name('admin.')->group(function () {
         Route::put('/cms/faqs/{faq}', [\App\Http\Controllers\Admin\CMSManagementController::class, 'faqsUpdate'])->name('cms.faqs.update');
         Route::delete('/cms/faqs/{faq}', [\App\Http\Controllers\Admin\CMSManagementController::class, 'faqsDestroy'])->name('cms.faqs.destroy');
     });
-    // Email Verification Routes (authenticated, but not verified)
-Route::get('/email/verify', [AdminAuthController::class, 'showVerificationNotice'])->middleware('auth')->name('verification.notice');
-Route::get('/email/verify/{id}/{hash}', [AdminAuthController::class, 'verify'])->middleware(['auth', 'signed'])->name('verification.verify');
-    Route::post('/email/resend', [AdminAuthController::class, 'resendVerificationEmail'])->middleware('auth')->name('verification.resend');
-
     // Moved inside admin group for security and consistent prefixing
     Route::delete('/product-images/{image}', [\App\Http\Controllers\Admin\ProductController::class, 'deleteImage'])->name('products.images.delete');
 });
@@ -245,15 +260,14 @@ Route::prefix('vendor')->name('vendor.')->group(function () {
         Route::post('/reset-password', [VendorAuthController::class, 'reset'])->name('password.update');
     });
 
-    // Dashboard routes (authenticated)
-    Route::middleware(['auth', 'verified'])->group(function () {
-        Route::get('/dashboard', [DashboardController::class, 'vendorDashboard'])->name('dashboard');
+    // Authenticated routes
+    Route::middleware('auth')->group(function () {
         Route::post('/logout', [VendorAuthController::class, 'logout'])->name('logout');
+
+        Route::middleware('verified')->group(function () {
+            Route::get('/dashboard', [DashboardController::class, 'vendorDashboard'])->name('dashboard');
+        });
     });
-    // Email Verification Routes (authenticated, but not verified)
-Route::get('/email/verify', [VendorAuthController::class, 'showVerificationNotice'])->middleware('auth')->name('vendor.verification.notice');
-    Route::get('/email/verify/{id}/{hash}', [VendorAuthController::class, 'verify'])->middleware(['auth', 'signed'])->name('verification.verify');
-    Route::post('/email/resend', [VendorAuthController::class, 'resendVerificationEmail'])->middleware('auth')->name('verification.resend');
 });
 
 // =======================================
