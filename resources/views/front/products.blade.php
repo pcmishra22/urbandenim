@@ -110,83 +110,48 @@
                         </div>
                     </div>
 
-                    @forelse($products as $product)
-                    <div class="col-lg-4 col-md-6 col-sm-12 pb-1">
-                        <div class="card product-item border-0 mb-4">
-                            <div class="card-header product-img position-relative overflow-hidden bg-transparent border p-0">
-            @php
-                            $img = $product->images->first() ?? null;
-                            $relativePath = $img ? 'products/' . $product->id . '/images/' . ($img->image ?? '') : '';
-                            $publicUrl    = $relativePath ? asset('storage/' . $relativePath) : asset('eshopper/img/product-1.jpg');
-                            $fallbackUrl  = asset('storage/default.jpeg');
-                            $imgSrc       = ($relativePath && file_exists(public_path('storage/' . $relativePath))) ? $publicUrl : ($product->images->isNotEmpty() ? $fallbackUrl : asset('eshopper/img/product-1.jpg'));
-                            $detailUrl    = route('products.detail', $product->slug);
-                            $reviewCount  = $product->reviews_count ?? 0;
-                            $avgRating    = round($product->reviews_avg_rating ?? 0, 1);
-                        @endphp
-                        <a href="{{ $detailUrl }}">
-                            <img class="img-fluid w-100" src="{{ $imgSrc }}" alt="{{ $product->name }}">
-                        </a>
-                            </div>
-                            <div class="card-body border-left border-right text-center p-0 pt-4 pb-3">
-                                <a href="{{ $detailUrl }}" class="text-dark text-decoration-none">
-                                    <h6 class="text-truncate mb-3">{{ $product->name }}</h6>
-                                </a>
-                                <div class="d-flex justify-content-center">
-                                    <h6>₹{{ number_format($product->sale_price ?? $product->price, 2) }}</h6>
-                                    @if($product->sale_price && $product->sale_price < $product->price)
-                                        <h6 class="text-muted ml-2"><del>₹{{ number_format($product->price, 2) }}</del></h6>
-                                    @endif
-                                </div>
-                            </div>
-                            <div class="card-footer d-flex justify-content-between align-items-center bg-light border">
-                                <div class="text-warning" style="font-size:13px;letter-spacing:1px;">
-                                    @for($s = 1; $s <= 5; $s++)
-                                        @if($avgRating >= $s)<i class="fas fa-star"></i>
-                                        @elseif($avgRating >= $s - 0.5)<i class="fas fa-star-half-alt"></i>
-                                        @else<i class="far fa-star"></i>
-                                        @endif
-                                    @endfor
-                                </div>
-                                <small class="text-muted">
-                                    @if($reviewCount > 0)
-                                        <a href="{{ $detailUrl }}#reviews" class="text-muted text-decoration-none">{{ $reviewCount }} {{ \Str::plural('review', $reviewCount) }}</a>
-                                    @else
-                                        No reviews yet
-                                    @endif
-                                </small>
-                            </div>
-                        </div>
+                    {{-- Products list (initial) + Infinite Scroll appends here --}}
+                    <div class="row pb-3" id="products-container">
+                        @foreach($products as $product)
+                            @include('front.partials.product-card-grid', ['product' => $product])
+                        @endforeach
                     </div>
-                    @empty
-                    <div class="col-12 text-center py-5">
-                        <i class="fas fa-search fa-3x text-muted mb-3"></i>
-                        <h5 class="text-muted">No products found</h5>
-                        <a href="{{ route('products.index') }}" class="btn btn-primary mt-3">Clear Filters</a>
-                    </div>
-                    @endforelse
 
-                    <!-- Pagination -->
-                    @if($products->hasPages())
-                    <div class="col-12 pb-1">
-                        <nav>
-                            <ul class="pagination justify-content-center mb-3">
-                                {{-- Previous --}}
-                                <li class="page-item {{ $products->onFirstPage() ? 'disabled' : '' }}">
-                                    <a class="page-link" href="{{ $products->previousPageUrl() }}">Previous</a>
-                                </li>
-                                @foreach($products->getUrlRange(1, $products->lastPage()) as $page => $url)
-                                <li class="page-item {{ $products->currentPage() == $page ? 'active' : '' }}">
-                                    <a class="page-link" href="{{ $url }}">{{ $page }}</a>
-                                </li>
-                                @endforeach
-                                <li class="page-item {{ $products->hasMorePages() ? '' : 'disabled' }}">
-                                    <a class="page-link" href="{{ $products->nextPageUrl() }}">Next</a>
-                                </li>
-                            </ul>
-                        </nav>
+                    {{-- Sentinel for IntersectionObserver --}}
+                    <div class="col-12" id="products-scroll-sentinel">
+                        @if($products->hasMorePages())
+                            <div class="text-center py-3 text-muted">
+                                Loading more...
+                            </div>
+                        @endif
                     </div>
+
+                    <input type="hidden" id="products-next-page" value="{{ $products->hasMorePages() ? $products->currentPage()+1 : '' }}">
+                    <input type="hidden" id="products-has-more" value="{{ $products->hasMorePages() ? 1 : 0 }}">
+                    <input type="hidden" id="products-page-size" value="24">
+
+                    {{-- Pagination fallback (optional): still render for non-JS users --}}
+                    @if($products->hasPages())
+                        <div class="col-12 pb-1">
+                            <nav>
+                                <ul class="pagination justify-content-center mb-3">
+                                    {{-- Previous --}}
+                                    <li class="page-item {{ $products->onFirstPage() ? 'disabled' : '' }}">
+                                        <a class="page-link" href="{{ $products->previousPageUrl() }}">Previous</a>
+                                    </li>
+                                    @foreach($products->getUrlRange(1, $products->lastPage()) as $page => $url)
+                                    <li class="page-item {{ $products->currentPage() == $page ? 'active' : '' }}">
+                                        <a class="page-link" href="{{ $url }}">{{ $page }}</a>
+                                    </li>
+                                    @endforeach
+                                    <li class="page-item {{ $products->hasMorePages() ? '' : 'disabled' }}">
+                                        <a class="page-link" href="{{ $products->nextPageUrl() }}">Next</a>
+                                    </li>
+                                </ul>
+                            </nav>
+                        </div>
                     @endif
+
                 </div>
             </div>
             <!-- Products End -->
@@ -195,4 +160,85 @@
     </div>
     <!-- Shop End -->
 
+@push('scripts')
+<script>
+(function(){
+    const sentinel = document.getElementById('products-scroll-sentinel');
+    const container = document.getElementById('products-container');
+    const nextPageInput = document.getElementById('products-next-page');
+    const hasMoreInput = document.getElementById('products-has-more');
+
+    if(!sentinel || !container || !nextPageInput || !hasMoreInput) return;
+
+    let loading = false;
+
+    const buildAjaxUrl = (page) => {
+        const url = new URL(window.location.href);
+        url.searchParams.set('page', page);
+        return url.pathname.replace(/\/$/, '') + '/ajax?' + url.searchParams.toString().replace('page=' + page, 'page=' + page);
+    };
+
+    // Create stable endpoint base: /products/ajax
+    const ajaxEndpointBase = '{{ url('/products/ajax') }}';
+
+    const getFiltersParams = () => {
+        const url = new URL(window.location.href);
+        // keep everything except page (we'll set it explicitly)
+        url.searchParams.delete('page');
+        return url.searchParams;
+    };
+
+    const loadMore = async () => {
+        const hasMore = String(hasMoreInput.value) === '1';
+        if(!hasMore || loading) return;
+
+        const nextPage = parseInt(nextPageInput.value, 10);
+        if(!nextPage) return;
+
+        loading = true;
+
+        try {
+            const params = getFiltersParams();
+            params.set('page', String(nextPage));
+
+            const res = await fetch(ajaxEndpointBase + '?' + params.toString(), {
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'Accept': 'application/json'
+                }
+            });
+
+            if(!res.ok) throw new Error('Request failed: ' + res.status);
+            const data = await res.json();
+
+            if(data && data.html){
+                container.insertAdjacentHTML('beforeend', data.html);
+            }
+
+            hasMoreInput.value = data.hasMore ? '1' : '0';
+            nextPageInput.value = data.nextPage ? String(data.nextPage) : '';
+
+            if(!data.hasMore){
+                const spinner = sentinel.querySelector('.text-muted');
+                if(spinner) spinner.remove();
+            }
+        } catch (e) {
+            console.error(e);
+        } finally {
+            loading = false;
+        }
+    };
+
+    const observer = new IntersectionObserver((entries) => {
+        if(entries.some(e => e.isIntersecting)){
+            loadMore();
+        }
+    }, { root: null, rootMargin: '200px', threshold: 0 });
+
+    observer.observe(sentinel);
+})();
+</script>
+@endpush
+
 @endsection
+

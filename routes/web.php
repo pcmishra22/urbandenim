@@ -276,6 +276,10 @@ Route::prefix('vendor')->name('vendor.')->group(function () {
 
 Route::get('/products', [\App\Http\Controllers\Front\ProductsController::class, 'index'])->name('products.index');
 
+// Infinite-scroll / AJAX endpoint (HTML fragment for appended products)
+Route::get('/products/ajax', [\App\Http\Controllers\Front\ProductsController::class, 'ajaxLoad'])->name('products.ajaxLoad');
+
+
 Route::get('/products/category/{slug}', [\App\Http\Controllers\Front\CategoryProductsController::class, 'show'])
     ->name('products.category');
 
