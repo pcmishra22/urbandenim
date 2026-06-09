@@ -115,6 +115,7 @@ Route::prefix('admin')->name('admin.')->group(function () {
         Route::post('/orders/{order}/status', [\App\Http\Controllers\Admin\OrderAdminController::class, 'updateStatus'])->name('orders.updateStatus');
         Route::get('/orders/{order}/invoice', [\App\Http\Controllers\Admin\OrderAdminController::class, 'downloadInvoice'])->name('orders.invoice');
         Route::get('/orders/{order}/shipping-label', [\App\Http\Controllers\Admin\OrderAdminController::class, 'downloadShippingLabel'])->name('orders.shippingLabel');
+        Route::post('/orders/{order}/mark-paid', [\App\Http\Controllers\Admin\OrderAdminController::class, 'markPaid'])->name('orders.markPaid');
 
         // Product management
         Route::resource('products', \App\Http\Controllers\Admin\ProductController::class);

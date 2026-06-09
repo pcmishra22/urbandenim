@@ -75,21 +75,34 @@ class CheckoutController extends Controller
             'notes'                => 'nullable|string|max:500',
         ]);
 
-        // Only COD hits this route directly.
-        if ($request->payment_method !== 'cod') {
+        // COD and UPI both hit this route directly.
+        // Card payments go through storePending → Razorpay flow instead.
+        if (!in_array($request->payment_method, ['cod', 'upi'])) {
             return redirect()->back()->with('error', 'Please use the online payment option properly.');
         }
 
-        $order = $this->createOrder($request, 'pending');
+        // UPI orders are saved as awaiting_payment until admin manually verifies.
+        // COD orders are immediately confirmed as pending.
+        $paymentStatus = $request->payment_method === 'upi' ? 'awaiting_payment' : 'pending';
+        $order = $this->createOrder($request, $paymentStatus);
 
         $this->cartService->clear();
         session()->forget(['coupon_code', 'coupon_discount']);
 
         $order->load('products', 'user');
-        $this->sendOrderEmails($order);
+
+        // Only send order confirmation email for COD.
+        // For UPI, email will be sent after admin marks payment as verified.
+        if ($request->payment_method === 'cod') {
+            $this->sendOrderEmails($order);
+        }
+
+        $successMsg = $request->payment_method === 'upi'
+            ? "Order #{$order->id} placed! Please complete your UPI payment. We'll confirm once verified."
+            : "Order #{$order->id} placed successfully!";
 
         return redirect()->route('checkout.confirmation', $order->id)
-            ->with('success', "Order #{$order->id} placed successfully!");
+            ->with('success', $successMsg);
     }
 
     /**

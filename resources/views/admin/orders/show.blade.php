@@ -53,7 +53,30 @@
                     @if($order->notes)
                     <div class="col-12"><p class="mb-0"><strong>Notes:</strong> {{ $order->notes }}</p></div>
                     @endif
-                </div>
+
+                    {{-- Mark as Paid: only for UPI orders awaiting payment --}}
+                    @if($order->payment_method === 'upi' && $order->payment_status !== 'paid')
+                    <div class="col-12 mt-2">
+                        <div class="alert alert-warning py-2 mb-2 d-flex align-items-center gap-2">
+                            <i class="fas fa-clock"></i>
+                            <span>
+                                <strong>UPI Payment Pending —</strong>
+                                Check your PhonePe / Google Pay app for a payment of
+                                <strong>₹{{ number_format($order->total_price, 2) }}</strong>
+                                from <strong>{{ $order->shipping_full_name }}</strong>
+                                ({{ $order->shipping_phone }}).
+                                Once confirmed, click the button below.
+                            </span>
+                        </div>
+                        <form method="POST" action="{{ route('admin.orders.markPaid', $order) }}"
+                              onsubmit="return confirm('Have you verified the UPI payment of ₹{{ number_format($order->total_price, 2) }} in your PhonePe/GPay app?\n\nThis will mark the order as paid and send a confirmation email to the customer.');">
+                            @csrf
+                            <button type="submit" class="btn btn-success w-100">
+                                <i class="fas fa-check-circle me-1"></i> Mark as Paid — Payment Verified
+                            </button>
+                        </form>
+                    </div>
+                    @endif
             </div>
         </div>
 

@@ -128,7 +128,40 @@ class OrderAdminController extends Controller
     }
 
     /**
-     * Apply inventory deduction and reorder alert for an order status.
+     * Manually mark a UPI order as paid after admin verifies payment in PhonePe/GPay.
+     * Triggers order confirmation emails and clears awaiting_payment status.
+     */
+    public function markPaid(Request $request, Order $order)
+    {
+        if ($order->payment_status === 'paid') {
+            return redirect()->route('admin.orders.show', $order)
+                ->with('error', 'Order is already marked as paid.');
+        }
+
+        if ($order->payment_method !== 'upi') {
+            return redirect()->route('admin.orders.show', $order)
+                ->with('error', 'Only UPI orders can be manually marked as paid.');
+        }
+
+        $order->update([
+            'payment_status' => 'paid',
+            'status'         => 'pending', // ready to be processed
+        ]);
+
+        // Send confirmation emails now that payment is verified
+        $order->load('products', 'user');
+        app(\App\Http\Controllers\Front\CheckoutController::class)->sendOrderEmails($order);
+
+        Log::info('UPI order manually marked as paid', [
+            'order_id' => $order->id,
+            'admin_id' => auth()->id(),
+        ]);
+
+        return redirect()->route('admin.orders.show', $order)
+            ->with('success', "Order #{$order->id} marked as paid. Confirmation email sent to customer.");
+    }
+
+ and reorder alert for an order status.
      * Currently deducts when status becomes "confirmed".
      */
     protected function applyInventoryForOrderStatus(Order $order, string $target): void

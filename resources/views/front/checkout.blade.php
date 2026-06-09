@@ -194,6 +194,7 @@
                     </div>
                     <div class="card-body">
 
+                        {{-- COD temporarily disabled — courier company criteria not yet met
                         <div class="form-group mb-3">
                             <div class="custom-control custom-radio">
                                 <input type="radio" class="custom-control-input" name="payment_method"
@@ -206,17 +207,69 @@
                                 </label>
                             </div>
                         </div>
+                        --}}
 
                         <div class="form-group mb-3">
                             <div class="custom-control custom-radio">
                                 <input type="radio" class="custom-control-input" name="payment_method"
                                        id="pay_upi" value="upi" form="checkout-form"
-                                       {{ old('payment_method') === 'upi' ? 'checked' : '' }}>
+                                       {{ old('payment_method', 'upi') === 'upi' ? 'checked' : '' }}>
                                 <label class="custom-control-label" for="pay_upi">
                                     <i class="fa fa-mobile-alt text-primary mr-2"></i>
-                                    <strong>UPI / Net Banking</strong>
-                                    <small class="d-block text-muted">Google Pay, PhonePe, BHIM, IMPS, Net Banking</small>
+                                    <strong>UPI / QR Code Payment</strong>
+                                    <small class="d-block text-muted">Google Pay, PhonePe, BHIM, Paytm & all UPI apps</small>
                                 </label>
+                            </div>
+
+                            {{-- UPI QR Scanner Panel --}}
+                            <div id="upi-qr-panel" class="mt-3 p-3 border rounded" style="background:#f9f9f9;">
+
+                                {{-- QR Code Image --}}
+                                <div class="text-center mb-3">
+                                    <img src="{{ asset('storage/qr-payment.jpeg') }}"
+                                         alt="Scan to Pay - Prakash Chandra Mishra"
+                                         class="img-fluid border"
+                                         style="max-width:220px; border-radius:8px;">
+                                </div>
+
+                                {{-- Payee Name --}}
+                                <div class="text-center mb-3">
+                                    <span class="badge badge-success px-3 py-2" style="font-size:14px;">
+                                        <i class="fa fa-user mr-1"></i> Prakash Chandra Mishra
+                                    </span>
+                                </div>
+
+                                {{-- Step-by-step instructions --}}
+                                <div class="mb-3">
+                                    <p class="font-weight-bold mb-2" style="font-size:14px;">
+                                        <i class="fa fa-info-circle text-primary mr-1"></i>
+                                        How to pay in 3 easy steps:
+                                    </p>
+                                    <ol class="pl-3 mb-0" style="font-size:13px; line-height:2;">
+                                        <li>Open <strong>Google Pay, PhonePe, Paytm</strong> or any UPI app on your phone.</li>
+                                        <li>Tap <strong>"Scan QR"</strong> and scan the code above — the amount will auto-fill.</li>
+                                        <li>Confirm the payment &amp; click <strong>"Place Order"</strong> below once done.</li>
+                                    </ol>
+                                </div>
+
+                                {{-- Amount to pay --}}
+                                <div class="d-flex align-items-center justify-content-between p-2 rounded mb-3"
+                                     style="background:#fff3cd; border:1px solid #ffc107;">
+                                    <span style="font-size:13px;" class="text-dark">
+                                        <i class="fa fa-rupee-sign mr-1"></i> Amount to pay:
+                                    </span>
+                                    <strong class="text-dark" style="font-size:16px;">
+                                        ₹{{ number_format($grandTotal, 2) }}
+                                    </strong>
+                                </div>
+
+                                {{-- Important note --}}
+                                <div class="alert alert-info py-2 mb-0" style="font-size:12px;">
+                                    <i class="fa fa-exclamation-circle mr-1"></i>
+                                    <strong>Important:</strong> After completing your UPI payment, click
+                                    <strong>"Place Order"</strong> below. Your order will be confirmed once
+                                    we verify the payment (usually within a few minutes).
+                                </div>
                             </div>
                         </div>
 
@@ -315,12 +368,22 @@
         $('html,body').animate({ scrollTop: $('#pay-error').offset().top - 120 }, 250);
     }
 
-    /* ── Payment-method label update ─────────────────────── */
-    $('input[name=payment_method]').on('change', function () {
+    /* ── Payment-method label update + QR panel toggle ───── */
+    function updatePaymentUI(method) {
+        /* Button label */
         $('#btn-label').text(
-            this.value === 'cod' ? 'Place Order' : 'Proceed to Pay ₹' + GRAND_TOTAL
+            method === 'upi' ? 'Place Order — I\'ve Paid via UPI' : 'Proceed to Pay ₹' + GRAND_TOTAL
         );
+        /* Show QR panel only for UPI */
+        $('#upi-qr-panel').toggle(method === 'upi');
+    }
+
+    $('input[name=payment_method]').on('change', function () {
+        updatePaymentUI(this.value);
     });
+
+    /* Set initial state on page load */
+    updatePaymentUI($('input[name=payment_method]:checked').val() || 'upi');
 
     /* ── Saved address autofill ──────────────────────────── */
     $(document).on('click', '.saved-addr', function () {
@@ -408,10 +471,13 @@
     $('#checkout-form').on('submit', function (e) {
         var method = $('input[name=payment_method]:checked').val();
 
-        /* COD — let the normal form POST proceed */
-        if (method === 'cod') return true;
+        /* UPI — validate then let normal form POST proceed to checkout.store */
+        if (method === 'upi') {
+            if (!validateFields()) { e.preventDefault(); }
+            return;
+        }
 
-        /* UPI / Card — intercept and run Razorpay flow */
+        /* Card — intercept and run Razorpay flow */
         e.preventDefault();
 
         if (!validateFields()) return;
