@@ -1,6 +1,6 @@
 @extends('layouts.eshopper')
 
-@section('title', 'Order #' . $order->id . ' - EShopper')
+@section('title', 'Order #' . $order->id . ' - Jeanzo')
 
 @section('content')
 

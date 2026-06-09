@@ -1,5 +1,5 @@
 @extends('layouts.eshopper')
-@section('title', 'My Reviews - EShopper')
+@section('title', 'My Reviews - Jeanzo')
 @section('content')
 
 @include('front.partials.page-banner', ['title' => 'My Reviews', 'breadcrumb' => 'My Reviews'])
