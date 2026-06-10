@@ -18,12 +18,12 @@
     <div class="container-fluid pt-5">
         <div class="row px-xl-5 align-items-center mb-5">
             <div class="col-lg-6 mb-4 mb-lg-0">
-                <img src="{{ asset('eshopper/img/about.jpg') }}" class="img-fluid w-100" alt="About EShopper"
+                <img src="{{ asset('eshopper/img/about.jpg') }}" class="img-fluid w-100" alt="About Jeanzo"
                      onerror="this.src='https://via.placeholder.com/600x400?text=About+Us'">
             </div>
             <div class="col-lg-6">
-                <h2 class="font-weight-semi-bold mb-4">Welcome to EShopper</h2>
-                <p class="mb-4">We are a passionate team of people who believe in delivering the best online shopping experience. Founded with a vision to make quality products accessible to everyone, EShopper has grown to become a trusted destination for fashion, electronics, and everyday essentials.</p>
+                <h2 class="font-weight-semi-bold mb-4">Welcome to Jeanzo</h2>
+                <p class="mb-4">We are a passionate team of people who believe in delivering the best online shopping experience. Founded with a vision to make quality products accessible to everyone, Jeanzo has grown to become a trusted destination for fashion, electronics, and everyday essentials.</p>
                 <p class="mb-4">Our platform brings together top brands and independent sellers, ensuring you always find what you're looking for — at the best price, with fast delivery and hassle-free returns.</p>
                 <div class="row">
                     <div class="col-6 mb-3">
@@ -57,7 +57,7 @@
         <!-- Why Us -->
         <div class="row px-xl-5 pb-5">
             <div class="col-12 text-center mb-4">
-                <h2 class="section-title px-5"><span class="px-2">Why Choose EShopper?</span></h2>
+                <h2 class="section-title px-5"><span class="px-2">Why Choose Jeanzo?</span></h2>
             </div>
             <div class="col-lg-3 col-md-6 mb-4">
                 <div class="border text-center p-4">

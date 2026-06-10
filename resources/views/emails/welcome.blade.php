@@ -2,7 +2,7 @@
 
 @section('content')
 <h2>Welcome, {{ $user->name }}! 🎉</h2>
-    <p>Thank you for joining <strong>EShopper</strong>. Your account is ready and you can start shopping right away.</p>
+    <p>Thank you for joining <strong>Jeanzo</strong>. Your account is ready and you can start shopping right away.</p>
 
     <div class="info">
         <p><span class="label">Name</span>{{ $user->name }}</p>

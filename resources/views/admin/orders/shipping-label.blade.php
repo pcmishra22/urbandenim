@@ -54,7 +54,7 @@
 
     <!-- Header -->
     <div class="label-header">
-        <div class="brand">📦 EShopper</div>
+        <div class="brand">📦 Jeanzo</div>
         <div style="text-align:center;">
             <div style="font-size:10px; letter-spacing:1px; opacity:.7;">SHIPPING LABEL</div>
             <div class="order-no">#{{ str_pad($order->id, 6, '0', STR_PAD_LEFT) }}</div>
@@ -83,7 +83,7 @@
         </div>
         <div class="section-box">
             <div class="section-label">🏬 Ship From</div>
-            <div class="section-value">EShopper Store</div>
+            <div class="section-value">Jeanzo Store</div>
             <div class="section-value muted">
                 {{ config('app.address', '123, Main Market') }}<br>
                 {{ config('app.city', 'Ludhiana') }}, Punjab — 141001<br>

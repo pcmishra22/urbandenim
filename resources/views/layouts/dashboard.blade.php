@@ -218,7 +218,7 @@
     <!-- Top Bar -->
     <div class="admin-topbar">
         <a href="{{ route('admin.dashboard') }}" class="brand">
-            <i class="fas fa-store"></i> EShopper Admin
+            <i class="fas fa-store"></i> Jeanzo Admin
         </a>
         <div class="nav-right">
             @auth

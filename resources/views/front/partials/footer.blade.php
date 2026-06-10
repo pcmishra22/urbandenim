@@ -12,7 +12,7 @@
                 </a>
                 <p>Quality fashion at your fingertips. Shop the latest trends with fast delivery and easy returns.</p>
                 <p class="mb-2"><i class="fa fa-map-marker-alt text-primary mr-3"></i>{{ $s['store_address'] ?? '123 Street, New York, USA' }}</p>
-                <p class="mb-2"><i class="fa fa-envelope text-primary mr-3"></i>{{ $s['store_email'] ?? 'info@eshopper.com' }}</p>
+                <p class="mb-2"><i class="fa fa-envelope text-primary mr-3"></i>{{ $s['store_email'] ?? 'info@jeanzo.in' }}</p>
                 <p class="mb-2"><i class="fa fa-phone-alt text-primary mr-3"></i>{{ $s['store_phone'] ?? '+012 345 67890' }}</p>
                 {{-- Social Links --}}
                 <div class="d-flex mt-3">

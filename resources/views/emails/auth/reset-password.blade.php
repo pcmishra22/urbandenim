@@ -2,7 +2,7 @@
 
 @section('content')
 <h2>Reset Your Password</h2>
-    <p>Hi {{ $user->name }}, we received a request to reset your EShopper account password.</p>
+    <p>Hi {{ $user->name }}, we received a request to reset your Jeanzo account password.</p>
 
     <div class="alert alert-warning">
         <p style="margin:0;font-size:14px;">This link will expire in <strong>60 minutes</strong>. If you did not request a password reset, no action is needed.</p>

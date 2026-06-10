@@ -2,7 +2,7 @@
 
 @section('content')
 <h2>👤 New Customer Registered</h2>
-    <p>A new customer has registered on EShopper.</p>
+    <p>A new customer has registered on Jeanzo.</p>
 
     <div class="info">
         <p><span class="label">Name</span>{{ $user->name }}</p>

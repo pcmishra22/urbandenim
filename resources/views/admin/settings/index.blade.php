@@ -35,7 +35,7 @@
                 </div>
                 <div class="col-md-6 mb-3">
                     <label class="form-label">Store Email</label>
-                    <input type="email" name="store_email" class="form-control" value="{{ $settings['store_email'] ?? '' }}" placeholder="info@eshopper.com">
+                    <input type="email" name="store_email" class="form-control" value="{{ $settings['store_email'] ?? '' }}" placeholder="info@Jeanzo.in">
                 </div>
             </div>
 

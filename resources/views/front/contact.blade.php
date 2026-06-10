@@ -62,14 +62,14 @@
                 <div class="d-flex flex-column mb-4">
                     <h5 class="font-weight-semi-bold mb-3">Head Office</h5>
                     <p class="mb-2"><i class="fa fa-map-marker-alt text-primary mr-3"></i>{{ $s['store_address'] ?? '123 Street, New York, USA' }}</p>
-                    <p class="mb-2"><i class="fa fa-envelope text-primary mr-3"></i>{{ $s['store_email'] ?? 'info@eshopper.com' }}</p>
+                    <p class="mb-2"><i class="fa fa-envelope text-primary mr-3"></i>{{ $s['store_email'] ?? 'info@jeanzo.in' }}</p>
                     <p class="mb-2"><i class="fa fa-phone-alt text-primary mr-3"></i>{{ $s['store_phone'] ?? '+012 345 67890' }}</p>
                     <p class="mb-0"><i class="fa fa-clock text-primary mr-3"></i>{{ $s['store_hours'] ?? 'Mon – Sat, 9am – 6pm' }}</p>
                 </div>
 
                 <div class="d-flex flex-column mb-4">
                     <h5 class="font-weight-semi-bold mb-3">Support</h5>
-                    <p class="mb-2"><i class="fa fa-envelope text-primary mr-3"></i>{{ $s['support_email'] ?? ($s['store_email'] ?? 'support@eshopper.com') }}</p>
+                    <p class="mb-2"><i class="fa fa-envelope text-primary mr-3"></i>{{ $s['support_email'] ?? ($s['store_email'] ?? 'support@jeanzo.in') }}</p>
                     <p class="mb-0"><i class="fa fa-phone-alt text-primary mr-3"></i>{{ $s['support_phone'] ?? ($s['store_phone'] ?? '+012 345 67891') }}</p>
                 </div>
 
