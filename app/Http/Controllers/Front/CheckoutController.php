@@ -211,7 +211,9 @@ class CheckoutController extends Controller
     public function sendOrderEmails(Order $order): void
     {
         try {
-            Mail::to($order->user->email)->send(new OrderConfirmedMail($order));
+            // Use a specific subject for initial placement to distinguish from "Processing" stage
+            Mail::to($order->user->email)
+                ->send((new OrderConfirmedMail($order))->subject("Order Received #{$order->id} — Jeanzo"));
         } catch (\Throwable $e) {
             Log::warning('Order confirmation email failed', ['order_id' => $order->id, 'error' => $e->getMessage()]);
         }

@@ -59,7 +59,7 @@ class OrderAdminController extends Controller
         ]);
 
         $current = $order->status;
-        $target = $validated['status'];
+        $target = strtolower($validated['status']);
 
         if ($current === $target) {
             return redirect()->route('admin.orders.show', $order)
@@ -121,12 +121,13 @@ class OrderAdminController extends Controller
             // Send email to customer based on new status
             $order->load('products', 'user');
 
+            // Send processing/confirmation email
             try {
                 if ($target === 'processing') {
                     Mail::to($order->user->email)
                         ->send((new OrderConfirmedMail($order))
                         ->subject("Order #{$order->id} Confirmed — Jeanzo"));
-                } elseif ($target === 'shipped') {
+                } elseif ($target === 'shipped' || $target === 'dispatched') {
                     // Get tracking info from latest shipment if available
                     $shipment      = $order->shipments()->latest()->first();
                     $trackingNumber = $shipment?->tracking_number;
