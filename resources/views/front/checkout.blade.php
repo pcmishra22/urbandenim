@@ -194,6 +194,8 @@
                     </div>
                     <div class="card-body">
 
+                        {{-- COD disabled for now (commented/blocked) --}}
+                        {{--
                         <div class="form-group mb-3">
                             <div class="custom-control custom-radio">
                                 <input type="radio" class="custom-control-input" name="payment_method"
@@ -206,6 +208,8 @@
                                 </label>
                             </div>
                         </div>
+                        --}}
+
 
                         <div class="form-group mb-3">
                             <div class="custom-control custom-radio">
@@ -228,7 +232,7 @@
                                 <label class="custom-control-label" for="pay_card">
                                     <i class="fa fa-credit-card text-info mr-2"></i>
                                     <strong>Credit / Debit Card</strong>
-                                    <small class="d-block text-muted">Visa, Mastercard, Rupay — via Razorpay</small>
+                                    <small class="d-block text-muted">Visa, Mastercard, Rupay — via PayU</small>
                                 </label>
                             </div>
                         </div>
@@ -240,9 +244,10 @@
                         <div class="mt-3 pt-2 border-top">
                             <small class="text-muted">
                                 <i class="fa fa-shield-alt text-success mr-1"></i>
-                                Online payments secured by <strong>Razorpay</strong>
+                                Online payments secured by <strong>PayU</strong>
                             </small>
                         </div>
+
                     </div>
 
                     <div class="card-footer border-secondary bg-transparent">
@@ -284,19 +289,16 @@
 @endsection
 
 @push('scripts')
-{{-- Load Razorpay SDK unconditionally — it's a tiny script and always needed --}}
-<script src="https://checkout.razorpay.com/v1/checkout.js"></script>
-
 <script>
 (function ($) {
 
     /* ── Config injected from server ─────────────────────── */
-    var RZP_KEY          = '{{ config("services.razorpay.key", "") }}';
-    var CSRF             = '{{ csrf_token() }}';
-    var STORE_PENDING    = '{{ route("checkout.store-pending") }}';
-    var CREATE_RZP_ORDER = '{{ route("payment.create-order") }}';
-    var VERIFY_URL       = '{{ route("payment.verify") }}';
-    var GRAND_TOTAL      = '{{ number_format($grandTotal, 2) }}';
+    var CSRF          = '{{ csrf_token() }}';
+    var STORE_PENDING = '{{ route("checkout.store-pending") }}';
+    var CREATE_PAYU   = '{{ route("payment.create-order") }}';
+    var VERIFY_URL    = '{{ route("payment.verify") }}';
+    var GRAND_TOTAL   = '{{ number_format($grandTotal, 2) }}';
+
 
     /* ── UI helpers ──────────────────────────────────────── */
     function spin(msg) {
@@ -408,19 +410,17 @@
     $('#checkout-form').on('submit', function (e) {
         var method = $('input[name=payment_method]:checked').val();
 
-        /* COD — let the normal form POST proceed */
-        if (method === 'cod') return true;
+        /* COD is disabled for now (commented/blocked). */
+        if (method === 'cod') {
+            e.preventDefault();
+            showErr('Cash on Delivery is currently disabled. Please choose an online payment method.');
+            return;
+        }
 
-        /* UPI / Card — intercept and run Razorpay flow */
+        /* Online payments — intercept and run PayU Hosted Checkout redirect flow */
         e.preventDefault();
 
         if (!validateFields()) return;
-
-        /* Razorpay key check (catches misconfigured .env at runtime) */
-        if (!RZP_KEY) {
-            showErr('Online payment is not configured on this server. Please use Cash on Delivery.');
-            return;
-        }
 
         /* ── Step 1: save order to DB ─────────────────────── */
         spin('Saving your order…');
@@ -428,76 +428,58 @@
         postJson(STORE_PENDING, formData(method))
         .then(function (od) {
             if (!od.order_id) throw new Error('No order ID returned from server.');
-            spin('Connecting to payment gateway…');
+            spin('Redirecting to PayU…');
 
-            /* ── Step 2: create Razorpay order ──────────────── */
-            return postJson(CREATE_RZP_ORDER, { order_id: od.order_id })
-                   .then(function (rzp) { return { od: od, rzp: rzp }; });
+            /* ── Step 2: create PayU hosted checkout data ───── */
+            return postJson(CREATE_PAYU, { order_id: od.order_id })
+                   .then(function (payu) { return { od: od, payu: payu }; });
         })
         .then(function (res) {
             unspin();
-            var od  = res.od;
-            var rzp = res.rzp;
+            var od   = res.od;
+            var payu = res.payu;
 
-            if (!rzp.razorpay_order_id) throw new Error('Razorpay order ID missing in response.');
+            if (!payu.endpoint || !payu.merchantKey || !payu.txnid || !payu.amount) {
+                throw new Error('PayU redirect data missing from server response.');
+            }
 
-            /* ── Step 3: open Razorpay modal ─────────────────── */
+            /* ── Step 3: POST form to PayU hosted checkout ───── */
+            var form = document.createElement('form');
+            form.method = 'POST';
+            form.action = payu.endpoint;
 
-            var options = {
-                key:         rzp.key,
-                amount:      rzp.amount,
-                currency:    rzp.currency || 'INR',
-name:        rzp.name || 'Jeanzo',
-                description: rzp.description || 'Order #' + od.order_id,
-                order_id:    rzp.razorpay_order_id,
-                prefill:     rzp.prefill || {},
-                theme:       { color: '#2c3e50' },
-
-                /* ── Step 4: on success, POST to verify ─────── */
-                handler: function (response) {
-                    spin('Verifying payment…');
-                    var form = document.createElement('form');
-                    form.method = 'POST';
-                    form.action = VERIFY_URL;
-                    var fields = {
-                        '_token':              CSRF,
-                        'razorpay_order_id':   response.razorpay_order_id,
-                        'razorpay_payment_id': response.razorpay_payment_id,
-                        'razorpay_signature':  response.razorpay_signature,
-                        'order_id':            od.order_id,
-                    };
-                    Object.keys(fields).forEach(function (k) {
-                        var inp = document.createElement('input');
-                        inp.type = 'hidden'; inp.name = k; inp.value = fields[k];
-                        form.appendChild(inp);
-                    });
-                    document.body.appendChild(form);
-                    form.submit();
-                },
-
-                modal: {
-                    ondismiss: function () {
-                        unspin();
-                        showErr(
-                            'Payment cancelled. Your order #' + od.order_id +
-                            ' is saved. You can complete payment from My Orders, or switch to Cash on Delivery.'
-                        );
-                    }
-                }
+            var fields = {
+                'key': payu.merchantKey,
+                'txnid': payu.txnid,
+                'amount': payu.amount,
+                'productinfo': payu.productinfo || ('Order #' + od.order_id),
+                'firstname': payu.firstname || '',
+                'email': payu.email || '',
+                'phone': payu.phone || '',
+                // PayU expects these callback URLs. We keep it aligned with our verify route.
+                'surl': VERIFY_URL + '?order_id=' + encodeURIComponent(od.order_id),
+                'furl': VERIFY_URL + '?order_id=' + encodeURIComponent(od.order_id),
+                // Optional: pass through order_id as udf values.
+                'udf1': String(od.order_id),
             };
 
-            var rzpObj = new Razorpay(options);
-            rzpObj.on('payment.failed', function (resp) {
-                unspin();
-                showErr('Payment failed: ' + (resp.error.description || 'Unknown error') + '. Please try again.');
+            Object.keys(fields).forEach(function (k) {
+                var inp = document.createElement('input');
+                inp.type = 'hidden';
+                inp.name = k;
+                inp.value = fields[k];
+                form.appendChild(inp);
             });
-            rzpObj.open();
+
+            document.body.appendChild(form);
+            form.submit();
         })
         .catch(function (err) {
-            showErr(err.message || 'Something went wrong. Please try again or use Cash on Delivery.');
-            console.error('Razorpay flow error:', err);
+            showErr(err.message || 'Something went wrong. Please try again.');
+            console.error('PayU flow error:', err);
         });
     });
+
 
     /* ── Coupon AJAX ─────────────────────────────────────── */
     $('#apply-coupon-btn').on('click', function () {

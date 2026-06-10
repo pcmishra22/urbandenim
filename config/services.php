@@ -37,4 +37,15 @@ return [
     
     'razorpay' => ['key' => env('RAZORPAY_KEY_ID'), 'secret' => env('RAZORPAY_KEY_SECRET')],
 
+    'payu' => [
+        // PayU Hosted Checkout / Redirect integration
+        'merchant_key' => env('PAYU_MERCHANT_KEY'),
+        // Depending on your integration setup, this may be called `salt`.
+        // Store your verification secret here.
+        'salt' => env('PAYU_SALT'),
+        // Example: https://secure.payu.in
+        'base_url' => env('PAYU_BASE_URL', 'https://secure.payu.in'),
+    ],
+
 ];
+
