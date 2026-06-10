@@ -8,6 +8,8 @@ use App\Models\User;
 use App\Notifications\OrderAlert;
 use Illuminate\Support\Facades\Notification;
 use App\Mail\OrderDispatchedMail;
+use App\Mail\OrderConfirmedMail;
+use App\Mail\OrderCancelledMail;
 use App\Mail\OrderDeliveredMail;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Http\Request;
@@ -56,8 +58,6 @@ class OrderAdminController extends Controller
             'status' => 'required|string',
         ]);
 
-        $flow = ['pending' => 'confirmed', 'confirmed' => 'packed', 'packed' => 'shipped', 'shipped' => 'delivered'];
-
         $current = $order->status;
         $target = $validated['status'];
 
@@ -66,7 +66,22 @@ class OrderAdminController extends Controller
                 ->with('success', 'Order status unchanged.');
         }
 
-        $allowed = ($flow[$current] ?? null) === $target;
+        // Define all allowed transitions
+        $allowedTransitions = [
+            'pending'    => ['processing', 'cancelled'],
+            'processing' => ['shipped', 'cancelled'],
+            'shipped'    => ['delivered', 'cancelled'],
+            'delivered'  => ['cancelled'],
+            'cancelled'  => ['pending', 'processing', 'shipped', 'delivered'],
+        ];
+
+        // Check if the transition is allowed
+        $isAllowed = in_array($target, $allowedTransitions[$current] ?? []);
+
+        if (!$isAllowed) {
+            return redirect()->route('admin.orders.show', $order)
+                ->with('error', 'Invalid status transition from ' . $current . ' to ' . $target);
+        }
 
         // allow cancel/cancelled if your system uses it
         if (in_array($target, ['cancelled', 'canceled'], true)) {
@@ -76,12 +91,20 @@ class OrderAdminController extends Controller
             $admins = User::where('role', 'admin')->get();
             Notification::send($admins, new OrderAlert($order, 'cancelled'));
             
-            return redirect()->route('admin.orders.show', $order)->with('success', 'Order cancelled.');
-        }
+            // Notify customer about cancellation via email
+            try {
+                Mail::to($order->user->email)
+                    ->send((new OrderCancelledMail($order, 'Your order has been cancelled by an administrator.'))
+                    ->subject("Order #{$order->id} Cancelled — Jeanzo"));
+            } catch (\Throwable $e) {
+                Log::warning('Order status cancellation email failed', [
+                    'order_id' => $order->id,
+                    'status'   => $target,
+                    'error'    => $e->getMessage(),
+                ]);
+            }
 
-        if (!$allowed) {
-            return redirect()->route('admin.orders.show', $order)
-                ->with('error', 'Invalid status transition from ' . $current . ' to ' . $target);
+            return redirect()->route('admin.orders.show', $order)->with('success', 'Order cancelled.');
         }
 
         // Keep status update + inventory operations atomic
@@ -91,23 +114,30 @@ class OrderAdminController extends Controller
 
             // Decrement inventory only when order reaches "confirmed" (next stage after pending)
             // and only once per order status transition.
-            if ($target === 'confirmed') {
-                $this->applyInventoryForOrderStatus($order, $target);
+            if ($target === 'processing') { // Changed from 'confirmed' to 'processing'
+                $this->applyInventoryForOrderStatus($order, $target); // Pass the correct target status
             }
 
             // Send email to customer based on new status
             $order->load('products', 'user');
 
             try {
-                if ($target === 'shipped') {
+                if ($target === 'processing') {
+                    Mail::to($order->user->email)
+                        ->send((new OrderConfirmedMail($order))
+                        ->subject("Order #{$order->id} Confirmed — Jeanzo"));
+                } elseif ($target === 'shipped') {
                     // Get tracking info from latest shipment if available
                     $shipment      = $order->shipments()->latest()->first();
                     $trackingNumber = $shipment?->tracking_number;
                     $courierName   = $shipment?->courier?->name;
                     Mail::to($order->user->email)
-                        ->send(new OrderDispatchedMail($order, $trackingNumber, $courierName));
+                        ->send((new OrderDispatchedMail($order, $trackingNumber, $courierName))
+                        ->subject("Your Order #{$order->id} Has Been Shipped 🚚 — Jeanzo"));
                 } elseif ($target === 'delivered') {
-                    Mail::to($order->user->email)->send(new OrderDeliveredMail($order));
+                    Mail::to($order->user->email)
+                        ->send((new OrderDeliveredMail($order))
+                        ->subject("Your Order #{$order->id} Has Been Delivered — Jeanzo"));
                 }
             } catch (\Throwable $e) {
                 \Illuminate\Support\Facades\Log::warning('Order status email failed', [
@@ -132,9 +162,8 @@ class OrderAdminController extends Controller
      * Currently deducts when status becomes "confirmed".
      */
     protected function applyInventoryForOrderStatus(Order $order, string $target): void
-    {
-        // Only supported stage
-        if ($target !== 'confirmed') {
+    {   // Only supported stage
+        if ($target !== 'processing') { // Changed from 'confirmed' to 'processing'
             return;
         }
 
@@ -158,7 +187,7 @@ class OrderAdminController extends Controller
                 'old_stock' => max(0, $product->quantity + $orderedQty),
                 'new_stock' => $product->quantity,
                 'adjustment' => -$orderedQty,
-                'reason' => 'Order #' . $order->id . ' confirmed',
+                'reason' => 'Order #' . $order->id . ' processing', // Changed from 'confirmed' to 'processing'
             ]);
 
             // Trigger reorder alert if needed

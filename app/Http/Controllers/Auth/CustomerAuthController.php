@@ -68,13 +68,17 @@ class CustomerAuthController extends Controller
         Auth::login($user);
 
         // Welcome email to user
-        try { Mail::to($user->email)->send(new WelcomeMail($user)); }
+        try { 
+            Mail::to($user->email)
+                ->send((new WelcomeMail($user))->subject("Welcome to Jeanzo, {$user->name}!")); 
+        }
         catch (\Throwable $e) { Log::warning('Welcome email failed', ['error' => $e->getMessage()]); }
 
         // Notify all admins
         try {
             $adminEmails = User::where('role', 'admin')->pluck('email')->toArray();
-            if ($adminEmails) Mail::to($adminEmails)->send(new NewUserAdminMail($user));
+            if ($adminEmails) Mail::to($adminEmails)
+                ->send((new NewUserAdminMail($user))->subject("New Customer Registered — Jeanzo"));
         } catch (\Throwable $e) { Log::warning('New user admin email failed', ['error' => $e->getMessage()]); }
 
         return redirect()->route('customer.dashboard')->with('success', 'Account created! Check your email.');
@@ -113,7 +117,8 @@ class CustomerAuthController extends Controller
             ['id' => $user->id, 'hash' => sha1($user->email)]
         );
         try {
-            Mail::to($user->email)->send(new VerifyEmailMail($user, $verificationUrl));
+            Mail::to($user->email)
+                ->send((new VerifyEmailMail($user, $verificationUrl))->subject("Verify Your Email Address — Jeanzo"));
         } catch (\Throwable $e) {
             \Illuminate\Support\Facades\Log::warning('Verify email send failed', ['error' => $e->getMessage()]);
         }
