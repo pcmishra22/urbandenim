@@ -17,7 +17,7 @@ class WelcomeMail extends Mailable
 
     public function envelope(): Envelope
     {
-        return new Envelope(subject: 'Welcome to EShopper, ' . $this->user->name . '!');
+        return new Envelope(subject: 'Welcome to Jeanzo, ' . $this->user->name . '!');
     }
 
     public function content(): Content

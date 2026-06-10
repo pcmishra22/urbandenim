@@ -52,9 +52,25 @@ Route::get('/email/verify/{id}/{hash}', function (EmailVerificationRequest $requ
 })->middleware(['auth', 'signed'])->name('verification.verify');
 
 Route::post('/email/resend', function (Request $request) {
-    $request->user()->sendEmailVerificationNotification();
+    if ($request->user()->hasVerifiedEmail()) {
+        return back()->with('status', 'already-verified');
+    }
+
+    $user = $request->user();
+
+    $verificationUrl = Illuminate\Support\Facades\URL::temporarySignedRoute(
+        'verification.verify',
+        now()->addMinutes(60),
+        ['id' => $user->id, 'hash' => sha1($user->email)]
+    );
+
+    \Illuminate\Support\Facades\Mail::to($user->email)->send(
+        (new \App\Mail\VerifyEmailMail($user, $verificationUrl))->subject('Verify Your Email Address — Jeanzo')
+    );
+
     return back()->with('status', 'verification-link-sent');
 })->middleware(['auth', 'throttle:6,1'])->name('verification.resend');
+
 
 // =======================================
 // ADMIN ROUTES
@@ -260,13 +276,29 @@ Route::prefix('vendor')->name('vendor.')->group(function () {
         Route::post('/reset-password', [VendorAuthController::class, 'reset'])->name('password.update');
     });
 
-    // Authenticated routes
-    Route::middleware('auth')->group(function () {
+    // Authenticated vendor-only routes
+    Route::middleware(['auth', 'vendor'])->group(function () {
         Route::post('/logout', [VendorAuthController::class, 'logout'])->name('logout');
 
-        Route::middleware('verified')->group(function () {
-            Route::get('/dashboard', [DashboardController::class, 'vendorDashboard'])->name('dashboard');
-        });
+        // Dashboard
+        Route::get('/dashboard', [\App\Http\Controllers\Vendor\VendorDashboardController::class, 'dashboard'])->name('dashboard');
+
+        // Profile
+        Route::get('/profile', [\App\Http\Controllers\Vendor\VendorDashboardController::class, 'profile'])->name('profile');
+        Route::post('/profile', [\App\Http\Controllers\Vendor\VendorDashboardController::class, 'updateProfile'])->name('profile.update');
+
+        // Products — vendor sees & manages ONLY their own products
+        Route::resource('products', \App\Http\Controllers\Vendor\VendorProductController::class);
+        Route::delete('/product-images/{image}', [\App\Http\Controllers\Vendor\VendorProductController::class, 'deleteImage'])->name('products.images.delete');
+
+        // Orders — vendor sees only orders containing their products
+        Route::get('/orders', [\App\Http\Controllers\Vendor\VendorOrderController::class, 'index'])->name('orders.index');
+        Route::get('/orders/{order}', [\App\Http\Controllers\Vendor\VendorOrderController::class, 'show'])->name('orders.show');
+
+        // Inventory — vendor sees only their product variants
+        Route::get('/inventory', [\App\Http\Controllers\Vendor\VendorInventoryController::class, 'index'])->name('inventory.index');
+        Route::get('/inventory/alerts', [\App\Http\Controllers\Vendor\VendorInventoryController::class, 'alerts'])->name('inventory.alerts');
+        Route::post('/inventory/adjust', [\App\Http\Controllers\Vendor\VendorInventoryController::class, 'adjustStock'])->name('inventory.adjust');
     });
 });
 

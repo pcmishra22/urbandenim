@@ -2,61 +2,58 @@
 
 namespace App\Policies;
 
+use App\Models\Product;
 use App\Models\User;
 
 class ProductPolicy
 {
-    /**
-     * Determine whether the user can view products.
-     */
+    /** Any role can browse products. */
     public function viewAny(User $user): bool
     {
         return in_array($user->role, ['admin', 'vendor', 'customer']);
     }
 
-    /**
-     * Determine whether the user can view the product.
-     */
-    public function view(User $user): bool
+    /** Admin can see all. Vendor can only see their own. */
+    public function view(User $user, Product $product): bool
     {
-        return in_array($user->role, ['admin', 'vendor', 'customer']);
+        if ($user->role === 'admin') return true;
+        if ($user->role === 'vendor') {
+            return (int) $product->vendor_id === (int) optional($user->vendorProfile)->id;
+        }
+        return true; // customers can view
     }
 
-    /**
-     * Determine whether the user can create products.
-     */
+    /** Admin and vendor can create. */
     public function create(User $user): bool
     {
         return in_array($user->role, ['admin', 'vendor']);
     }
 
-    /**
-     * Determine whether the user can update the product.
-     */
-    public function update(User $user): bool
+    /** Admin can update any. Vendor only their own. */
+    public function update(User $user, Product $product): bool
     {
-        return in_array($user->role, ['admin', 'vendor']);
+        if ($user->role === 'admin') return true;
+        if ($user->role === 'vendor') {
+            return (int) $product->vendor_id === (int) optional($user->vendorProfile)->id;
+        }
+        return false;
     }
 
-    /**
-     * Determine whether the user can delete the product.
-     */
-    public function delete(User $user): bool
+    /** Admin can delete any. Vendor only their own. */
+    public function delete(User $user, Product $product): bool
     {
-        return $user->role === 'admin';
+        if ($user->role === 'admin') return true;
+        if ($user->role === 'vendor') {
+            return (int) $product->vendor_id === (int) optional($user->vendorProfile)->id;
+        }
+        return false;
     }
 
-    /**
-     * Determine whether the user can restore the product.
-     */
     public function restore(User $user): bool
     {
         return $user->role === 'admin';
     }
 
-    /**
-     * Determine whether the user can permanently delete the product.
-     */
     public function forceDelete(User $user): bool
     {
         return $user->role === 'admin';

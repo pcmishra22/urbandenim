@@ -48,22 +48,10 @@ class DashboardController extends Controller
     }
 
     /**
-     * Show vendor dashboard
+     * Show vendor dashboard — redirect to scoped vendor panel.
      */
     public function vendorDashboard()
     {
-        $products = \App\Models\Product::all();
-        $total_products = $products->count();
-        $low_stock = $products->where('quantity', '<', 5)->count();
-        $out_of_stock = $products->where('quantity', 0)->count();
-        $total_value = $products->sum(fn ($p) => $p->price * $p->quantity);
-
-        return view('dashboard.vendor', [
-            'products' => $products,
-            'total_products' => $total_products,
-            'low_stock' => $low_stock,
-            'out_of_stock' => $out_of_stock,
-            'total_value' => $total_value,
-        ]);
+        return redirect()->route('vendor.dashboard');
     }
 }

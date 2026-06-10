@@ -74,6 +74,24 @@ class CustomerAuthController extends Controller
         }
         catch (\Throwable $e) { Log::warning('Welcome email failed', ['error' => $e->getMessage()]); }
 
+        // Send email verification link to the user
+        try {
+            $verificationUrl = URL::temporarySignedRoute(
+                'verification.verify',
+                now()->addMinutes(60),
+                [
+                    'id' => $user->id,
+                    'hash' => sha1($user->email),
+                ]
+            );
+
+            Mail::to($user->email)->send(
+                (new VerifyEmailMail($user, $verificationUrl))->subject("Verify Your Email Address — Jeanzo")
+            );
+        } catch (\Throwable $e) {
+            Log::warning('Verification email send failed', ['error' => $e->getMessage()]);
+        }
+
         // Notify all admins
         try {
             $adminEmails = User::where('role', 'admin')->pluck('email')->toArray();
@@ -82,6 +100,7 @@ class CustomerAuthController extends Controller
         } catch (\Throwable $e) { Log::warning('New user admin email failed', ['error' => $e->getMessage()]); }
 
         return redirect()->route('customer.dashboard')->with('success', 'Account created! Check your email.');
+
     }
 
     public function logout(Request $request)

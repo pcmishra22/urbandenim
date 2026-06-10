@@ -11,6 +11,16 @@
     <link href="{{ asset('eshopper/lib/owlcarousel/assets/owl.carousel.min.css') }}" rel="stylesheet">
     <link href="{{ asset('eshopper/css/style.css') }}" rel="stylesheet">
     @stack('styles')
+    <!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-FKT9P78GTQ"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', 'G-FKT9P78GTQ');
+</script>
+    @stack('scripts')
 </head>
 <body>
     <!-- Topbar Start -->
