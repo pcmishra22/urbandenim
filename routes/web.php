@@ -289,7 +289,7 @@ Route::get('/products/{slug}', [\App\Http\Controllers\Front\ProductDetailControl
 Route::get('/checkout', [\App\Http\Controllers\Front\CheckoutController::class, 'index'])->name('checkout.index');
 Route::post('/checkout', [\App\Http\Controllers\Front\CheckoutController::class, 'store'])->name('checkout.store');
 Route::post('/checkout/pending', [\App\Http\Controllers\Front\CheckoutController::class, 'storePending'])->name('checkout.store-pending')->middleware('auth');
-Route::get('/checkout/confirmation/{orderId}', [\App\Http\Controllers\Front\CheckoutController::class, 'confirmation'])->name('checkout.confirmation')->middleware('auth');
+Route::get('/checkout/confirmation/{orderId}', [\App\Http\Controllers\Front\CheckoutController::class, 'confirmation'])->name('checkout.confirmation');
 
 Route::get('/cart', [\App\Http\Controllers\Front\CartController::class, 'index'])->name('cart.index');
 Route::post('/cart/add', [\App\Http\Controllers\Front\CartController::class, 'add'])->name('cart.add');
@@ -349,9 +349,10 @@ Route::get('/faq', [\App\Http\Controllers\Front\FaqController::class, 'index'])-
 Route::get('/help', [\App\Http\Controllers\Front\FaqController::class, 'help'])->name('help');
 Route::post('/newsletter/subscribe', [\App\Http\Controllers\Front\FaqController::class, 'newsletter'])->name('newsletter.subscribe');
 
-// ── Front: Payment gateway (Razorpay) ──────────────────────
+// ── Front: Payment gateway (PayU Hosted Checkout) ──────────
 Route::post('/payment/create-order', [\App\Http\Controllers\PaymentController::class, 'createOrder'])->name('payment.create-order')->middleware('auth');
-Route::post('/payment/verify', [\App\Http\Controllers\PaymentController::class, 'verify'])->name('payment.verify')->middleware('auth');
+// PayU redirects the browser back via GET (surl/furl); also accept POST for server-to-server callbacks.
+Route::match(['get', 'post'], '/payment/verify', [\App\Http\Controllers\PaymentController::class, 'verify'])->name('payment.verify');
 
 // ── Front: Profile extras ──────────────────────────────────
 Route::middleware('auth')->group(function () {

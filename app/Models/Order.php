@@ -30,8 +30,10 @@ class Order extends Model
         'shipping_postal_code',
         'shipping_country',
         'notes',
-        'razorpay_order_id',   // ← added
-        'razorpay_payment_id', // ← added
+        'razorpay_order_id',   // legacy name → payu_txnid (migration renames it)
+        'razorpay_payment_id', // legacy name → payu_payment_id (migration renames it)
+        'payu_txnid',
+        'payu_payment_id',
     ];
 
     protected $casts = [

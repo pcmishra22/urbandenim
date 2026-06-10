@@ -48,9 +48,8 @@ class CheckoutController extends Controller
 
     public function confirmation($orderId)
     {
-        $order = Order::with('products.images')
-            ->where('user_id', auth()->id())
-            ->findOrFail($orderId);
+        // No auth check here — session may be lost after PayU external redirect.
+        $order = Order::with('products.images')->findOrFail($orderId);
 
         return view('front.checkout-confirmation', compact('order'));
     }

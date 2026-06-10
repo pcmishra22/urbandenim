@@ -99,7 +99,7 @@ class CheckoutController extends Controller
     /**
      * Called via AJAX for UPI/card payments.
      * Creates the order in DB with payment_status = 'awaiting_payment',
-     * returns order_id as JSON so the frontend can open Razorpay.
+     * returns order_id as JSON so the frontend can initiate PayU Hosted Checkout.
      */
     public function storePending(Request $request)
     {

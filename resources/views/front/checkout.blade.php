@@ -456,11 +456,11 @@
                 'firstname': payu.firstname || '',
                 'email': payu.email || '',
                 'phone': payu.phone || '',
-                // PayU expects these callback URLs. We keep it aligned with our verify route.
+                'hash': payu.hash,   // pre-computed on server — required by PayU
+                'udf1': payu.udf1 || String(od.order_id),
+                // PayU callback URLs
                 'surl': VERIFY_URL + '?order_id=' + encodeURIComponent(od.order_id),
                 'furl': VERIFY_URL + '?order_id=' + encodeURIComponent(od.order_id),
-                // Optional: pass through order_id as udf values.
-                'udf1': String(od.order_id),
             };
 
             Object.keys(fields).forEach(function (k) {
@@ -472,6 +472,9 @@
             });
 
             document.body.appendChild(form);
+            // TEMPORARY DEBUG — remove after fixing
+            //console.log('PayU payload:', JSON.stringify(fields));
+            //alert('hash value: ' + payu.hash);
             form.submit();
         })
         .catch(function (err) {
