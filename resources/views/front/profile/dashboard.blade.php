@@ -1,10 +1,49 @@
 @extends('layouts.eshopper')
 
 @section('content')
-    @include('front.partials.page-banner', ['title' => 'My Account', 'breadcrumb' => 'My Account'])
-</div>
+    <div class="container" style="padding-top: 30px;">
+        <div class="row justify-content-center">
+            <div class="col-lg-10">
+                <div class="auth-theme-card shadow-sm">
+                    <div class="auth-theme-header">
+                        <div class="auth-theme-title">My Account</div>
+                    </div>
+
+                    <div class="auth-theme-body p-4">
+                        <div class="text-center text-muted">
+                            Manage your account details, orders, addresses, and more.
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
-    <!-- Page Header End -->
+
+    <style>
+        .auth-theme-card {
+            border-radius: 14px;
+            border: 2px solid #D19C97;
+            background: #ffffff;
+            overflow: hidden;
+        }
+
+        .auth-theme-header {
+            background: #D19C97;
+            padding: 18px 18px;
+        }
+
+        .auth-theme-title {
+            color: #ffffff;
+            font-weight: 700;
+            text-align: center;
+            font-size: 1.35rem;
+            letter-spacing: 0.2px;
+        }
+
+        .auth-theme-body {
+            background: #ffffff;
+        }
+    </style>
 
     <div class="container-fluid pt-5 pb-5">
         <div class="row px-xl-5">

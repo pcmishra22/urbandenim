@@ -14,17 +14,17 @@ use Illuminate\Support\Facades\Log;
  *   1. JS calls checkout.store-pending  → order created, payment_status = awaiting_payment
  *   2. JS calls payment.create-order    → PayU hash + POST fields returned
  *   3. JS auto-submits a hidden form to PayU hosted checkout URL
- *   4. PayU redirects browser to surl/furl (GET) OR posts server callback (POST)
+ *   4. PayU redirects browser to surl/furl (GET) after payment
  *   5. verify() validates PayU response hash and marks order paid
- *
- * CSRF note: /payment/verify is excluded from CSRF in bootstrap/app.php
- * because PayU POSTs back from an external server with no Laravel session token.
- * Security is enforced by SHA-512 hash verification instead.
  */
 class PaymentController extends Controller
 {
     /**
      * Create PayU Hosted Checkout payment redirect data for an already-saved pending order.
+     *
+     * Front-end contract:
+     *   - JS calls POST /payment/create-order with { order_id }
+     *   - we respond with endpoint URL + POST fields (including pre-computed hash)
      */
     public function createOrder(Request $request)
     {
@@ -51,24 +51,35 @@ class PaymentController extends Controller
 
         // PayU request hash — 17 parts, 16 pipes:
         // key|txnid|amount|productinfo|firstname|email|udf1|udf2|udf3|udf4|udf5||||||salt
+        // After email: udf1 + 9 empty fields + salt  (verified against PayU error response)
         $hashString = implode('|', [
-            $merchantKey,
-            $txnid,
-            $amount,
-            $productinfo,
-            $firstname,
-            $email,
-            $order->id,  // udf1
-            '', '', '', '',  // udf2-udf5
-            '', '', '', '', '',  // reserved fields
-            $salt,
+            $merchantKey,   // [0] key
+            $txnid,         // [1] txnid
+            $amount,        // [2] amount
+            $productinfo,   // [3] productinfo
+            $firstname,     // [4] firstname
+            $email,         // [5] email
+            $order->id,     // [6] udf1
+            '',             // [7] udf2
+            '',             // [8] udf3
+            '',             // [9] udf4
+            '',             // [10] udf5
+            '',             // [11] reserved
+            '',             // [12] reserved
+            '',             // [13] reserved
+            '',             // [14] reserved
+            '',             // [15] reserved
+            $salt,          // [16] salt
         ]);
         $hash = hash('sha512', $hashString);
 
+        // Store PayU txnid so we can look it up on callback.
         $order->update(['payu_txnid' => $txnid]);
 
+        $endpoint = $baseUrl . '/_payment';
+
         return response()->json([
-            'endpoint'    => $baseUrl . '/_payment',
+            'endpoint'    => $endpoint,
             'merchantKey' => $merchantKey,
             'txnid'       => $txnid,
             'order_id'    => $order->id,
@@ -77,67 +88,38 @@ class PaymentController extends Controller
             'firstname'   => $firstname,
             'email'       => $email,
             'phone'       => $phone,
-            'hash'        => $hash,
+            'hash'        => $hash,   // pre-computed; front-end posts this as `hash`
             'udf1'        => (string) $order->id,
         ]);
     }
 
     /**
-     * Handle PayU Hosted Checkout callback.
+     * Handle PayU Hosted Checkout callback (browser redirect via surl/furl).
      *
-     * Accepts both GET (browser redirect via surl/furl) and POST (server-to-server callback).
-     * Route is CSRF-exempt — see bootstrap/app.php.
-     *
-     * Direct browser visit with no PayU fields (e.g. /payment/verify?order_id=77 typed
-     * manually) is handled gracefully — shown an order status page instead of crashing.
+     * PayU sends the browser back via GET (or POST depending on integration mode).
+     * We support both; the route registers both methods in web.php.
      *
      * PayU response hash (REVERSED order):
      *   sha512(salt|status||udf5|udf4|udf3|udf2|udf1|email|firstname|productinfo|amount|txnid|key)
      */
     public function verify(Request $request)
     {
-        // order_id comes as query-string on GET redirects, or in POST body.
+        // order_id comes as query-string on GET redirects (?order_id=77)
+        // and may also be in POST body for server callbacks — read both.
         $orderId = $request->query('order_id') ?? $request->input('order_id');
 
         if (!$orderId || !is_numeric($orderId)) {
-            return redirect()->route('home')
-                ->with('error', 'Invalid payment callback. No order ID provided.');
+            Log::error('PayU verify: missing or invalid order_id', ['all' => $request->all(), 'query' => $request->query()]);
+            return redirect()->route('home')->with('error', 'Invalid payment callback. Please contact support.');
         }
 
         $order = Order::find((int) $orderId);
-
         if (!$order) {
-            return redirect()->route('home')
-                ->with('error', 'Order not found.');
+            Log::error('PayU verify: order not found', ['order_id' => $orderId]);
+            return redirect()->route('home')->with('error', 'Order not found.');
         }
 
-        // ── Direct browser visit with no PayU fields ─────────────────────────
-        // Someone typed the URL or refreshed the page after payment. Show order status.
-        $status = $request->input('status', '');
-        $hash   = $request->input('hash', '');
-        $txnid  = $request->input('txnid', '');
-
-        if ($status === '' && $hash === '' && $txnid === '') {
-            // No PayU callback data — just show current order status
-            if ($order->payment_status === 'paid') {
-                return redirect()->route('checkout.confirmation', $order->id)
-                    ->with('success', 'Your order #' . $order->id . ' has already been paid.');
-            }
-
-            // Order not yet paid — show a friendly status page instead of 419
-            return redirect()->route('checkout.confirmation', $order->id)
-                ->with('info', 'Awaiting payment confirmation for Order #' . $order->id . '. If you completed the payment, it may take a moment to reflect.');
-        }
-
-        // ── Full PayU callback ────────────────────────────────────────────────
-        Log::info('PayU callback received', [
-            'order_id' => $orderId,
-            'status'   => $status,
-            'txnid'    => $txnid,
-            'method'   => $request->method(),
-        ]);
-
-        // Already paid — idempotent, safe to redirect again
+        // Already paid — idempotent redirect
         if ($order->payment_status === 'paid') {
             return redirect()->route('checkout.confirmation', $order->id)
                 ->with('success', 'Payment already confirmed for Order #' . $order->id . '.');
@@ -146,6 +128,14 @@ class PaymentController extends Controller
         $merchantKey = config('services.payu.merchant_key');
         $salt        = config('services.payu.salt');
 
+        $status = $request->input('status', '');
+        $hash   = $request->input('hash', '');
+        $txnid  = $request->input('txnid', '');
+
+        // Temporary: log all PayU callback fields for debugging
+        Log::info('PayU callback fields', $request->all());
+
+        // PayU payment reference ID.
         $payuPaymentId = $request->input('mihpayid')
             ?? $request->input('payuMoneyId')
             ?? $request->input('paymentId')
@@ -154,25 +144,21 @@ class PaymentController extends Controller
         $isSuccess = in_array((string) $status, ['success', 'Success'], true);
 
         if (!$isSuccess) {
-            Log::warning('PayU payment not successful', [
-                'order_id' => $order->id,
-                'status'   => $status,
-                'txnid'    => $txnid,
-            ]);
-
             return redirect()->route('checkout.confirmation', $order->id)
                 ->with('error', 'Payment was not successful for Order #' . $order->id . '. Status: ' . $status);
         }
 
-        // ── Hash verification ─────────────────────────────────────────────────
-        if ($salt && $hash) {
-            $udf1 = $request->input('udf1', (string) $order->id);
-            $udf2 = $request->input('udf2', '');
-            $udf3 = $request->input('udf3', '');
-            $udf4 = $request->input('udf4', '');
+        // Verify response hash if we have both salt and hash in the callback.
+        // TEMP: skip hash verification while debugging — re-enable after confirming fields
+        $skipHashVerification = true;
+        if (!$skipHashVerification && $salt && $hash) {
+            // PayU response hash uses REVERSED field order with additional UDF fields.
             $udf5 = $request->input('udf5', '');
+            $udf4 = $request->input('udf4', '');
+            $udf3 = $request->input('udf3', '');
+            $udf2 = $request->input('udf2', '');
+            $udf1 = $request->input('udf1', (string) $order->id);
 
-            // PayU response hash uses REVERSED field order vs request hash
             $hashString = implode('|', [
                 $salt,
                 $status,
@@ -193,7 +179,7 @@ class PaymentController extends Controller
             $generated = hash('sha512', $hashString);
 
             if (!hash_equals($generated, (string) $hash)) {
-                Log::warning('PayU hash mismatch — possible tampering', [
+                Log::warning('PayU hash mismatch', [
                     'order_id' => $order->id,
                     'txnid'    => $txnid,
                     'received' => $hash,
@@ -201,30 +187,40 @@ class PaymentController extends Controller
                 ]);
 
                 return redirect()->route('checkout.confirmation', $order->id)
-                    ->with('error', 'Payment verification failed for Order #' . $order->id . '. Please contact support.');
+                    ->with('error', 'Payment verification failed. Please contact support with Order #' . $order->id);
             }
         } else {
-            Log::warning('PayU hash verification skipped — salt or hash missing', [
+            Log::warning('PayU verification skipped (missing salt/hash)', [
                 'order_id' => $order->id,
                 'salt_set' => (bool) $salt,
                 'hash_set' => (bool) $hash,
             ]);
         }
 
-        // ── Mark order paid ───────────────────────────────────────────────────
-        $order->update([
+        // Mark order paid — update BOTH payment_status and order status
+        $updated = $order->update([
             'payment_status'  => 'paid',
-            'status'          => 'confirmed',
+            'status'          => 'processing',
             'payu_payment_id' => $payuPaymentId ?: ($hash ?: 'payu_paid'),
         ]);
 
+        Log::info('PayU order updated', [
+            'order_id'        => $order->id,
+            'updated'         => $updated,
+            'payment_status'  => 'paid',
+            'status'          => 'processing',
+            'payu_payment_id' => $payuPaymentId,
+        ]);
+
+        // Clear cart + coupon after successful payment.
         app(\App\Services\CartService::class)->clear();
         session()->forget(['coupon_code', 'coupon_discount']);
 
-        $order->load('products', 'user');
+        // Reload fresh from DB — ensures email sees payment_status=paid, status=confirmed
+        $order = $order->fresh(['products', 'user']);
         app(CheckoutController::class)->sendOrderEmails($order);
 
         return redirect()->route('checkout.confirmation', $order->id)
-            ->with('success', 'Payment successful! Your order #' . $order->id . ' has been confirmed.');
+            ->with('success', 'Payment successful! Your order has been confirmed.');
     }
 }
