@@ -35,9 +35,7 @@ Route::prefix('')->name('customer.')->group(function () {
     Route::middleware('auth')->group(function () {
         Route::post('/logout', [CustomerAuthController::class, 'logout'])->name('logout');
 
-        Route::middleware('verified')->group(function () {
-            Route::get('/dashboard', [DashboardController::class, 'customerDashboard'])->name('dashboard');
-        });
+        Route::get('/dashboard', [DashboardController::class, 'customerDashboard'])->name('dashboard');
     });
 });
 
@@ -92,9 +90,7 @@ Route::prefix('admin')->name('admin.')->group(function () {
     Route::middleware(['auth', 'admin'])->group(function () {
         Route::post('/logout', [AdminAuthController::class, 'logout'])->name('logout');
 
-        Route::middleware('verified')->group(function () {
-            Route::get('/dashboard', [DashboardController::class, 'adminDashboard'])->name('dashboard');
-        });
+        Route::get('/dashboard', [DashboardController::class, 'adminDashboard'])->name('dashboard');
 
         Route::get('/register', [AdminAuthController::class, 'showRegister'])->name('register');
         Route::post('/register', [AdminAuthController::class, 'register'])->name('register.submit');
@@ -383,7 +379,11 @@ Route::post('/newsletter/subscribe', [\App\Http\Controllers\Front\FaqController:
 
 // ── Front: Payment gateway (PayU Hosted Checkout) ──────────
 Route::post('/payment/create-order', [\App\Http\Controllers\PaymentController::class, 'createOrder'])->name('payment.create-order')->middleware('auth');
-// PayU redirects the browser back via GET (surl/furl); also accept POST for server-to-server callbacks.
+
+// PayU redirects the browser back via GET (surl/furl) and may also POST for server callbacks.
+// This route is CSRF-exempt via bootstrap/app.php validateCsrfTokens(except: ['payment/verify'])
+// because PayU is an external server with no Laravel session token.
+// Security is enforced by SHA-512 hash verification inside PaymentController@verify.
 Route::match(['get', 'post'], '/payment/verify', [\App\Http\Controllers\PaymentController::class, 'verify'])->name('payment.verify');
 
 // ── Front: Profile extras ──────────────────────────────────

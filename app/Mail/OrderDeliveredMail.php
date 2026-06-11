@@ -16,7 +16,7 @@ class OrderDeliveredMail extends Mailable
 
     public function envelope(): Envelope
     {
-        return new Envelope(subject: 'Your Order #' . $this->order->id . ' Has Been Delivered ✅ — EShopper');
+        return new Envelope(subject: 'Your Order #' . $this->order->id . ' Has Been Delivered ✅ — Jeanzo');
     }
 
     public function content(): Content

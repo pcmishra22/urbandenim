@@ -1,68 +1,88 @@
 @php
-    // Fetch up to 4 active page header banners for the given page key ($title)
-    $pageBanners = \App\Models\Banner::where('type', 'page_header')
+    /**
+     * Dynamic Page Header Banner
+     *
+     * Looks up an active `page_header` banner matching the current page $title key.
+     * Falls back to a global banner (title IS NULL) if no specific one is found.
+     * Falls back to a plain dark background if no banner exists at all.
+     *
+     * Admin: Banners > Add Banner > Type: page_header > Page Key = one of the keys below
+     * Page keys: shop, product-detail, Shopping Cart, checkout, Order Confirmed,
+     *            My Account, My Orders, My Wishlist, My Addresses, Contact Us, FAQs, etc.
+     */
+    $banner = \App\Models\Banner::where('type', 'page_header')
         ->where('is_active', true)
-        ->where(function($q) use ($title) {
-            // Match current page key, but also allow global banners where title is null
-            $q->where('title', $title)->orWhereNull('title');
-        })
+        ->where('title', $title)
         ->orderByDesc('sort_order')
-        ->orderByDesc('id')
-        ->take(4)
-        ->get();
+        ->first();
 
-    $hasAny = $pageBanners->isNotEmpty();
+    // Fall back to global (null title) banner if no page-specific one
+    if (!$banner) {
+        $banner = \App\Models\Banner::where('type', 'page_header')
+            ->where('is_active', true)
+            ->whereNull('title')
+            ->orderByDesc('sort_order')
+            ->first();
+    }
 
-    // Use the first banner (if available) for title/breadcrumb styling
-    $pageBannerForText = $pageBanners->first();
-    $hasBg  = $pageBannerForText && $pageBannerForText->image_url;
-    $bgCss  = $hasBg ? 'background:url('.asset('storage/'.$pageBannerForText->image_url).') center/cover no-repeat;position:relative;' : '';
-    $txtCls = $hasBg ? 'text-white' : '';
-    $lnkCls = $hasBg ? 'text-white' : '';
+    $hasBg       = $banner && $banner->image_url;
+    $bgImageUrl  = $hasBg ? asset('storage/' . $banner->image_url) : null;
+    $headingText = $banner->heading ?? $title ?? $breadcrumb ?? '';
+    $linkUrl     = $banner->link_url ?? null;
 @endphp
 
-<div class="container-fluid bg-secondary mb-5" style="min-height:300px;{{ $bgCss }}">
-    {{-- Overlay when using background text styling --}}
+<div class="page-header-banner position-relative overflow-hidden mb-5"
+     style="min-height: 280px; background-color: #1c1c2e;">
+
+    {{-- Background image --}}
     @if($hasBg)
-        <div style="position:absolute;inset:0;background:rgba(0,0,0,.45);z-index:0;"></div>
-    @endif
-
-    {{-- 4-banner grid --}}
-    @if($hasAny)
-        <div class="row g-3" style="position:relative;z-index:1; padding: 18px;">
-            @foreach($pageBanners as $b)
-                <div class="col-12 col-md-6">
-                    <div class="h-100 overflow-hidden" style="border-radius: 6px; background: rgba(0,0,0,.05);">
-                        <a href="{{ $b->link_url ?: url('/') }}" target="_blank" rel="noopener" class="d-block h-100">
-                            <img
-                                src="{{ $b->image }}"
-                                alt="{{ $b->title ?? 'banner' }}"
-                                class="w-100"
-                                style="height: 170px; object-fit: cover;"
-                                loading="lazy"
-                            />
-                        </a>
-                    </div>
-                </div>
-            @endforeach
-
-            {{-- If fewer than 4 exist, keep layout consistent with empty cells --}}
-            @for($i = $pageBanners->count(); $i < 4; $i++)
-                <div class="col-12 col-md-6"></div>
-            @endfor
+        <div class="page-header-bg"
+             style="position:absolute;inset:0;
+                    background: url('{{ $bgImageUrl }}') center center / cover no-repeat;
+                    z-index: 0;">
+        </div>
+        {{-- Dark overlay for text readability --}}
+        <div style="position:absolute;inset:0;background:rgba(0,0,0,0.5);z-index:1;"></div>
+    @else
+        {{-- Gradient fallback when no image is set --}}
+        <div style="position:absolute;inset:0;
+                    background: linear-gradient(135deg, #1c1c2e 0%, #2d3561 100%);
+                    z-index:0;">
         </div>
     @endif
 
-    {{-- Page heading + breadcrumb (keeps existing UX) --}}
-    <div class="d-flex flex-column align-items-center justify-content-center" style="min-height:300px;position:relative;z-index:2; {{ $hasAny ? 'margin-top:-150px;' : '' }}">
-        <h1 class="font-weight-semi-bold text-uppercase mb-3 {{ $txtCls }}">
-            {{ $pageBannerForText->heading ?? $title }}
+    {{-- Content --}}
+    <div class="position-relative d-flex flex-column align-items-center justify-content-center text-center"
+         style="min-height: 280px; z-index: 2; padding: 40px 20px;">
+
+        <h1 class="font-weight-bold text-white text-uppercase mb-3"
+            style="font-size: clamp(1.5rem, 4vw, 2.5rem); letter-spacing: 2px; text-shadow: 0 2px 8px rgba(0,0,0,0.4);">
+            {{ $headingText }}
         </h1>
-        <div class="d-inline-flex">
-            <p class="m-0"><a href="{{ url('/') }}" class="{{ $lnkCls }}">Home</a></p>
-            <p class="m-0 px-2 {{ $txtCls }}">-</p>
-            <p class="m-0 {{ $txtCls }}">{{ $breadcrumb ?? $title }}</p>
-        </div>
+
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb justify-content-center bg-transparent p-0 mb-0">
+                <li class="breadcrumb-item">
+                    <a href="{{ url('/') }}" class="text-white-50" style="text-decoration:none;">Home</a>
+                </li>
+                <li class="breadcrumb-item active text-white" aria-current="page">
+                    {{ $breadcrumb ?? $title }}
+                </li>
+            </ol>
+        </nav>
+
+        {{-- Optional CTA if banner has a link --}}
+        @if($linkUrl && $hasBg)
+            <a href="{{ $linkUrl }}" class="btn btn-outline-light btn-sm mt-3 px-4" style="border-radius:20px;">
+                Shop Now <i class="fa fa-arrow-right ml-1"></i>
+            </a>
+        @endif
     </div>
 </div>
 
+<style>
+.page-header-banner .breadcrumb-item + .breadcrumb-item::before {
+    color: rgba(255,255,255,0.5);
+    content: "›";
+}
+</style>

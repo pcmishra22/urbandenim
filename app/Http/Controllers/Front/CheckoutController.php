@@ -210,21 +210,32 @@ class CheckoutController extends Controller
 
     public function sendOrderEmails(Order $order): void
     {
+        // Customer confirmation email
         try {
-            // Use a specific subject for initial placement to distinguish from "Processing" stage
-            Mail::to($order->user->email)
-                ->send((new OrderConfirmedMail($order))->subject("Order Received #{$order->id} — Jeanzo"));
+            Mail::to($order->user->email)->send(new OrderConfirmedMail($order));
+            Log::info('Order confirmation email sent', ['order_id' => $order->id, 'to' => $order->user->email]);
         } catch (\Throwable $e) {
-            Log::warning('Order confirmation email failed', ['order_id' => $order->id, 'error' => $e->getMessage()]);
+            Log::error('Order confirmation email FAILED', [
+                'order_id' => $order->id,
+                'to'       => $order->user->email ?? 'unknown',
+                'error'    => $e->getMessage(),
+                'mailer'   => config('mail.default'),
+            ]);
         }
 
+        // Admin notification email
         try {
             $adminEmails = User::where('role', 'admin')->pluck('email')->toArray();
             if ($adminEmails) {
                 Mail::to($adminEmails)->send(new NewOrderAdminMail($order));
+                Log::info('Admin order email sent', ['order_id' => $order->id, 'to' => $adminEmails]);
             }
         } catch (\Throwable $e) {
-            Log::warning('Admin order email failed', ['order_id' => $order->id, 'error' => $e->getMessage()]);
+            Log::error('Admin order email FAILED', [
+                'order_id' => $order->id,
+                'error'    => $e->getMessage(),
+                'mailer'   => config('mail.default'),
+            ]);
         }
     }
 

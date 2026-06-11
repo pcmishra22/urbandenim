@@ -17,7 +17,7 @@ class OrderConfirmedMail extends Mailable
 
     public function envelope(): Envelope
     {
-        return new Envelope(subject: 'Order #' . $this->order->id . ' Confirmed — EShopper');
+        return new Envelope(subject: 'Order #' . $this->order->id . ' Confirmed — Jeanzo');
     }
 
     public function content(): Content

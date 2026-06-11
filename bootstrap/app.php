@@ -18,6 +18,12 @@ return Application::configure(basePath: dirname(__DIR__))
             'vendor' => \App\Http\Middleware\EnsureVendor::class,
             'role'   => \App\Http\Middleware\CheckRole::class,
         ]);
+
+        // Exclude PayU callback from CSRF — PayU POSTs back from an external server
+        // with no Laravel session/token. Security is enforced by SHA-512 hash verification.
+        $middleware->validateCsrfTokens(except: [
+            'payment/verify',
+        ]);
     })
     ->withExceptions(function (Exceptions $exceptions) {
         //

@@ -19,7 +19,7 @@ class VerifyEmailMail extends Mailable
 
     public function envelope(): Envelope
     {
-        return new Envelope(subject: 'Verify Your Email Address — EShopper');
+        return new Envelope(subject: 'Verify Your Email Address — Jeanzo');
     }
 
     public function content(): Content

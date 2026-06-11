@@ -66,6 +66,9 @@
                 @if(session('success'))
                     <div class="alert alert-success alert-dismissible fade show">
                         {{ session('success') }}
+                        <a href="{{ route('cart.index') }}" class="btn btn-sm btn-primary ml-2">
+                            <i class="fa fa-shopping-bag mr-1"></i> View Cart
+                        </a>
                         <button type="button" class="close" data-dismiss="alert">&times;</button>
                     </div>
                 @endif
@@ -145,7 +148,7 @@
 
                 <!-- Add to Cart -->
                 <div class="d-flex align-items-center mb-4 pt-2">
-                    <form method="POST" action="{{ route('cart.add') }}" id="add-to-cart-form" class="d-flex align-items-center">
+                    <form method="POST" action="{{ route('cart.add') }}" id="add-to-cart-form" class="d-flex align-items-center flex-wrap gap-2">
                         @csrf
                         <input type="hidden" name="product_id" value="{{ $product->id }}">
                         <div class="input-group quantity mr-3" style="width: 130px;">
@@ -161,8 +164,12 @@
                             <i class="fa fa-shopping-cart mr-1"></i> Add To Cart
                         </button>
                     </form>
+                    {{-- Go to Cart shortcut --}}
+                    <a href="{{ route('cart.index') }}" class="btn btn-outline-primary px-3 ml-2" title="View your cart">
+                        <i class="fa fa-shopping-bag mr-1"></i> Go to Cart
+                    </a>
                     @auth
-                    <form method="POST" action="{{ route('wishlist.add') }}" class="ml-3">
+                    <form method="POST" action="{{ route('wishlist.add') }}" class="ml-2">
                         @csrf
                         <input type="hidden" name="product_id" value="{{ $product->id }}">
                         <button type="submit" class="btn btn-outline-primary px-3 text-dark">

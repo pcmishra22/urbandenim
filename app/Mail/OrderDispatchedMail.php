@@ -20,7 +20,7 @@ class OrderDispatchedMail extends Mailable
 
     public function envelope(): Envelope
     {
-        return new Envelope(subject: 'Your Order #' . $this->order->id . ' Has Been Shipped 🚚 — EShopper');
+        return new Envelope(subject: 'Your Order #' . $this->order->id . ' Has Been Shipped 🚚 — Jeanzo');
     }
 
     public function content(): Content
