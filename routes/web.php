@@ -5,12 +5,18 @@ use App\Http\Controllers\Auth\CustomerAuthController;
 use App\Http\Controllers\Auth\VendorAuthController;
 use App\Http\Controllers\Front\BlogController;
 use App\Http\Controllers\DashboardController;
+use App\Models\Banner;
 use Illuminate\Foundation\Auth\EmailVerificationRequest;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
-    return view('front.index');
+    $banners = Banner::where('type', 'homepage')
+        ->where('is_active', true)
+        ->orderBy('sort_order', 'asc')
+        ->get();
+
+    return view('front.index', compact('banners'));
 });
 
 // =======================================

@@ -36,14 +36,22 @@
             <div class="col-lg-9 px-0">
                 <div id="header-carousel" class="carousel slide" data-ride="carousel">
                     <div class="carousel-inner">
-                        @php $banners = \App\Models\Banner::where('is_active', true)->where('type','slider')->orderBy('sort_order')->take(3)->get(); @endphp
-                        @if($banners->isNotEmpty())
+                        @if(isset($banners) && $banners->isNotEmpty())
                             @foreach($banners as $i => $banner)
                             <div class="carousel-item {{ $i === 0 ? 'active' : '' }}" style="height:410px;">
-                                <img class="img-fluid w-100 h-100" style="object-fit:cover;" src="{{ $banner->image_url ? asset('storage/' . $banner->image_url) : asset('eshopper/img/carousel-1.jpg') }}" alt="{{ $banner->title }}">
+                                @php
+                                    $imageUrl = $banner->image_url;
+                                    // Handle uploaded images vs seeded assets
+                                    if (!str_starts_with($imageUrl, 'http') && !str_starts_with($imageUrl, '/')) {
+                                        $imageUrl = asset('storage/' . $imageUrl);
+                                    } else {
+                                        $imageUrl = asset($imageUrl);
+                                    }
+                                @endphp
+                                <img class="img-fluid w-100 h-100" style="object-fit:cover;" src="{{ $imageUrl }}" alt="{{ $banner->title }}">
                                 <div class="carousel-caption d-flex flex-column align-items-center justify-content-center">
                                     <div class="p-3" style="max-width:700px;">
-                                        @if($banner->subtitle)<h4 class="text-light text-uppercase font-weight-medium mb-3">{{ $banner->subtitle }}</h4>@endif
+                                        @if(isset($banner->subtitle))<h4 class="text-light text-uppercase font-weight-medium mb-3">{{ $banner->subtitle }}</h4>@endif
                                         <h3 class="display-4 text-white font-weight-semi-bold mb-4">{{ $banner->title }}</h3>
                                         @if($banner->link_url)<a href="{{ $banner->link_url }}" class="btn btn-light py-2 px-3">Shop Now</a>@endif
                                     </div>
