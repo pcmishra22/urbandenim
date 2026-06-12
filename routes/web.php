@@ -6,6 +6,8 @@ use App\Http\Controllers\Auth\VendorAuthController;
 use App\Http\Controllers\Front\BlogController;
 use App\Http\Controllers\DashboardController;
 use App\Models\Banner;
+use App\Models\Product;
+use App\Models\Category;
 use Illuminate\Foundation\Auth\EmailVerificationRequest;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
@@ -17,6 +19,16 @@ Route::get('/', function () {
         ->get();
 
     return view('front.index', compact('banners'));
+});
+
+Route::get('/sitemap.xml', function () {
+    $products = Product::where('is_active', true)->get();
+    $categories = Category::where('is_active', true)->get();
+
+    return response()->view('front.sitemap', [
+        'products' => $products,
+        'categories' => $categories,
+    ])->header('Content-Type', 'text/xml');
 });
 
 // =======================================
