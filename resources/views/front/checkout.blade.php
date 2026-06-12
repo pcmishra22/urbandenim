@@ -1,510 +1,344 @@
 @extends('layouts.eshopper')
-
 @section('title', 'Checkout - Jeanzo')
 
 @section('content')
+@include('front.partials.design-system')
+@include('front.partials.page-banner', ['title' => 'checkout', 'breadcrumb' => 'Checkout', 'showCategories' => false])
 
-    <div class="container-fluid bg-secondary mb-5">
-        <div class="d-flex flex-column align-items-center justify-content-center" style="min-height: 300px">
-            <h1 class="font-weight-semi-bold text-uppercase mb-3">Checkout</h1>
-            <div class="d-inline-flex">
-                <p class="m-0"><a href="{{ url('/') }}">Home</a></p>
-                <p class="m-0 px-2">-</p>
-                <p class="m-0">Checkout</p>
+<div class="container-fluid pb-5" style="background:#faf8f8;padding-top:20px;">
+    <div class="row px-xl-5">
+
+        {{-- Left: Address + Coupon --}}
+        <div class="col-lg-8 mb-4">
+
+            @if($errors->any())
+            <div class="alert alert-danger alert-dismissible fade show">
+                <ul class="mb-0">@foreach($errors->all() as $e)<li>{{ $e }}</li>@endforeach</ul>
+                <button type="button" class="close" data-dismiss="alert">&times;</button>
             </div>
-        </div>
-    </div>
+            @endif
+            @if(session('error'))
+            <div class="alert alert-danger alert-dismissible fade show">
+                {{ session('error') }}<button type="button" class="close" data-dismiss="alert">&times;</button>
+            </div>
+            @endif
 
-    <div class="container-fluid pt-5">
-        <div class="row px-xl-5">
+            <form method="POST" action="{{ route('checkout.store') }}" id="checkout-form">
+            @csrf
 
-            {{-- ── Left: address form ──────────────────────────── --}}
-            <div class="col-lg-8">
-
-                @if($errors->any())
-                <div class="alert alert-danger alert-dismissible fade show">
-                    <ul class="mb-0">@foreach($errors->all() as $e)<li>{{ $e }}</li>@endforeach</ul>
-                    <button type="button" class="close" data-dismiss="alert">&times;</button>
-                </div>
-                @endif
-                @if(session('error'))
-                <div class="alert alert-danger alert-dismissible fade show">
-                    {{ session('error') }}<button type="button" class="close" data-dismiss="alert">&times;</button>
-                </div>
-                @endif
-
-                <form method="POST" action="{{ route('checkout.store') }}" id="checkout-form">
-                @csrf
-
-                <h4 class="font-weight-semi-bold mb-4">Billing / Shipping Address</h4>
-
-                @if($addresses->isNotEmpty())
-                <div class="mb-4">
-                    <label class="font-weight-medium mb-2">Use a saved address:</label>
-                    <div class="row">
-                        @foreach($addresses as $address)
-                        <div class="col-md-6 mb-2">
-                            <div class="border p-3 saved-addr" style="cursor:pointer;border-radius:4px;"
-                                 data-full_name="{{ $address->full_name }}"
-                                 data-phone="{{ $address->phone }}"
-                                 data-street="{{ $address->street }}"
-                                 data-city="{{ $address->city }}"
-                                 data-state="{{ $address->state }}"
-                                 data-postal="{{ $address->postal_code }}"
-                                 data-country="{{ $address->country }}">
-                                <strong>{{ $address->full_name }}</strong>
-                                <p class="mb-0 small text-muted">{{ $address->street }}, {{ $address->city }}</p>
-                                <p class="mb-0 small text-muted">{{ $address->state }} {{ $address->postal_code }}</p>
-                                <small class="text-primary">Click to use</small>
-                            </div>
+            {{-- Saved Addresses --}}
+            @if($addresses->isNotEmpty())
+            <div class="j-section mb-3">
+                <div class="j-section-title"><i class="fa fa-map-marker-alt mr-2" style="color:var(--j-primary);"></i>Deliver to a Saved Address</div>
+                <div class="row">
+                    @foreach($addresses as $address)
+                    <div class="col-md-6 mb-2">
+                        <div class="j-address-card saved-addr" style="cursor:pointer;"
+                             data-full_name="{{ $address->full_name }}" data-phone="{{ $address->phone }}"
+                             data-street="{{ $address->street }}" data-city="{{ $address->city }}"
+                             data-state="{{ $address->state }}" data-postal="{{ $address->postal_code }}"
+                             data-country="{{ $address->country }}">
+                            <div class="font-weight-700 mb-1">{{ $address->full_name }}</div>
+                            <div class="text-muted small">{{ $address->street }}, {{ $address->city }}</div>
+                            <div class="text-muted small">{{ $address->state }} {{ $address->postal_code }}</div>
+                            <small style="color:var(--j-primary);" class="mt-1 d-block">Tap to use this address</small>
                         </div>
-                        @endforeach
                     </div>
-                    <hr>
+                    @endforeach
                 </div>
-                @endif
+            </div>
+            @endif
 
+            {{-- Address Form --}}
+            <div class="j-section mb-3">
+                <div class="j-section-title"><i class="fa fa-home mr-2" style="color:var(--j-primary);"></i>Shipping Details</div>
                 <div class="row">
                     <div class="col-md-6 form-group">
-                        <label>Full Name <span class="text-danger">*</span></label>
+                        <label class="font-weight-600">Full Name <span class="text-danger">*</span></label>
                         <input class="form-control @error('shipping_full_name') is-invalid @enderror"
                                type="text" name="shipping_full_name"
-                               value="{{ old('shipping_full_name', auth()->user()->name ?? '') }}"
-                               placeholder="Full Name">
+                               value="{{ old('shipping_full_name', auth()->user()->name ?? '') }}" placeholder="Full Name">
                         @error('shipping_full_name')<div class="invalid-feedback">{{ $message }}</div>@enderror
                     </div>
                     <div class="col-md-6 form-group">
-                        <label>Mobile No <span class="text-danger">*</span></label>
+                        <label class="font-weight-600">Mobile No <span class="text-danger">*</span></label>
                         <input class="form-control @error('shipping_phone') is-invalid @enderror"
                                type="text" name="shipping_phone"
                                value="{{ old('shipping_phone') }}" placeholder="+91 99999 99999">
                         @error('shipping_phone')<div class="invalid-feedback">{{ $message }}</div>@enderror
                     </div>
-                    <div class="col-md-12 form-group">
-                        <label>Street Address <span class="text-danger">*</span></label>
+                    <div class="col-12 form-group">
+                        <label class="font-weight-600">Street Address <span class="text-danger">*</span></label>
                         <input class="form-control @error('shipping_street') is-invalid @enderror"
                                type="text" name="shipping_street"
                                value="{{ old('shipping_street') }}" placeholder="House no. and Street name">
                         @error('shipping_street')<div class="invalid-feedback">{{ $message }}</div>@enderror
                     </div>
                     <div class="col-md-6 form-group">
-                        <label>City <span class="text-danger">*</span></label>
+                        <label class="font-weight-600">City <span class="text-danger">*</span></label>
                         <input class="form-control @error('shipping_city') is-invalid @enderror"
                                type="text" name="shipping_city"
                                value="{{ old('shipping_city') }}" placeholder="City">
                         @error('shipping_city')<div class="invalid-feedback">{{ $message }}</div>@enderror
                     </div>
                     <div class="col-md-6 form-group">
-                        <label>State <span class="text-danger">*</span></label>
+                        <label class="font-weight-600">State <span class="text-danger">*</span></label>
                         <input class="form-control @error('shipping_state') is-invalid @enderror"
                                type="text" name="shipping_state"
                                value="{{ old('shipping_state') }}" placeholder="State">
                         @error('shipping_state')<div class="invalid-feedback">{{ $message }}</div>@enderror
                     </div>
                     <div class="col-md-6 form-group">
-                        <label>ZIP / PIN Code <span class="text-danger">*</span></label>
+                        <label class="font-weight-600">PIN Code <span class="text-danger">*</span></label>
                         <input class="form-control @error('shipping_postal_code') is-invalid @enderror"
                                type="text" name="shipping_postal_code"
                                value="{{ old('shipping_postal_code') }}" placeholder="PIN Code">
                         @error('shipping_postal_code')<div class="invalid-feedback">{{ $message }}</div>@enderror
                     </div>
                     <div class="col-md-6 form-group">
-                        <label>Country <span class="text-danger">*</span></label>
+                        <label class="font-weight-600">Country <span class="text-danger">*</span></label>
                         <input class="form-control @error('shipping_country') is-invalid @enderror"
                                type="text" name="shipping_country"
                                value="{{ old('shipping_country', 'India') }}" placeholder="Country">
                         @error('shipping_country')<div class="invalid-feedback">{{ $message }}</div>@enderror
                     </div>
-                    <div class="col-12 form-group">
-                        <label>Order Notes <small class="text-muted">(optional)</small></label>
-                        <textarea class="form-control" name="notes" rows="3"
-                                  placeholder="Special delivery instructions">{{ old('notes') }}</textarea>
+                    <div class="col-12 form-group mb-0">
+                        <label class="font-weight-600">Order Notes <small class="text-muted font-weight-normal">(optional)</small></label>
+                        <textarea class="form-control" name="notes" rows="2" placeholder="Special delivery instructions">{{ old('notes') }}</textarea>
                     </div>
                 </div>
+            </div>
 
-                {{-- Coupon --}}
-                <div class="mb-4">
-                    <h4 class="font-weight-semi-bold mb-3">
-                        Coupon Code <small class="text-muted font-weight-normal">(optional)</small>
-                    </h4>
-                    <div class="input-group" style="max-width:400px;">
+            {{-- Coupon --}}
+            <div class="j-section mb-3">
+                <div class="j-section-title"><i class="fa fa-tag mr-2" style="color:var(--j-primary);"></i>Coupon Code <small class="font-weight-normal text-muted">(optional)</small></div>
+                @if(session('coupon_code'))
+                    <div class="alert py-2 mb-0 d-flex justify-content-between align-items-center" style="background:var(--j-primary-lt);border:1px solid var(--j-primary);border-radius:8px;">
+                        <span><i class="fa fa-check-circle mr-1" style="color:var(--j-primary);"></i><strong>{{ session('coupon_code') }}</strong> applied — saving ₹{{ number_format($discount,2) }}</span>
+                    </div>
+                @else
+                    <div class="d-flex gap-2" style="max-width:420px;">
                         <input class="form-control" type="text" id="coupon_input" name="coupon_code"
-                               value="{{ old('coupon_code', session('coupon_code')) }}"
-                               placeholder="Enter coupon code">
-                        <div class="input-group-append">
-                            <button type="button" class="btn btn-outline-primary" id="apply-coupon-btn">Apply</button>
-                        </div>
+                               value="{{ old('coupon_code') }}" placeholder="Enter coupon code" style="border-radius:8px;">
+                        <button type="button" class="btn btn-outline-primary btn-sm px-4" id="apply-coupon-btn" style="white-space:nowrap;">Apply</button>
                     </div>
                     <div id="coupon-msg" class="mt-2 small"></div>
-                </div>
-
-                </form>
+                @endif
             </div>
 
-            {{-- ── Right: summary + payment ────────────────────── --}}
-            <div class="col-lg-4">
+            </form>
+        </div>
 
-                <div class="card border-secondary mb-4">
-                    <div class="card-header bg-secondary border-0">
-                        <h4 class="font-weight-semi-bold m-0">Order Total</h4>
+        {{-- Right: Summary + Payment --}}
+        <div class="col-lg-4 mb-5">
+
+            {{-- Order Summary --}}
+            <div class="j-order-summary mb-3">
+                <div class="summary-title"><i class="fa fa-shopping-bag mr-2" style="color:var(--j-primary);"></i>Order Summary</div>
+                @foreach($cartItems as $item)
+                <div class="d-flex justify-content-between align-items-center mb-2 pb-2" style="border-bottom:1px solid var(--j-border);">
+                    <div style="font-size:.88rem;max-width:180px;">
+                        {{ $item['product']->name }}
+                        <span class="text-muted">×{{ $item['quantity'] }}</span>
                     </div>
-                    <div class="card-body">
-                        <h5 class="font-weight-medium mb-3">Products</h5>
-                        @foreach($cartItems as $item)
-                        <div class="d-flex justify-content-between mb-2">
-                            <p class="mb-0 text-truncate" style="max-width:200px;">
-                                {{ $item['product']->name }}
-                                <small class="text-muted">×{{ $item['quantity'] }}</small>
-                            </p>
-                            <p class="mb-0">₹{{ number_format($item['subtotal'], 2) }}</p>
-                        </div>
-                        @endforeach
-                        <hr class="mt-0">
-                        <div class="d-flex justify-content-between mb-2">
-                            <h6 class="font-weight-medium">Subtotal</h6>
-                            <h6 class="font-weight-medium">₹{{ number_format($subtotal, 2) }}</h6>
-                        </div>
-                        <div class="d-flex justify-content-between mb-2">
-                            <h6 class="font-weight-medium">Shipping</h6>
-                            <h6 class="font-weight-medium">
-                                @if($shipping == 0)<span class="text-success">Free</span>
-                                @else ₹{{ number_format($shipping, 2) }}@endif
-                            </h6>
-                        </div>
-                        @if($discount > 0)
-                        <div class="d-flex justify-content-between mb-2">
-                            <h6 class="font-weight-medium text-success">
-                                Discount @if($couponCode)<small>({{ $couponCode }})</small>@endif
-                            </h6>
-                            <h6 class="font-weight-medium text-success">- ₹{{ number_format($discount, 2) }}</h6>
-                        </div>
-                        @endif
-                    </div>
-                    <div class="card-footer border-secondary bg-transparent">
-                        <div class="d-flex justify-content-between mt-2">
-                            <h5 class="font-weight-bold">Grand Total</h5>
-                            <h5 class="font-weight-bold">₹{{ number_format($grandTotal, 2) }}</h5>
-                        </div>
-                    </div>
+                    <div class="font-weight-700" style="font-size:.88rem;">₹{{ number_format($item['subtotal'],2) }}</div>
                 </div>
-
-                <div class="card border-secondary mb-4">
-                    <div class="card-header bg-secondary border-0">
-                        <h4 class="font-weight-semi-bold m-0">Payment Method</h4>
-                    </div>
-                    <div class="card-body">
-
-                        {{-- COD disabled for now (commented/blocked) --}}
-                        {{--
-                        <div class="form-group mb-3">
-                            <div class="custom-control custom-radio">
-                                <input type="radio" class="custom-control-input" name="payment_method"
-                                       id="pay_cod" value="cod" form="checkout-form"
-                                       {{ old('payment_method','cod') === 'cod' ? 'checked' : '' }}>
-                                <label class="custom-control-label" for="pay_cod">
-                                    <i class="fa fa-money-bill-wave text-success mr-2"></i>
-                                    <strong>Cash on Delivery</strong>
-                                    <small class="d-block text-muted">Pay when your order arrives</small>
-                                </label>
-                            </div>
-                        </div>
-                        --}}
-
-
-                        <div class="form-group mb-3">
-                            <div class="custom-control custom-radio">
-                                <input type="radio" class="custom-control-input" name="payment_method"
-                                       id="pay_upi" value="upi" form="checkout-form"
-                                       {{ old('payment_method') === 'upi' ? 'checked' : '' }}>
-                                <label class="custom-control-label" for="pay_upi">
-                                    <i class="fa fa-mobile-alt text-primary mr-2"></i>
-                                    <strong>UPI / Net Banking</strong>
-                                    <small class="d-block text-muted">Google Pay, PhonePe, BHIM, IMPS, Net Banking</small>
-                                </label>
-                            </div>
-                        </div>
-
-                        <div class="form-group mb-2">
-                            <div class="custom-control custom-radio">
-                                <input type="radio" class="custom-control-input" name="payment_method"
-                                       id="pay_card" value="card" form="checkout-form"
-                                       {{ old('payment_method') === 'card' ? 'checked' : '' }}>
-                                <label class="custom-control-label" for="pay_card">
-                                    <i class="fa fa-credit-card text-info mr-2"></i>
-                                    <strong>Credit / Debit Card</strong>
-                                    <small class="d-block text-muted">Visa, Mastercard, Rupay — via PayU</small>
-                                </label>
-                            </div>
-                        </div>
-
-                        @error('payment_method')
-                        <small class="text-danger d-block mt-2">{{ $message }}</small>
-                        @enderror
-
-                        <div class="mt-3 pt-2 border-top">
-                            <small class="text-muted">
-                                <i class="fa fa-shield-alt text-success mr-1"></i>
-                                Online payments secured by <strong>PayU</strong>
-                            </small>
-                        </div>
-
-                    </div>
-
-                    <div class="card-footer border-secondary bg-transparent">
-                        {{-- error box (hidden by default) --}}
-                        <div id="pay-error" class="alert alert-danger small py-2 mb-2" style="display:none;"></div>
-
-                        {{-- spinner (hidden by default — NO !important so JS can show it) --}}
-                        <div id="pay-spinner" class="text-center py-2" style="display:none;">
-                            <div class="spinner-border spinner-border-sm text-primary mr-2" role="status"></div>
-                            <span id="pay-spinner-msg" class="small text-muted">Processing…</span>
-                        </div>
-
-                        <button type="submit" form="checkout-form" id="place-order-btn"
-                                class="btn btn-lg btn-block btn-primary font-weight-bold my-3 py-3">
-                            <i class="fa fa-lock mr-2"></i><span id="btn-label">Place Order</span>
-                        </button>
-                    </div>
+                @endforeach
+                <div class="summary-row mt-3"><span>Subtotal</span><span>₹{{ number_format($subtotal,2) }}</span></div>
+                @if($discount > 0)
+                <div class="summary-row text-success"><span>Discount @if($couponCode)<small>({{ $couponCode }})</small>@endif</span><span>- ₹{{ number_format($discount,2) }}</span></div>
+                @endif
+                <div class="summary-row">
+                    <span>Shipping</span>
+                    <span>@if($shipping==0)<span class="text-success font-weight-700">FREE</span>@else ₹{{ number_format($shipping,2) }}@endif</span>
                 </div>
-
-                <div class="border p-4">
-                    <div class="d-flex align-items-center mb-3">
-                        <i class="fa fa-shield-alt text-primary mr-3 fa-lg"></i>
-                        <div><h6 class="mb-0">Secure Checkout</h6><small class="text-muted">SSL encrypted</small></div>
-                    </div>
-                    <div class="d-flex align-items-center mb-3">
-                        <i class="fa fa-undo text-primary mr-3 fa-lg"></i>
-                        <div><h6 class="mb-0">Easy Returns</h6><small class="text-muted">14-day return policy</small></div>
-                    </div>
-                    <div class="d-flex align-items-center">
-                        <i class="fa fa-headset text-primary mr-3 fa-lg"></i>
-                        <div><h6 class="mb-0">24/7 Support</h6><small class="text-muted">We're here to help</small></div>
-                    </div>
+                <div class="summary-total">
+                    <span>Grand Total</span>
+                    <span style="color:var(--j-primary);">₹{{ number_format($grandTotal,2) }}</span>
                 </div>
-
             </div>
+
+            {{-- Payment Method --}}
+            <div class="j-order-summary mb-3">
+                <div class="summary-title"><i class="fa fa-credit-card mr-2" style="color:var(--j-primary);"></i>Payment Method</div>
+
+                <div class="mb-3">
+                    <div class="custom-control custom-radio mb-3">
+                        <input type="radio" class="custom-control-input" name="payment_method" id="pay_upi" value="upi"
+                               form="checkout-form" {{ old('payment_method') === 'upi' ? 'checked' : '' }}>
+                        <label class="custom-control-label" for="pay_upi">
+                            <i class="fa fa-mobile-alt mr-2" style="color:var(--j-primary);"></i>
+                            <strong>UPI / Net Banking</strong>
+                            <small class="d-block text-muted" style="margin-left:22px;">Google Pay, PhonePe, BHIM, IMPS</small>
+                        </label>
+                    </div>
+                    <div class="custom-control custom-radio">
+                        <input type="radio" class="custom-control-input" name="payment_method" id="pay_card" value="card"
+                               form="checkout-form" {{ old('payment_method') === 'card' ? 'checked' : '' }}>
+                        <label class="custom-control-label" for="pay_card">
+                            <i class="fa fa-credit-card mr-2" style="color:var(--j-primary);"></i>
+                            <strong>Credit / Debit Card</strong>
+                            <small class="d-block text-muted" style="margin-left:22px;">Visa, Mastercard, Rupay — via PayU</small>
+                        </label>
+                    </div>
+                </div>
+
+                @error('payment_method')<small class="text-danger">{{ $message }}</small>@enderror
+
+                <div class="pt-2 mb-3" style="border-top:1px solid var(--j-border);">
+                    <small class="text-muted"><i class="fa fa-shield-alt text-success mr-1"></i>Payments secured by <strong>PayU</strong></small>
+                </div>
+
+                <div id="pay-error" class="alert alert-danger small py-2 mb-2" style="display:none;border-radius:8px;"></div>
+                <div id="pay-spinner" class="text-center py-2 mb-2" style="display:none;">
+                    <div class="spinner-border spinner-border-sm mr-2" style="color:var(--j-primary);" role="status"></div>
+                    <span id="pay-spinner-msg" class="small text-muted">Processing…</span>
+                </div>
+
+                <button type="submit" form="checkout-form" id="place-order-btn"
+                        class="btn btn-primary btn-block py-3 font-weight-bold" style="border-radius:10px;font-size:1rem;">
+                    <i class="fa fa-lock mr-2"></i><span id="btn-label">Proceed to Pay ₹{{ number_format($grandTotal,2) }}</span>
+                </button>
+            </div>
+
+            {{-- Trust badges --}}
+            <div class="j-section">
+                <div class="d-flex align-items-center mb-3">
+                    <div class="action-icon mr-3"><i class="fa fa-shield-alt" style="color:var(--j-primary);"></i></div>
+                    <div><div class="font-weight-700" style="font-size:.9rem;">Secure Checkout</div><small class="text-muted">SSL encrypted & safe</small></div>
+                </div>
+                <div class="d-flex align-items-center mb-3">
+                    <div class="action-icon mr-3"><i class="fa fa-undo" style="color:var(--j-primary);"></i></div>
+                    <div><div class="font-weight-700" style="font-size:.9rem;">Easy Returns</div><small class="text-muted">14-day return policy</small></div>
+                </div>
+                <div class="d-flex align-items-center">
+                    <div class="action-icon mr-3"><i class="fa fa-headset" style="color:var(--j-primary);"></i></div>
+                    <div><div class="font-weight-700" style="font-size:.9rem;">24/7 Support</div><small class="text-muted">We're here to help</small></div>
+                </div>
+            </div>
+
         </div>
     </div>
+</div>
 
 @endsection
 
 @push('scripts')
 <script>
 (function ($) {
-
-    /* ── Config injected from server ─────────────────────── */
     var CSRF          = '{{ csrf_token() }}';
     var STORE_PENDING = '{{ route("checkout.store-pending") }}';
     var CREATE_PAYU   = '{{ route("payment.create-order") }}';
     var VERIFY_URL    = '{{ route("payment.verify") }}';
     var GRAND_TOTAL   = '{{ number_format($grandTotal, 2) }}';
 
-
-    /* ── UI helpers ──────────────────────────────────────── */
     function spin(msg) {
         $('#pay-error').hide();
         $('#pay-spinner').show();
         $('#pay-spinner-msg').text(msg || 'Processing…');
         $('#place-order-btn').prop('disabled', true);
     }
-    function unspin() {
-        $('#pay-spinner').hide();
-        $('#place-order-btn').prop('disabled', false);
-    }
+    function unspin() { $('#pay-spinner').hide(); $('#place-order-btn').prop('disabled', false); }
     function showErr(msg) {
         unspin();
         $('#pay-error').text(msg).show();
         $('html,body').animate({ scrollTop: $('#pay-error').offset().top - 120 }, 250);
     }
 
-    /* ── Payment-method label update ─────────────────────── */
-    $('input[name=payment_method]').on('change', function () {
-        $('#btn-label').text(
-            this.value === 'cod' ? 'Place Order' : 'Proceed to Pay ₹' + GRAND_TOTAL
-        );
-    });
-
-    /* ── Saved address autofill ──────────────────────────── */
     $(document).on('click', '.saved-addr', function () {
-        $('.saved-addr').removeClass('border-primary');
-        $(this).addClass('border-primary');
+        $('.saved-addr').css({'border-color':'var(--j-border)','background':'#fff'});
+        $(this).css({'border-color':'var(--j-primary)','background':'var(--j-primary-lt)'});
         var d = $(this).data();
-        $('[name=shipping_full_name]').val(d.full_name || '');
-        $('[name=shipping_phone]').val(d.phone || '');
-        $('[name=shipping_street]').val(d.street || '');
-        $('[name=shipping_city]').val(d.city || '');
-        $('[name=shipping_state]').val(d.state || '');
-        $('[name=shipping_postal_code]').val(d.postal || '');
-        $('[name=shipping_country]').val(d.country || '');
+        $('[name=shipping_full_name]').val(d.full_name||'');
+        $('[name=shipping_phone]').val(d.phone||'');
+        $('[name=shipping_street]').val(d.street||'');
+        $('[name=shipping_city]').val(d.city||'');
+        $('[name=shipping_state]').val(d.state||'');
+        $('[name=shipping_postal_code]').val(d.postal||'');
+        $('[name=shipping_country]').val(d.country||'');
     });
 
-    /* ── Field validation helper ─────────────────────────── */
     function validateFields() {
         var checks = [
-            ['shipping_full_name',   'Full Name'],
-            ['shipping_phone',       'Mobile No'],
-            ['shipping_street',      'Street Address'],
-            ['shipping_city',        'City'],
-            ['shipping_state',       'State'],
-            ['shipping_postal_code', 'PIN Code'],
-            ['shipping_country',     'Country'],
+            ['shipping_full_name','Full Name'],['shipping_phone','Mobile No'],
+            ['shipping_street','Street Address'],['shipping_city','City'],
+            ['shipping_state','State'],['shipping_postal_code','PIN Code'],['shipping_country','Country']
         ];
-        for (var i = 0; i < checks.length; i++) {
-            if (!$('[name=' + checks[i][0] + ']').val().trim()) {
-                showErr(checks[i][1] + ' is required.');
-                $('[name=' + checks[i][0] + ']').focus();
+        for(var i=0;i<checks.length;i++){
+            if(!$('[name='+checks[i][0]+']').val().trim()){
+                showErr(checks[i][1]+' is required.');
+                $('[name='+checks[i][0]+']').focus();
                 return false;
             }
         }
         return true;
     }
 
-    /* ── Collect all form fields as object ───────────────── */
     function formData(method) {
         return {
-            shipping_full_name:   $('[name=shipping_full_name]').val(),
-            shipping_phone:       $('[name=shipping_phone]').val(),
-            shipping_street:      $('[name=shipping_street]').val(),
-            shipping_city:        $('[name=shipping_city]').val(),
-            shipping_state:       $('[name=shipping_state]').val(),
-            shipping_postal_code: $('[name=shipping_postal_code]').val(),
-            shipping_country:     $('[name=shipping_country]').val(),
-            notes:                $('[name=notes]').val(),
-            coupon_code:          $('[name=coupon_code]').val(),
-            payment_method:       method,
+            shipping_full_name:$('[name=shipping_full_name]').val(),
+            shipping_phone:$('[name=shipping_phone]').val(),
+            shipping_street:$('[name=shipping_street]').val(),
+            shipping_city:$('[name=shipping_city]').val(),
+            shipping_state:$('[name=shipping_state]').val(),
+            shipping_postal_code:$('[name=shipping_postal_code]').val(),
+            shipping_country:$('[name=shipping_country]').val(),
+            notes:$('[name=notes]').val(),
+            coupon_code:$('[name=coupon_code]').val(),
+            payment_method:method
         };
     }
 
-    /* ── JSON POST helper ────────────────────────────────── */
-    function postJson(url, data) {
-        return fetch(url, {
-            method:  'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'Accept':       'application/json',   // forces JSON errors from Laravel
-                'X-CSRF-TOKEN': CSRF,
-            },
-            body: JSON.stringify(data),
-        }).then(function (r) {
-            return r.text().then(function (text) {
-                var json = null;
-                try { json = text ? JSON.parse(text) : {}; } catch (e) {}
-
-                if (!r.ok) {
-                    /* Laravel 422 validation → { errors: { field: ['msg'] } } */
-                    if (json && json.errors) {
-                        var first = Object.values(json.errors)[0];
-                        throw new Error(Array.isArray(first) ? first[0] : String(first));
-                    }
-                    throw new Error(
-                        (json && (json.error || json.message)) ||
-                        ('Server error ' + r.status + (text ? ': ' + text.substring(0, 200) : ''))
-                    );
-                }
-                return json || {};
-            });
-        });
+    function postJson(url,data){
+        return fetch(url,{method:'POST',headers:{'Content-Type':'application/json','Accept':'application/json','X-CSRF-TOKEN':CSRF},body:JSON.stringify(data)})
+        .then(function(r){return r.text().then(function(text){
+            var json=null; try{json=text?JSON.parse(text):{}}catch(e){}
+            if(!r.ok){
+                if(json&&json.errors){var f=Object.values(json.errors)[0];throw new Error(Array.isArray(f)?f[0]:String(f));}
+                throw new Error((json&&(json.error||json.message))||('Server error '+r.status));
+            }
+            return json||{};
+        });});
     }
 
-    /* ── Submit handler ──────────────────────────────────── */
-    $('#checkout-form').on('submit', function (e) {
-        var method = $('input[name=payment_method]:checked').val();
-
-        /* COD is disabled for now (commented/blocked). */
-        if (method === 'cod') {
-            e.preventDefault();
-            showErr('Cash on Delivery is currently disabled. Please choose an online payment method.');
-            return;
-        }
-
-        /* Online payments — intercept and run PayU Hosted Checkout redirect flow */
+    $('#checkout-form').on('submit',function(e){
+        var method=$('input[name=payment_method]:checked').val();
         e.preventDefault();
-
-        if (!validateFields()) return;
-
-        /* ── Step 1: save order to DB ─────────────────────── */
+        if(!method){showErr('Please select a payment method.');return;}
+        if(!validateFields()) return;
         spin('Saving your order…');
-
-        postJson(STORE_PENDING, formData(method))
-        .then(function (od) {
-            if (!od.order_id) throw new Error('No order ID returned from server.');
+        postJson(STORE_PENDING,formData(method))
+        .then(function(od){
+            if(!od.order_id) throw new Error('No order ID returned.');
             spin('Redirecting to PayU…');
-
-            /* ── Step 2: create PayU hosted checkout data ───── */
-            return postJson(CREATE_PAYU, { order_id: od.order_id })
-                   .then(function (payu) { return { od: od, payu: payu }; });
+            return postJson(CREATE_PAYU,{order_id:od.order_id}).then(function(payu){return{od:od,payu:payu};});
         })
-        .then(function (res) {
+        .then(function(res){
             unspin();
-            var od   = res.od;
-            var payu = res.payu;
-
-            if (!payu.endpoint || !payu.merchantKey || !payu.txnid || !payu.amount) {
-                throw new Error('PayU redirect data missing from server response.');
-            }
-
-            /* ── Step 3: POST form to PayU hosted checkout ───── */
-            var form = document.createElement('form');
-            form.method = 'POST';
-            form.action = payu.endpoint;
-
-            var fields = {
-                'key': payu.merchantKey,
-                'txnid': payu.txnid,
-                'amount': payu.amount,
-                'productinfo': payu.productinfo || ('Order #' + od.order_id),
-                'firstname': payu.firstname || '',
-                'email': payu.email || '',
-                'phone': payu.phone || '',
-                'hash': payu.hash,   // pre-computed on server — required by PayU
-                'udf1': payu.udf1 || String(od.order_id),
-                // PayU callback URLs
-                'surl': VERIFY_URL + '?order_id=' + encodeURIComponent(od.order_id),
-                'furl': VERIFY_URL + '?order_id=' + encodeURIComponent(od.order_id),
-            };
-
-            Object.keys(fields).forEach(function (k) {
-                var inp = document.createElement('input');
-                inp.type = 'hidden';
-                inp.name = k;
-                inp.value = fields[k];
-                form.appendChild(inp);
-            });
-
-            document.body.appendChild(form);
-            // TEMPORARY DEBUG — remove after fixing
-            //console.log('PayU payload:', JSON.stringify(fields));
-            //alert('hash value: ' + payu.hash);
-            form.submit();
+            var od=res.od,payu=res.payu;
+            if(!payu.endpoint||!payu.hash) throw new Error('PayU data missing from server.');
+            var form=document.createElement('form');
+            form.method='POST'; form.action=payu.endpoint;
+            var fields={'key':payu.merchantKey,'txnid':payu.txnid,'amount':payu.amount,
+                'productinfo':payu.productinfo||('Order #'+od.order_id),'firstname':payu.firstname||'',
+                'email':payu.email||'','phone':payu.phone||'','hash':payu.hash,
+                'udf1':payu.udf1||String(od.order_id),
+                'surl':VERIFY_URL+'?order_id='+encodeURIComponent(od.order_id),
+                'furl':VERIFY_URL+'?order_id='+encodeURIComponent(od.order_id)};
+            Object.keys(fields).forEach(function(k){var i=document.createElement('input');i.type='hidden';i.name=k;i.value=fields[k];form.appendChild(i);});
+            document.body.appendChild(form); form.submit();
         })
-        .catch(function (err) {
-            showErr(err.message || 'Something went wrong. Please try again.');
-            console.error('PayU flow error:', err);
-        });
+        .catch(function(err){showErr(err.message||'Something went wrong. Please try again.');});
     });
 
-
-    /* ── Coupon AJAX ─────────────────────────────────────── */
-    $('#apply-coupon-btn').on('click', function () {
-        var code = $('#coupon_input').val().trim();
-        if (!code) {
-            $('#coupon-msg').html('<span class="text-danger">Please enter a coupon code.</span>');
-            return;
-        }
-        $.post('{{ route("coupon.apply") }}', {
-            _token: CSRF, coupon_code: code, subtotal: {{ $subtotal }}
-        }, function (res) {
-            if (res.success) {
-                $('#coupon-msg').html('<span class="text-success"><i class="fa fa-check mr-1"></i>' + res.message + '</span>');
-                setTimeout(function () { location.reload(); }, 800);
-            } else {
-                $('#coupon-msg').html('<span class="text-danger">' + res.message + '</span>');
-            }
-        }).fail(function () {
-            $('#coupon-msg').html('<span class="text-danger">Error applying coupon.</span>');
-        });
+    $('#apply-coupon-btn').on('click',function(){
+        var code=$('#coupon_input').val().trim();
+        if(!code){$('#coupon-msg').html('<span class="text-danger">Please enter a coupon code.</span>');return;}
+        $.post('{{ route("coupon.apply") }}',{_token:CSRF,coupon_code:code,subtotal:{{ $subtotal }}},function(res){
+            if(res.success){$('#coupon-msg').html('<span class="text-success"><i class="fa fa-check mr-1"></i>'+res.message+'</span>');setTimeout(function(){location.reload();},800);}
+            else{$('#coupon-msg').html('<span class="text-danger">'+res.message+'</span>');}
+        }).fail(function(){$('#coupon-msg').html('<span class="text-danger">Error applying coupon.</span>');});
     });
-
 })(jQuery);
 </script>
 @endpush

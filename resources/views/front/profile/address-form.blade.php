@@ -1,7 +1,6 @@
 @extends('layouts.eshopper')
 
 @section('content')
-    @include('front.partials.page-banner', ['title' => 'Address', 'breadcrumb' => 'Address'])
 </div>
     </div>
 

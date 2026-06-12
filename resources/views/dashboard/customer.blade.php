@@ -1,26 +1,10 @@
 @extends('layouts.eshopper')
 @section('title', 'My Dashboard - Jeanzo')
 @section('content')
-    @include('front.partials.page-banner', ['title' => 'My Account', 'breadcrumb' => 'Dashboard'])
-    <div class="container-fluid pt-5 pb-5">
+    <div class="container-fluid pt-4 pb-5">
         <div class="row px-xl-5">
             @include('front.partials.profile-sidebar')
             <div class="col-lg-9 mb-5">
-                {{-- Email verification banner (soft nudge, not a blocker) --}}
-                @if(!Auth::user()->hasVerifiedEmail())
-                <div class="alert alert-warning alert-dismissible fade show d-flex align-items-center mb-4" role="alert">
-                    <i class="fas fa-envelope me-2"></i>
-                    <div>
-                        <strong>Please verify your email address.</strong>
-                        Check your inbox for the verification link we sent to <strong>{{ Auth::user()->email }}</strong>.
-                        <form method="POST" action="{{ route('verification.resend') }}" class="d-inline ms-2">
-                            @csrf
-                            <button type="submit" class="btn btn-sm btn-warning">Resend Email</button>
-                        </form>
-                    </div>
-                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-                </div>
-                @endif
                 <h5 class="font-weight-semi-bold mb-4">Welcome, {{ Auth::user()->name }}!</h5>
                 <div class="row mb-4">
                     <div class="col-md-4 mb-3">

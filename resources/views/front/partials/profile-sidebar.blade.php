@@ -1,48 +1,56 @@
+@include('front.partials.design-system')
+
 <div class="col-lg-3 mb-5">
-    <div class="bg-light p-4">
-        <div class="text-center mb-4">
-            <div class="rounded-circle bg-primary d-inline-flex align-items-center justify-content-center mb-3"
-                 style="width:80px;height:80px;">
-                <i class="fa fa-user fa-2x text-white"></i>
+    <div class="profile-sidebar-card shadow-sm">
+
+        {{-- User Header --}}
+        <div class="profile-sidebar-header">
+            <div class="profile-sidebar-avatar">
+                <i class="fa fa-user fa-lg text-white"></i>
             </div>
-            <h5 class="font-weight-semi-bold mb-1">{{ auth()->user()->name }}</h5>
-            <small class="text-muted">{{ auth()->user()->email }}</small>
+            <p class="profile-sidebar-name">{{ auth()->user()->name }}</p>
+            <p class="profile-sidebar-email">{{ auth()->user()->email }}</p>
         </div>
-        <div class="d-flex flex-column">
+
+        {{-- Navigation --}}
+        <div class="profile-sidebar-nav">
             <a href="{{ route('profile.dashboard') }}"
-               class="btn {{ request()->routeIs('profile.dashboard') ? 'btn-primary' : 'btn-outline-dark' }} mb-2">
-                <i class="fa fa-tachometer-alt mr-2"></i>Dashboard
+               class="{{ request()->routeIs('profile.dashboard') ? 'active' : '' }}">
+                <i class="fa fa-tachometer-alt"></i> Dashboard
             </a>
             <a href="{{ route('profile.personal-info') }}"
-               class="btn {{ request()->routeIs('profile.personal-info') ? 'btn-primary' : 'btn-outline-dark' }} mb-2">
-                <i class="fa fa-user mr-2"></i>Personal Info
+               class="{{ request()->routeIs('profile.personal-info') ? 'active' : '' }}">
+                <i class="fa fa-user"></i> Personal Info
             </a>
             <a href="{{ route('profile.addresses') }}"
-               class="btn {{ request()->routeIs('profile.addresses') || request()->routeIs('profile.address.*') ? 'btn-primary' : 'btn-outline-dark' }} mb-2">
-                <i class="fa fa-map-marker-alt mr-2"></i>Addresses
+               class="{{ request()->routeIs('profile.addresses') || request()->routeIs('profile.address.*') ? 'active' : '' }}">
+                <i class="fa fa-map-marker-alt"></i> My Addresses
             </a>
             <a href="{{ route('profile.orders') }}"
-               class="btn {{ request()->routeIs('profile.orders') || request()->routeIs('profile.order-details') ? 'btn-primary' : 'btn-outline-dark' }} mb-2">
-                <i class="fa fa-shopping-bag mr-2"></i>My Orders
+               class="{{ request()->routeIs('profile.orders') || request()->routeIs('profile.order-details') ? 'active' : '' }}">
+                <i class="fa fa-shopping-bag"></i> My Orders
             </a>
             <a href="{{ route('profile.reviews') }}"
-               class="btn {{ request()->routeIs('profile.reviews') ? 'btn-primary' : 'btn-outline-dark' }} mb-2">
-                <i class="fa fa-star mr-2"></i>My Reviews
+               class="{{ request()->routeIs('profile.reviews') ? 'active' : '' }}">
+                <i class="fa fa-star"></i> My Reviews
             </a>
             <a href="{{ route('wishlist.index') }}"
-               class="btn {{ request()->routeIs('wishlist.*') ? 'btn-primary' : 'btn-outline-dark' }} mb-2">
-                <i class="fa fa-heart mr-2"></i>Wishlist
+               class="{{ request()->routeIs('wishlist.*') ? 'active' : '' }}">
+                <i class="fa fa-heart"></i> Wishlist
             </a>
             <a href="{{ route('profile.change-password') }}"
-               class="btn {{ request()->routeIs('profile.change-password') ? 'btn-primary' : 'btn-outline-dark' }} mb-2">
-                <i class="fa fa-lock mr-2"></i>Change Password
+               class="{{ request()->routeIs('profile.change-password') ? 'active' : '' }}">
+                <i class="fa fa-lock"></i> Change Password
             </a>
-            <form method="POST" action="{{ route('customer.logout') }}">
-                @csrf
-                <button type="submit" class="btn btn-outline-danger w-100">
-                    <i class="fa fa-sign-out-alt mr-2"></i>Logout
-                </button>
-            </form>
+            <div class="logout-btn">
+                <form method="POST" action="{{ route('customer.logout') }}">
+                    @csrf
+                    <button type="submit">
+                        <i class="fa fa-sign-out-alt"></i> Logout
+                    </button>
+                </form>
+            </div>
         </div>
+
     </div>
 </div>

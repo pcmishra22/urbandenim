@@ -2,15 +2,27 @@
 @section('title', 'FAQs - Jeanzo')
 @section('content')
 
-@include('front.partials.page-banner', ['title' => 'FAQs', 'breadcrumb' => 'FAQs'])
-
-<div class="container-fluid pt-5 pb-5">
-    <div class="row px-xl-5">
-        <div class="col-lg-10 offset-lg-1">
-            <div class="text-center mb-5">
-                <h2 class="section-title px-5"><span class="px-2">Frequently Asked Questions</span></h2>
-                <p class="text-muted">Can't find an answer? <a href="{{ route('contact') }}">Contact our support team</a>.</p>
+<div class="container-fluid px-xl-5 pt-4 pb-5" style="background:#faf8f8;">
+    <div class="row">
+        <div class="col-12 mb-4">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h3 class="font-weight-bold mb-1" style="color:#2d2d2d;">
+                        <i class="fa fa-question-circle mr-2" style="color:#D19C97;"></i>Frequently Asked Questions
+                    </h3>
+                    <div style="font-size:.85rem;">
+                        <a href="{{ url('/') }}" class="text-muted" style="text-decoration:none;">Home</a>
+                        <span class="text-muted mx-1">›</span>
+                        <span style="color:#D19C97;">FAQs</span>
+                    </div>
+                </div>
             </div>
+            <div style="width:50px;height:3px;background:#D19C97;border-radius:2px;margin-top:10px;"></div>
+        </div>
+    </div>
+    <div class="row">
+        <div class="col-lg-10 offset-lg-1">
+            <p class="text-muted mb-4">Can't find an answer? <a href="{{ route('contact') }}" style="color:#D19C97;">Contact our support team</a>.</p>
 
             @if($faqs->isEmpty())
                 <div class="text-center py-5 bg-light rounded">

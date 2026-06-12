@@ -180,4 +180,29 @@ class ProfileController extends Controller
         $wishlistItems = auth()->user()->wishlists()->with('product','product.images')->paginate(12);
         return view('front.profile.wishlist', compact('wishlistItems'));
     }
+
+    public function reviews()
+    {
+        $reviews = \App\Models\Review::where('user_id', auth()->id())
+            ->with('product', 'product.images')
+            ->latest()
+            ->paginate(10);
+
+        return view('front.profile.reviews', compact('reviews'));
+    }
+
+    public function reorder($id)
+    {
+        $order = auth()->user()->orders()->with('products')->findOrFail($id);
+
+        $cartService = app(\App\Services\CartService::class);
+
+        foreach ($order->products as $product) {
+            $qty = $product->pivot->quantity ?? 1;
+            $cartService->add($product->id, $qty);
+        }
+
+        return redirect()->route('cart.index')
+            ->with('success', 'Items from Order #' . $order->id . ' have been added to your cart.');
+    }
 }

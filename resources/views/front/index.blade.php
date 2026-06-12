@@ -3,55 +3,86 @@
 @section('title', 'Jeanzo - Home')
 
 @section('navbar-extra')
-<div id="header-carousel" class="carousel slide" data-ride="carousel">
-    <div class="carousel-inner">
-        @php $banners = \App\Models\Banner::where('is_active', true)->orderBy('sort_order')->take(3)->get(); @endphp
-        @if($banners->isNotEmpty())
-            @foreach($banners as $i => $banner)
-            <div class="carousel-item {{ $i === 0 ? 'active' : '' }}" style="height: 410px;">
-                <img class="img-fluid w-100 h-100" style="object-fit:cover;" src="{{ $banner->image_url ? asset('storage/' . $banner->image_url) : asset('eshopper/img/carousel-1.jpg') }}" alt="{{ $banner->title }}">
-                <div class="carousel-caption d-flex flex-column align-items-center justify-content-center">
-                    <div class="p-3" style="max-width: 700px;">
-                        @if($banner->subtitle)<h4 class="text-light text-uppercase font-weight-medium mb-3">{{ $banner->subtitle }}</h4>@endif
-                        <h3 class="display-4 text-white font-weight-semi-bold mb-4">{{ $banner->title }}</h3>
-                        @if($banner->link_url)<a href="{{ $banner->link_url }}" class="btn btn-light py-2 px-3">Shop Now</a>@endif
-                    </div>
-                </div>
-            </div>
-            @endforeach
-        @else
-        <div class="carousel-item active" style="height: 410px;">
-            <img class="img-fluid w-100 h-100" style="object-fit:cover;" src="{{ asset('eshopper/img/carousel-1.jpg') }}" alt="">
-            <div class="carousel-caption d-flex flex-column align-items-center justify-content-center">
-                <div class="p-3" style="max-width: 700px;">
-                    <h4 class="text-light text-uppercase font-weight-medium mb-3">10% Off Your First Order</h4>
-                    <h3 class="display-4 text-white font-weight-semi-bold mb-4">Fashionable Dress</h3>
-                    <a href="{{ route('products.index') }}" class="btn btn-light py-2 px-3">Shop Now</a>
-                </div>
-            </div>
-        </div>
-        <div class="carousel-item" style="height: 410px;">
-            <img class="img-fluid w-100 h-100" style="object-fit:cover;" src="{{ asset('eshopper/img/carousel-2.jpg') }}" alt="">
-            <div class="carousel-caption d-flex flex-column align-items-center justify-content-center">
-                <div class="p-3" style="max-width: 700px;">
-                    <h4 class="text-light text-uppercase font-weight-medium mb-3">10% Off Your First Order</h4>
-                    <h3 class="display-4 text-white font-weight-semi-bold mb-4">Reasonable Price</h3>
-                    <a href="{{ route('products.index') }}" class="btn btn-light py-2 px-3">Shop Now</a>
-                </div>
-            </div>
-        </div>
-        @endif
-    </div>
-    <a class="carousel-control-prev" href="#header-carousel" data-slide="prev">
-        <div class="btn btn-dark" style="width: 45px; height: 45px;"><span class="carousel-control-prev-icon mb-n2"></span></div>
-    </a>
-    <a class="carousel-control-next" href="#header-carousel" data-slide="next">
-        <div class="btn btn-dark" style="width: 45px; height: 45px;"><span class="carousel-control-next-icon mb-n2"></span></div>
-    </a>
-</div>
+{{-- intentionally empty - carousel moved to content section below --}}
 @endsection
 
 @section('content')
+
+    {{-- Hero Carousel — sits in col-lg-9 alongside the category sidebar, scrolls normally --}}
+    <div class="container-fluid mb-0">
+        <div class="row border-top px-xl-5">
+            {{-- Category sidebar (open on homepage) --}}
+            <div class="col-lg-3 d-none d-lg-block">
+                <a class="btn shadow-none d-flex align-items-center justify-content-between bg-primary text-white w-100"
+                   data-toggle="collapse" href="#navbar-vertical"
+                   style="height:65px;margin-top:-1px;padding:0 30px;">
+                    <h6 class="m-0">Categories</h6>
+                    <i class="fa fa-angle-down text-dark"></i>
+                </a>
+                <nav class="show collapse position-absolute navbar navbar-vertical navbar-light align-items-start p-0 border border-top-0 border-bottom-0 bg-light"
+                     id="navbar-vertical"
+                     style="width:calc(100% - 30px);z-index:999;top:0;">
+                    <div class="navbar-nav w-100" style="height:410px;overflow:hidden;">
+                        @php $navCategories = \App\Models\Category::where('is_active', true)->take(12)->get(); @endphp
+                        @forelse($navCategories as $cat)
+                            <a href="{{ route('products.index', ['category' => $cat->id]) }}" class="nav-item nav-link">{{ $cat->name }}</a>
+                        @empty
+                            <a href="{{ route('products.index') }}" class="nav-item nav-link">All Products</a>
+                        @endforelse
+                    </div>
+                </nav>
+            </div>
+            {{-- Carousel --}}
+            <div class="col-lg-9 px-0">
+                <div id="header-carousel" class="carousel slide" data-ride="carousel">
+                    <div class="carousel-inner">
+                        @php $banners = \App\Models\Banner::where('is_active', true)->where('type','slider')->orderBy('sort_order')->take(3)->get(); @endphp
+                        @if($banners->isNotEmpty())
+                            @foreach($banners as $i => $banner)
+                            <div class="carousel-item {{ $i === 0 ? 'active' : '' }}" style="height:410px;">
+                                <img class="img-fluid w-100 h-100" style="object-fit:cover;" src="{{ $banner->image_url ? asset('storage/' . $banner->image_url) : asset('eshopper/img/carousel-1.jpg') }}" alt="{{ $banner->title }}">
+                                <div class="carousel-caption d-flex flex-column align-items-center justify-content-center">
+                                    <div class="p-3" style="max-width:700px;">
+                                        @if($banner->subtitle)<h4 class="text-light text-uppercase font-weight-medium mb-3">{{ $banner->subtitle }}</h4>@endif
+                                        <h3 class="display-4 text-white font-weight-semi-bold mb-4">{{ $banner->title }}</h3>
+                                        @if($banner->link_url)<a href="{{ $banner->link_url }}" class="btn btn-light py-2 px-3">Shop Now</a>@endif
+                                    </div>
+                                </div>
+                            </div>
+                            @endforeach
+                        @else
+                        <div class="carousel-item active" style="height:410px;">
+                            <img class="img-fluid w-100 h-100" style="object-fit:cover;" src="{{ asset('eshopper/img/carousel-1.jpg') }}" alt="">
+                            <div class="carousel-caption d-flex flex-column align-items-center justify-content-center">
+                                <div class="p-3" style="max-width:700px;">
+                                    <h4 class="text-light text-uppercase font-weight-medium mb-3">10% Off Your First Order</h4>
+                                    <h3 class="display-4 text-white font-weight-semi-bold mb-4">Fashionable Dress</h3>
+                                    <a href="{{ route('products.index') }}" class="btn btn-light py-2 px-3">Shop Now</a>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="carousel-item" style="height:410px;">
+                            <img class="img-fluid w-100 h-100" style="object-fit:cover;" src="{{ asset('eshopper/img/carousel-2.jpg') }}" alt="">
+                            <div class="carousel-caption d-flex flex-column align-items-center justify-content-center">
+                                <div class="p-3" style="max-width:700px;">
+                                    <h4 class="text-light text-uppercase font-weight-medium mb-3">10% Off Your First Order</h4>
+                                    <h3 class="display-4 text-white font-weight-semi-bold mb-4">Reasonable Price</h3>
+                                    <a href="{{ route('products.index') }}" class="btn btn-light py-2 px-3">Shop Now</a>
+                                </div>
+                            </div>
+                        </div>
+                        @endif
+                    </div>
+                    <a class="carousel-control-prev" href="#header-carousel" data-slide="prev">
+                        <div class="btn btn-dark" style="width:45px;height:45px;"><span class="carousel-control-prev-icon mb-n2"></span></div>
+                    </a>
+                    <a class="carousel-control-next" href="#header-carousel" data-slide="next">
+                        <div class="btn btn-dark" style="width:45px;height:45px;"><span class="carousel-control-next-icon mb-n2"></span></div>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
 
     <!-- Featured Start -->
     <div class="container-fluid pt-5">
