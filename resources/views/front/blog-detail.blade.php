@@ -1,6 +1,38 @@
 @extends('layouts.eshopper')
 
-@section('title', 'Blog - Jeanzo')
+@section('title', ($post->meta_title ?: $post->title) . ' - Jeanzo')
+@section('meta_description', $post->meta_description ?: \Illuminate\Support\Str::limit(strip_tags($post->excerpt ?? $post->content ?? ''), 155))
+@section('canonical', $post->canonical_url ?: route('blog.show', $post->slug))
+@section('og_type', 'article')
+@section('og_title', $post->og_title ?: $post->meta_title ?: $post->title)
+@section('og_description', $post->og_description ?: $post->meta_description ?: \Illuminate\Support\Str::limit(strip_tags($post->excerpt ?? ''), 155))
+@if($post->featured_image_url)
+@section('og_image', $post->featured_image_url)
+@endif
+
+@push('json_ld')
+@php
+    $jsonld = [
+        '@context'         => 'https://schema.org',
+        '@type'            => 'Article',
+        'headline'         => $post->title,
+        'description'      => \Illuminate\Support\Str::limit(strip_tags($post->excerpt ?? $post->content ?? ''), 155),
+        'author'           => ['@type' => 'Organization', 'name' => 'Jeanzo'],
+        'publisher'        => [
+            '@type' => 'Organization',
+            'name'  => 'Jeanzo',
+            'logo'  => ['@type' => 'ImageObject', 'url' => asset('eshopper/img/favicon.ico')],
+        ],
+        'datePublished'    => optional($post->published_at)->toIso8601String(),
+        'dateModified'     => $post->updated_at->toIso8601String(),
+        'mainEntityOfPage' => ['@type' => 'WebPage', '@id' => route('blog.show', $post->slug)],
+    ];
+    if ($post->featured_image_url) {
+        $jsonld['image'] = $post->featured_image_url;
+    }
+@endphp
+<script type="application/ld+json">{{ json_encode($jsonld, JSON_UNESCAPED_SLASHES|JSON_UNESCAPED_UNICODE) }}</script>
+@endpush
 
 @section('content')
 

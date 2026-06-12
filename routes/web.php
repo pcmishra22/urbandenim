@@ -6,6 +6,7 @@ use App\Http\Controllers\Auth\VendorAuthController;
 use App\Http\Controllers\Front\BlogController;
 use App\Http\Controllers\DashboardController;
 use App\Models\Banner;
+use App\Models\BlogPost;
 use App\Models\Product;
 use App\Models\Category;
 use Illuminate\Foundation\Auth\EmailVerificationRequest;
@@ -22,13 +23,31 @@ Route::get('/', function () {
 });
 
 Route::get('/sitemap.xml', function () {
-    $products = Product::where('is_active', true)->get();
-    $categories = Category::where('is_active', true)->get();
+    $products   = Product::where('is_active', true)->select('slug', 'canonical_url', 'updated_at')->get();
+    $categories = Category::where('is_active', true)->select('slug', 'updated_at')->get();
+    $posts      = BlogPost::where('status', 'published')
+                    ->select('slug', 'canonical_url', 'updated_at')
+                    ->latest('updated_at')
+                    ->get();
 
-    return response()->view('front.sitemap', [
-        'products' => $products,
-        'categories' => $categories,
-    ])->header('Content-Type', 'text/xml');
+    return response()->view('front.sitemap', compact('products', 'categories', 'posts'))
+                     ->header('Content-Type', 'text/xml');
+});
+
+Route::get('/robots.txt', function () {
+    $content = implode("\n", [
+        'User-agent: *',
+        'Allow: /',
+        'Disallow: /admin',
+        'Disallow: /checkout',
+        'Disallow: /cart',
+        'Disallow: /profile',
+        'Disallow: /login',
+        'Disallow: /register',
+        '',
+        'Sitemap: ' . url('/sitemap.xml'),
+    ]);
+    return response($content, 200)->header('Content-Type', 'text/plain');
 });
 
 // =======================================

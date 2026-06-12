@@ -1,5 +1,46 @@
 @extends('layouts.eshopper')
-@section('title', $product->name . ' - Jeanzo')
+@section('title', ($product->meta_title ?: $product->name) . ' - Jeanzo')
+@section('meta_description', $product->meta_description ?: \Illuminate\Support\Str::limit(strip_tags($product->short_description ?? $product->description ?? ''), 155))
+@section('canonical', $product->canonical_url ?: route('products.detail', $product->slug))
+@section('og_type', 'product')
+@section('og_title', $product->meta_title ?: $product->name)
+@section('og_description', $product->meta_description ?: \Illuminate\Support\Str::limit(strip_tags($product->short_description ?? $product->description ?? ''), 155))
+@section('og_image', $product->images->first() ? asset('storage/' . $product->images->first()->image_path) : asset('eshopper/img/og-default.jpg'))
+
+@push('json_ld')
+@php
+    $price      = number_format((float)$product->price, 2, '.', '');
+    $inStock    = ($product->variants->isNotEmpty() || ($product->quantity ?? 0) > 0);
+    $ratingVal  = round($product->reviews ? $product->reviews->where('is_approved', true)->avg('rating') : 0, 1);
+    $ratingCnt  = $product->reviews ? $product->reviews->where('is_approved', true)->count() : 0;
+    $imgUrl     = $product->images->first() ? asset('storage/' . $product->images->first()->image_path) : asset('eshopper/img/og-default.jpg');
+    $jsonld = [
+        '@context'    => 'https://schema.org',
+        '@type'       => 'Product',
+        'name'        => $product->name,
+        'description' => strip_tags($product->short_description ?? $product->description ?? ''),
+        'image'       => $imgUrl,
+        'sku'         => $product->sku ?? '',
+        'brand'       => ['@type' => 'Brand', 'name' => optional($product->brand)->name ?? 'Jeanzo'],
+        'offers'      => [
+            '@type'         => 'Offer',
+            'url'           => route('products.detail', $product->slug),
+            'priceCurrency' => 'INR',
+            'price'         => $price,
+            'availability'  => $inStock ? 'https://schema.org/InStock' : 'https://schema.org/OutOfStock',
+            'seller'        => ['@type' => 'Organization', 'name' => 'Jeanzo'],
+        ],
+    ];
+    if ($ratingCnt > 0) {
+        $jsonld['aggregateRating'] = [
+            '@type'       => 'AggregateRating',
+            'ratingValue' => $ratingVal,
+            'reviewCount' => $ratingCnt,
+        ];
+    }
+@endphp
+<script type="application/ld+json">{{ json_encode($jsonld, JSON_UNESCAPED_SLASHES|JSON_UNESCAPED_UNICODE) }}</script>
+@endpush
 
 @section('content')
 @include('front.partials.design-system')
@@ -172,7 +213,7 @@
 
                     @if($product->variants->isNotEmpty())
                         <div id="select-size-message" class="mt-2 small text-danger" style="display:none;">
-                            <i class="fa fa-exclamation-circle mr-1"></i> Please select a size before adding to cart.
+                            Please select size
                         </div>
                     @endif
 

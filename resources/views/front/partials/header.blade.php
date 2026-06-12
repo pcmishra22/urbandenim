@@ -5,6 +5,46 @@
     <title>@yield('title', 'Jeanzo')</title>
     <meta content="width=device-width, initial-scale=1.0" name="viewport">
     <link href="{{ asset('eshopper/img/favicon.ico') }}" rel="icon">
+
+    {{-- SEO: Meta Description & Robots --}}
+    @hasSection('meta_description')
+        <meta name="description" content="@yield('meta_description')">
+    @endif
+    @hasSection('meta_robots')
+        <meta name="robots" content="@yield('meta_robots')">
+    @else
+        <meta name="robots" content="index, follow">
+    @endif
+
+    {{-- SEO: Canonical URL --}}
+    @hasSection('canonical')
+        <link rel="canonical" href="@yield('canonical')">
+    @endif
+
+    {{-- SEO: Open Graph --}}
+    <meta property="og:site_name" content="Jeanzo">
+    <meta property="og:type" content="@yield('og_type', 'website')">
+    <meta property="og:title" content="@yield('og_title', config('app.name', 'Jeanzo'))">
+    <meta property="og:description" content="@yield('og_description', '')">
+    @hasSection('og_image')
+        <meta property="og:image" content="@yield('og_image')">
+        <meta property="og:image:width" content="1200">
+        <meta property="og:image:height" content="630">
+    @endif
+    @hasSection('canonical')
+        <meta property="og:url" content="@yield('canonical')">
+    @endif
+
+    {{-- SEO: Twitter Card --}}
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="@yield('og_title', config('app.name', 'Jeanzo'))">
+    <meta name="twitter:description" content="@yield('og_description', '')">
+    @hasSection('og_image')
+        <meta name="twitter:image" content="@yield('og_image')">
+    @endif
+
+    {{-- SEO: JSON-LD Structured Data --}}
+    @stack('json_ld')
     <link rel="preconnect" href="https://fonts.gstatic.com">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@100;200;300;400;500;600;700;800;900&display=swap" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.10.0/css/all.min.css" rel="stylesheet">
