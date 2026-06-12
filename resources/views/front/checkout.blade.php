@@ -295,7 +295,9 @@
             var json=null; try{json=text?JSON.parse(text):{}}catch(e){}
             if(!r.ok){
                 if(json&&json.errors){var f=Object.values(json.errors)[0];throw new Error(Array.isArray(f)?f[0]:String(f));}
-                throw new Error((json&&(json.error||json.message))||('Server error '+r.status));
+                var msg=(json&&(json.error||json.message))||('Server error '+r.status);
+                if(r.status===401||(typeof msg==='string'&&(msg.toLowerCase()==='unauthenticated.'||msg.toLowerCase()==='unauthenticated'))){msg='Please login to continue...';}
+                throw new Error(msg);
             }
             return json||{};
         });});

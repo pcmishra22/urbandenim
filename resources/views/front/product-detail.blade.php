@@ -172,7 +172,7 @@
 
                     @if($product->variants->isNotEmpty())
                         <div id="select-size-message" class="mt-2 small text-danger" style="display:none;">
-                            Please select size
+                            <i class="fa fa-exclamation-circle mr-1"></i> Please select a size before adding to cart.
                         </div>
                     @endif
 
