@@ -163,13 +163,21 @@
                                 </div>
                             </div>
                             {{-- Add to cart --}}
-                            <button type="submit" class="btn btn-primary" style="min-width:140px;">
+                            <button type="submit" class="btn btn-primary" style="min-width:140px;" id="add-to-cart-button" {{ $product->variants->isNotEmpty() ? 'disabled' : '' }}>
                                 <i class="fa fa-cart-plus mr-1"></i> Add to Cart
                             </button>
+
                         </div>
                     </form>
 
+                    @if($product->variants->isNotEmpty())
+                        <div id="select-size-message" class="mt-2 small text-danger" style="display:none;">
+                            Please select size
+                        </div>
+                    @endif
+
                     {{-- Go to Cart + Wishlist on separate row --}}
+
                     <div class="d-flex align-items-center mt-3" style="gap:10px;flex-wrap:wrap;">
                         <a href="{{ route('cart.index') }}" class="btn btn-outline-primary" style="min-width:130px;">
                             <i class="fa fa-shopping-bag mr-1"></i> View Cart
@@ -329,7 +337,35 @@ $(document).on('click','.btn-plus',function(){var $i=$(this).closest('.quantity'
 $(document).on('click','.btn-minus',function(){var $i=$(this).closest('.quantity').find('input');var v=parseInt($i.val())||1;if(v>1)$i.val(v-1);});
 $('.star-btn').on('click',function(){var v=$(this).data('val');$('#rating-val').val(v);$('.star-btn').each(function(){$(this).toggleClass('fas',$(this).data('val')<=v).toggleClass('far',$(this).data('val')>v);});});
 // Variant label highlight
-$('.variant-radio').on('change',function(){$('label[for^="variant-"]').css({borderColor:'#ddd',background:'#fff',color:'#333'});$('label[for="'+this.id+'"]').css({borderColor:'var(--j-primary)',background:'var(--j-primary-lt)',color:'var(--j-primary)'});});
+$('.variant-radio').on('change',function(){
+    $('label[for^="variant-"]').css({borderColor:'#ddd',background:'#fff',color:'#333'});
+$('label[for="'+this.id+'" ]').css({borderColor:'var(--j-primary)',background:'var(--j-primary-lt)',color:'var(--j-primary)'});
+
+
+    // Toggle Add to Cart button based on selected size
+
+
+    var hasSelection = $('input[name="variant_id"]:checked').length > 0;
+    if(hasSelection){
+        $('#add-to-cart-button').prop('disabled', false);
+        $('#select-size-message').hide();
+    }
+});
+
+// Initial toggle on page load
+(function(){
+    var hasSelection = $('input[name="variant_id"]:checked').length > 0;
+    if($('#add-to-cart-button').length){
+        if(hasSelection){
+            $('#add-to-cart-button').prop('disabled', false);
+            $('#select-size-message').hide();
+        }else{
+            $('#add-to-cart-button').prop('disabled', true);
+            $('#select-size-message').show();
+        }
+    }
+})();
+
 </script>
 @endpush
 @endsection
