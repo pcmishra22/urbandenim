@@ -82,6 +82,7 @@
                     <form method="POST" action="{{ route('cart.remove') }}">
                         @csrf
                         <input type="hidden" name="product_id" value="{{ $product->id }}">
+                        <input type="hidden" name="variant_id" value="{{ $item['variant_id'] ?? '' }}">
                         <button type="submit" class="btn btn-sm btn-outline-danger" style="border-radius:6px;" title="Remove">
                             <i class="fa fa-trash"></i>
                         </button>
