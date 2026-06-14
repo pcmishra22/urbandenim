@@ -120,7 +120,19 @@
         z-index: 2000;
         padding: 32px 40px 28px;
     }
-    .mega-trigger.hovered .mega-panel { display: flex; gap: 0; }
+/* Open via hover intent (JS adds .hovered) OR direct hover (pure CSS) */
+.mega-trigger.hovered .mega-panel,
+.mega-trigger:hover .mega-panel { 
+    display: flex; 
+    gap: 0; 
+}
+
+/* Prevent hovering the panel from closing the menu immediately on fast mouse moves */
+.mega-panel {
+        pointer-events: auto;
+        visibility: visible;
+        opacity: 1;
+    }
 
     /* -- Mega columns -- */
     .mega-column { flex: 1; min-width: 140px; padding: 0 20px 0 0; }
