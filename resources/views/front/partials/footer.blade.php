@@ -40,6 +40,7 @@
                         <div class="d-flex flex-column justify-content-start">
                             <a class="text-dark mb-2" href="{{ url('/') }}"><i class="fa fa-angle-right mr-2"></i>Home</a>
                             <a class="text-dark mb-2" href="{{ route('products.index') }}"><i class="fa fa-angle-right mr-2"></i>Our Shop</a>
+                            <a class="text-dark mb-2" href="{{ route('blog.index') }}"><i class="fa fa-angle-right mr-2"></i>Blog</a>
                             <a class="text-dark mb-2" href="{{ route('cart.index') }}"><i class="fa fa-angle-right mr-2"></i>Shopping Cart</a>
                             <a class="text-dark mb-2" href="{{ route('checkout.index') }}"><i class="fa fa-angle-right mr-2"></i>Checkout</a>
                             <a class="text-dark mb-2" href="{{ route('faq') }}"><i class="fa fa-angle-right mr-2"></i>FAQs</a>

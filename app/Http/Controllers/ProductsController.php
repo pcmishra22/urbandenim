@@ -10,11 +10,23 @@ use Illuminate\Http\Request;
 
 class ProductsController extends Controller
 {
+    /**
+     * Given a category ID, return that ID plus all descendant IDs (recursive).
+     * This ensures clicking a parent shows products from all its children too.
+     */
+    private function getCategoryAndDescendantIds(int $categoryId): array
+    {
+        $ids = [$categoryId];
+        $children = Category::where('parent_id', $categoryId)->where('is_active', true)->pluck('id');
+        foreach ($children as $childId) {
+            $ids = array_merge($ids, $this->getCategoryAndDescendantIds($childId));
+        }
+        return array_unique($ids);
+    }
+
     public function ajaxLoad(Request $request)
     {
-        // Same filters as index(), but returns only product grid HTML for infinite scroll.
         $query = Product::where('is_active', true)
-
             ->with(['category', 'images', 'brand', 'variants'])
             ->withCount(['reviews as reviews_count' => fn($q) => $q->where('is_approved', true)])
             ->withAvg(['reviews as reviews_avg_rating' => fn($q) => $q->where('is_approved', true)], 'rating');
@@ -27,19 +39,22 @@ class ProductsController extends Controller
             default:           $query->orderBy('created_at', 'desc');
         }
 
-        // Price range filter (from sidebar radio)
+        // Price range filter
         if ($request->filled('price_range') && $request->price_range !== '') {
             [$min, $max] = explode('-', $request->price_range . '-');
             if ($min !== '') $query->where('price', '>=', (float)$min);
             if ($max !== '') $query->where('price', '<=', (float)$max);
         }
-        // Also support direct min/max
         if ($request->filled('price_min')) $query->where('price', '>=', $request->price_min);
         if ($request->filled('price_max')) $query->where('price', '<=', $request->price_max);
 
-        // Category filter (query-param: ?category=1 maps to category_id)
+        // Category filter — include all descendants so subcategory clicks work
         if ($request->filled('category')) {
-            $query->whereIn('category_id', (array)$request->category);
+            $allCategoryIds = [];
+            foreach ((array)$request->category as $catId) {
+                $allCategoryIds = array_merge($allCategoryIds, $this->getCategoryAndDescendantIds((int)$catId));
+            }
+            $query->whereIn('category_id', array_unique($allCategoryIds));
         }
 
         // Brand filter
@@ -68,7 +83,6 @@ class ProductsController extends Controller
 
     public function index(Request $request)
     {
-
         $query = Product::where('is_active', true)
             ->with(['category', 'images', 'brand', 'variants'])
             ->withCount(['reviews as reviews_count' => fn($q) => $q->where('is_approved', true)])
@@ -82,36 +96,22 @@ class ProductsController extends Controller
             default:           $query->orderBy('created_at', 'desc');
         }
 
-        // Price range filter (from sidebar radio)
+        // Price range filter
         if ($request->filled('price_range') && $request->price_range !== '') {
             [$min, $max] = explode('-', $request->price_range . '-');
             if ($min !== '') $query->where('price', '>=', (float)$min);
             if ($max !== '') $query->where('price', '<=', (float)$max);
         }
-        // Also support direct min/max
         if ($request->filled('price_min')) $query->where('price', '>=', $request->price_min);
         if ($request->filled('price_max')) $query->where('price', '<=', $request->price_max);
 
-        // Category filter
-        // Support both:
-        // - selecting a child category directly (?category=<child_id>)
-        // - selecting a top-level category (?category=<parent_id>)
-        //   => include products from ALL child categories.
+        // Category filter — include all descendants so subcategory clicks work
         if ($request->filled('category')) {
-            $requestedCategoryIds = array_map('intval', (array)$request->category);
-            $allCategoryIds = collect($requestedCategoryIds);
-
-            $topCategories = \App\Models\Category::whereIn('id', $requestedCategoryIds)
-                ->whereNull('parent_id')
-                ->pluck('id');
-
-            if ($topCategories->isNotEmpty()) {
-                $childIds = \App\Models\Category::whereIn('parent_id', $topCategories)
-                    ->pluck('id');
-                $allCategoryIds = $allCategoryIds->merge($childIds);
+            $allCategoryIds = [];
+            foreach ((array)$request->category as $catId) {
+                $allCategoryIds = array_merge($allCategoryIds, $this->getCategoryAndDescendantIds((int)$catId));
             }
-
-            $query->whereIn('category_id', $allCategoryIds->unique()->values()->all());
+            $query->whereIn('category_id', array_unique($allCategoryIds));
         }
 
         // Brand filter
@@ -119,7 +119,7 @@ class ProductsController extends Controller
             $query->whereIn('brand_id', (array)$request->brand);
         }
 
-        // Search (column is 'name', with fallback accessor 'title')
+        // Search
         if ($request->filled('search')) {
             $s = $request->search;
             $query->where(function ($q) use ($s) {
@@ -130,7 +130,6 @@ class ProductsController extends Controller
         }
 
         $products   = $query->paginate(24)->withQueryString();
-
         $brands     = Brand::has('products')->get();
         $categories = Category::where('is_active', true)->withCount('products')->get();
 

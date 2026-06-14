@@ -11,26 +11,61 @@
     {{-- Hero Carousel — sits in col-lg-9 alongside the category sidebar, scrolls normally --}}
     <div class="container-fluid mb-0">
         <div class="row border-top px-xl-5">
-            {{-- Category sidebar (open on homepage) --}}
+            {{-- Category sidebar (collapsible on homepage) --}}
             <div class="col-lg-3 d-none d-lg-block">
                 <a class="btn shadow-none d-flex align-items-center justify-content-between bg-primary text-white w-100"
                    data-toggle="collapse" href="#navbar-vertical"
                    style="height:65px;margin-top:-1px;padding:0 30px;">
                     <h6 class="m-0">Categories</h6>
-                    <i class="fa fa-angle-down text-dark"></i>
+                    <i class="fa fa-angle-down text-dark" id="cat-toggle-icon"></i>
                 </a>
                 <nav class="show collapse position-absolute navbar navbar-vertical navbar-light align-items-start p-0 border border-top-0 border-bottom-0 bg-light"
                      id="navbar-vertical"
                      style="width:calc(100% - 30px);z-index:999;top:0;">
-                    <div class="navbar-nav w-100" style="height:410px;overflow:hidden;">
-                        @php $navCategories = \App\Models\Category::where('is_active', true)->take(12)->get(); @endphp
+                    <div class="navbar-nav w-100" style="max-height:410px;overflow-y:auto;">
+                        @php
+                            $navCategories = \App\Models\Category::where('is_active', true)
+                                ->whereNull('parent_id')
+                                ->with(['children' => function($q){
+                                    // show only subcategories which have at least one ACTIVE product
+                                    $q->where('is_active', true)
+                                      ->whereHas('products', fn($p) => $p->where('is_active', true))
+                                      ->orderBy('name')
+                                      // keep enough children; final display is limited to 3 below
+                                      ->take(50);
+                                }])
+                                ->whereHas('children', fn($c) => $c->where('is_active', true)
+                                    ->whereHas('products', fn($p) => $p->where('is_active', true)))
+                                ->take(15)
+                                ->get();
+                        @endphp
                         @forelse($navCategories as $cat)
-                            <a href="{{ route('products.index', ['category' => $cat->id]) }}" class="nav-item nav-link">{{ $cat->name }}</a>
+                               <a href="{{ route('products.index', ['category' => $cat->id]) }}"
+                               class="nav-item nav-link py-2 font-weight-600"
+                               style="font-size:.9rem;border-bottom:1px solid #eee;">
+                               {{ $cat->name }}
+                               </a>
+                        @foreach($cat->children as $child)
+                            <a href="{{ route('products.index', ['category' => $child->id]) }}"
+                               class="nav-item nav-link py-1 pl-4"
+                               style="font-size:.8rem;color:#888;">
+                                ↳ {{ $child->name }}
+                            </a>
+                            @endforeach
                         @empty
                             <a href="{{ route('products.index') }}" class="nav-item nav-link">All Products</a>
                         @endforelse
                     </div>
                 </nav>
+                <script>
+                (function(){
+                    var el = document.getElementById('navbar-vertical');
+                    var icon = document.getElementById('cat-toggle-icon');
+                    if(!el || !icon) return;
+                    el.addEventListener('hide.bs.collapse', function(){ icon.className='fa fa-angle-up text-dark'; });
+                    el.addEventListener('show.bs.collapse', function(){ icon.className='fa fa-angle-down text-dark'; });
+                })();
+                </script>
             </div>
             {{-- Carousel --}}
             <div class="col-lg-9 px-0">

@@ -50,36 +50,211 @@ class CategorySeeder extends Seeder
                     'description' => $category['description'],
                     'parent_id' => $category['parent_id'],
                     'is_active' => true,
-                    'meta_title' => $category['name'] . ' - Premium Denim Collection | UrbanDenim',
-                    'meta_description' => $category['description'],
                 ]
             );
         }
 
-        // Create subcategories for Men's Jeans
+
+        // Men: Jeans Types mapping
         $mensCategory = Category::where('slug', 'mens-jeans')->first();
         if ($mensCategory) {
-            $subcategories = [
-                'Slim Fit',
-                'Regular Fit',
-                'Baggy Fit',
-                'Skinny Fit',
-                'Straight Fit',
+            // Parent groups
+            $byFit = Category::firstOrCreate(
+                ['slug' => 'mens-jeans-by-fit'],
+                [
+                    'name' => "Men's By Fit",
+                    'description' => "Men's jeans grouped by fit",
+                    'parent_id' => $mensCategory->id,
+                    'is_active' => true,
+                ]
+            );
+
+            $byRise = Category::firstOrCreate(
+                ['slug' => 'mens-jeans-by-rise'],
+                [
+                    'name' => "Men's By Rise",
+                    'description' => "Men's jeans grouped by rise",
+                    'parent_id' => $mensCategory->id,
+                    'is_active' => true,
+                ]
+            );
+
+            $byStyle = Category::firstOrCreate(
+                ['slug' => 'mens-jeans-by-style'],
+                [
+                    'name' => "Men's By Style",
+                    'description' => "Men's jeans grouped by style",
+                    'parent_id' => $mensCategory->id,
+                    'is_active' => true,
+                ]
+            );
+
+
+            $byFitChildren = [
+                "Slim Fit Jeans",
+                "Skinny Fit Jeans",
+                "Regular Fit Jeans",
+                "Straight Fit Jeans",
+                "Relaxed Fit Jeans",
+                "Tapered Fit Jeans",
+                "Bootcut Jeans",
+                "Loose Fit Jeans",
+                "Athletic Fit Jeans",
+                "Cargo Jeans",
             ];
 
-            foreach ($subcategories as $subcat) {
+            foreach ($byFitChildren as $child) {
                 Category::firstOrCreate(
-                    ['slug' => Str::slug($subcat)],
+                    ['slug' => Str::slug($child)],
                     [
-                        'name' => $subcat,
-                        'description' => "Men's {$subcat} Jeans",
-                        'parent_id' => $mensCategory->id,
+                        'name' => $child,
+                        'description' => "Men's {$child}",
+                        'parent_id' => $byFit->id,
                         'is_active' => true,
-                        'meta_title' => "Men's {$subcat} Fit Jeans | UrbanDenim",
-                        'meta_description' => "Discover the best Men's {$subcat} jeans. High quality, durable denim for the modern urban lifestyle.",
+                    ]
+                );
+            }
+
+            $byRiseChildren = [
+                "Low Rise Jeans",
+                "Mid Rise Jeans",
+                "High Rise Jeans",
+            ];
+
+            foreach ($byRiseChildren as $child) {
+                Category::firstOrCreate(
+                    ['slug' => Str::slug($child)],
+                    [
+                        'name' => $child,
+                        'description' => "Men's {$child}",
+                        'parent_id' => $byRise->id,
+                        'is_active' => true,
+                    ]
+                );
+            }
+
+            $byStyleChildren = [
+                "Distressed Jeans",
+                "Ripped Jeans",
+                "Washed Jeans",
+                "Stretch Jeans",
+                "Vintage Jeans",
+                "Carpenter Jeans",
+                "Biker Jeans",
+            ];
+
+            foreach ($byStyleChildren as $child) {
+                Category::firstOrCreate(
+                    ['slug' => Str::slug($child)],
+                    [
+                        'name' => $child,
+                        'description' => "Men's {$child}",
+                        'parent_id' => $byStyle->id,
+                        'is_active' => true,
                     ]
                 );
             }
         }
+
+        // Women: Jeans Types mapping
+        $womensCategory = Category::where('slug', 'womens-denim')->first();
+        if ($womensCategory) {
+            $byFit = Category::firstOrCreate(
+                ['slug' => 'womens-denim-by-fit'],
+                [
+                    'name' => "Women's By Fit",
+                    'description' => "Women's jeans grouped by fit",
+                    'parent_id' => $womensCategory->id,
+                    'is_active' => true,
+                ]
+            );
+
+            $byRise = Category::firstOrCreate(
+                ['slug' => 'womens-denim-by-rise'],
+                [
+                    'name' => "Women's By Rise",
+                    'description' => "Women's jeans grouped by rise",
+                    'parent_id' => $womensCategory->id,
+                    'is_active' => true,
+                ]
+            );
+
+            $byStyle = Category::firstOrCreate(
+                ['slug' => 'womens-denim-by-style'],
+                [
+                    'name' => "Women's By Style",
+                    'description' => "Women's jeans grouped by style",
+                    'parent_id' => $womensCategory->id,
+                    'is_active' => true,
+                ]
+            );
+
+
+            $byFitChildren = [
+                "Skinny Jeans",
+                "Slim Fit Jeans",
+                "Straight Leg Jeans",
+                "Relaxed Fit Jeans",
+                "Boyfriend Jeans",
+                "Girlfriend Jeans",
+                "Mom Jeans",
+                "Wide Leg Jeans",
+                "Flared Jeans",
+                "Bootcut Jeans",
+            ];
+
+            foreach ($byFitChildren as $child) {
+                Category::firstOrCreate(
+                    ['slug' => Str::slug($child)],
+                    [
+                        'name' => $child,
+                        'description' => "Women's {$child}",
+                        'parent_id' => $byFit->id,
+                        'is_active' => true,
+                    ]
+                );
+            }
+
+            $byRiseChildren = [
+                "Low Rise Jeans",
+                "Mid Rise Jeans",
+                "High Rise Jeans",
+            ];
+
+            foreach ($byRiseChildren as $child) {
+                Category::firstOrCreate(
+                    ['slug' => Str::slug($child)],
+                    [
+                        'name' => $child,
+                        'description' => "Women's {$child}",
+                        'parent_id' => $byRise->id,
+                        'is_active' => true,
+                    ]
+                );
+            }
+
+            $byStyleChildren = [
+                "Distressed Jeans",
+                "Ripped Jeans",
+                "Stretch Jeans",
+                "Jeggings",
+                "Cropped Jeans",
+                "Vintage Jeans",
+                "Cargo Jeans",
+            ];
+
+            foreach ($byStyleChildren as $child) {
+                Category::firstOrCreate(
+                    ['slug' => Str::slug($child)],
+                    [
+                        'name' => $child,
+                        'description' => "Women's {$child}",
+                        'parent_id' => $byStyle->id,
+                        'is_active' => true,
+                    ]
+                );
+            }
+        }
+
     }
 }
