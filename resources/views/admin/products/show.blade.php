@@ -179,6 +179,10 @@
             </div>
             <div class="card-body">
                 <div class="mb-3">
+                    @php
+                        $variants = $product->variants ?? collect();
+                        $images = $product->images ?? collect();
+                    @endphp
                     <div class="d-flex justify-content-between align-items-center">
                         <span>Total Variants:</span>
                         <strong class="badge bg-primary">{{ $variants->count() }}</strong>
