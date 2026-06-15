@@ -311,15 +311,25 @@
 
         {{-- WOMEN --}}
         @php
-            $womensCat = \App\Models\Category::whereIn('slug', ['womens-jeans', 'womens-denim'])->first();
-            // DB is flat: subcategories are direct children of Women's Jeans
-            // Only show subcategories that actually have active products
-            $womenSubcats = $womensCat
-                ? \App\Models\Category::where('parent_id', $womensCat->id)
+            // Women may have multiple “parent” categories (e.g. womens-jeans + womens-denim).
+            // Use both, then de-duplicate children so the dropdown always shows what has active products.
+            $womenParentCats = \App\Models\Category::whereIn('slug', ['womens-jeans', 'womens-denim'])
+                ->where('is_active', true)
+                ->get();
+
+            // Pick one parent for the “View All Women” link (prefer womens-jeans)
+            $womensCat = $womenParentCats->firstWhere('slug', 'womens-jeans')
+                ?? $womenParentCats->firstWhere('slug', 'womens-denim')
+                ?? $womenParentCats->first();
+
+            $womenSubcats = $womenParentCats->isNotEmpty()
+                ? \App\Models\Category::whereIn('parent_id', $womenParentCats->pluck('id'))
                     ->where('is_active', true)
                     ->whereHas('products', fn($p) => $p->where('is_active', true))
                     ->orderBy('name')
                     ->get()
+                    ->unique('id')
+                    ->values()
                 : collect();
             // Commented out: Clothing / Innerwear / Accessories — jeans-only store
         @endphp
