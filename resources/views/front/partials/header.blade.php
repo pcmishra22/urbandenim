@@ -271,38 +271,35 @@
         {{-- MEN --}}
         @php
             $mensCat = \App\Models\Category::where('slug', 'mens-jeans')->first();
-            $mensGroups = $mensCat
+            // DB is flat: subcategories (Slim Fit, Skinny Fit…) are direct children of Men's Jeans
+            // Only show subcategories that actually have active products
+            $menSubcats = $mensCat
                 ? \App\Models\Category::where('parent_id', $mensCat->id)
                     ->where('is_active', true)
-                    ->with(['children' => function($q){
-                        $q->where('is_active', true)
-                          ->whereHas('products', fn($p) => $p->where('is_active', true))
-                          ->orderBy('name');
-                    }])
+                    ->whereHas('products', fn($p) => $p->where('is_active', true))
+                    ->orderBy('name')
                     ->get()
-                    ->filter(fn($g) => $g->children->isNotEmpty())
                 : collect();
+            // Commented out: Clothing / Innerwear / Accessories — jeans-only store
         @endphp
         <div class="mega-trigger" id="mega-men">
             <a href="{{ $mensCat ? route('products.index', ['category' => $mensCat->id]) : route('products.index') }}"
                class="nav-top-link {{ request('category') == ($mensCat->id ?? null) ? 'active' : '' }}">
                 Men <i class="fas fa-chevron-down"></i>
             </a>
-            @if($mensGroups->isNotEmpty())
+            @if($menSubcats->isNotEmpty())
             <div class="mega-panel">
-                @foreach($mensGroups as $group)
                 <div class="mega-column">
-                    <div class="mega-column-title">
-                        <a href="{{ route('products.index', ['category' => $group->id]) }}"
-                           style="color:inherit;text-decoration:none;">{{ $group->name }}</a>
-                    </div>
+                    <div class="mega-column-title">Jeans</div>
                     <ul>
-                        @foreach($group->children as $child)
-                        <li><a href="{{ route('products.index', ['category' => $child->id]) }}">{{ $child->name }}</a></li>
+                        @foreach($menSubcats as $sub)
+                        <li><a href="{{ route('products.index', ['category' => $sub->id]) }}">{{ $sub->name }}</a></li>
                         @endforeach
                     </ul>
                 </div>
-                @endforeach
+                {{-- <div class="mega-column"><div class="mega-column-title">Clothing</div>...</div> --}}
+                {{-- <div class="mega-column"><div class="mega-column-title">Innerwear</div>...</div> --}}
+                {{-- <div class="mega-column"><div class="mega-column-title">Accessories</div>...</div> --}}
                 <div class="mega-view-all-wrap" style="align-self:flex-end;margin-left:auto;flex-shrink:0;padding-left:24px;border-top:none;">
                     <a class="mega-view-all-btn" href="{{ route('products.index', ['category' => $mensCat->id]) }}">
                         View All Men's →
@@ -315,38 +312,35 @@
         {{-- WOMEN --}}
         @php
             $womensCat = \App\Models\Category::where('slug', 'womens-denim')->first();
-            $womensGroups = $womensCat
+            // DB is flat: subcategories are direct children of Women's Jeans
+            // Only show subcategories that actually have active products
+            $womenSubcats = $womensCat
                 ? \App\Models\Category::where('parent_id', $womensCat->id)
                     ->where('is_active', true)
-                    ->with(['children' => function($q){
-                        $q->where('is_active', true)
-                          ->whereHas('products', fn($p) => $p->where('is_active', true))
-                          ->orderBy('name');
-                    }])
+                    ->whereHas('products', fn($p) => $p->where('is_active', true))
+                    ->orderBy('name')
                     ->get()
-                    ->filter(fn($g) => $g->children->isNotEmpty())
                 : collect();
+            // Commented out: Clothing / Innerwear / Accessories — jeans-only store
         @endphp
         <div class="mega-trigger" id="mega-women">
             <a href="{{ $womensCat ? route('products.index', ['category' => $womensCat->id]) : route('products.index') }}"
                class="nav-top-link {{ request('category') == ($womensCat->id ?? null) ? 'active' : '' }}">
                 Women <i class="fas fa-chevron-down"></i>
             </a>
-            @if($womensGroups->isNotEmpty())
+            @if($womenSubcats->isNotEmpty())
             <div class="mega-panel">
-                @foreach($womensGroups as $group)
                 <div class="mega-column">
-                    <div class="mega-column-title">
-                        <a href="{{ route('products.index', ['category' => $group->id]) }}"
-                           style="color:inherit;text-decoration:none;">{{ $group->name }}</a>
-                    </div>
+                    <div class="mega-column-title">Jeans</div>
                     <ul>
-                        @foreach($group->children as $child)
-                        <li><a href="{{ route('products.index', ['category' => $child->id]) }}">{{ $child->name }}</a></li>
+                        @foreach($womenSubcats as $sub)
+                        <li><a href="{{ route('products.index', ['category' => $sub->id]) }}">{{ $sub->name }}</a></li>
                         @endforeach
                     </ul>
                 </div>
-                @endforeach
+                {{-- <div class="mega-column"><div class="mega-column-title">Clothing</div>...</div> --}}
+                {{-- <div class="mega-column"><div class="mega-column-title">Innerwear</div>...</div> --}}
+                {{-- <div class="mega-column"><div class="mega-column-title">Accessories</div>...</div> --}}
                 <div class="mega-view-all-wrap" style="align-self:flex-end;margin-left:auto;flex-shrink:0;padding-left:24px;border-top:none;">
                     <a class="mega-view-all-btn" href="{{ route('products.index', ['category' => $womensCat->id]) }}">
                         View All Women's →
