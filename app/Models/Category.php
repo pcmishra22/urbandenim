@@ -59,4 +59,20 @@ class Category extends Model
     {
         return $this->children()->with('childrenRecursive');
     }
+
+    /**
+     * Backwards-compat: some code paths call $category->images (plural) but this model only
+     * stores a single image_url.
+     *
+     * Returning an empty relation would still require schema work; instead we provide a
+     * safe accessor-like structure so legacy code won't throw an undefined-relationship
+     * exception.
+     */
+    public function images()
+    {
+        // Provide a valid Eloquent relation so eager-loading (`with('images')`) works.
+        // We don't have a real category_images table in this codebase, so expose a
+        // minimal hasMany-like relation that returns zero rows.
+        return $this->hasMany(ProductImage::class, 'product_id', 'id')->whereRaw('1 = 0');
+    }
 }

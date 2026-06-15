@@ -3,13 +3,22 @@
      * Grid card for shop page infinite-scroll.
      * Expects: $product
      */
-    $img = $product->images->first() ?? null;
-    $relativePath = $img ? 'products/' . $product->id . '/images/' . ($img->image ?? '') : '';
-    $publicUrl    = $relativePath ? asset('storage/' . $relativePath) : asset('eshopper/img/product-1.jpg');
-    $fallbackUrl  = asset('storage/default.jpeg');
-    $imgSrc       = ($relativePath && file_exists(public_path('storage/' . $relativePath)))
-        ? $publicUrl
-        : ($product->images->isNotEmpty() ? $fallbackUrl : asset('eshopper/img/product-1.jpg'));
+
+    $img = $product->images->first();
+
+    // Prefer storage disk existence check (works even when public_path checks fail)
+    $storageDisk = \Illuminate\Support\Facades\Storage::disk('public');
+    $relativePath = $img
+        ? 'products/' . $product->id . '/images/' . ($img->image ?? '')
+        : null;
+
+    $imgSrc = null;
+    if ($relativePath && $img && $storageDisk->exists($relativePath)) {
+        $imgSrc = $storageDisk->url($relativePath);
+    } else {
+        // Hard fallback to avoid broken images on homepage/products
+        $imgSrc = $img ? asset('storage/' . $relativePath) : asset('eshopper/img/product-1.jpg');
+    }
 
     $detailUrl    = route('products.detail', $product->slug);
     $reviewCount  = $product->reviews_count ?? ($product->reviews->count() ?? 0);
