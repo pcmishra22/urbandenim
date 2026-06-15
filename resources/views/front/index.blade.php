@@ -24,20 +24,19 @@
                      style="width:calc(100% - 30px);z-index:999;top:0;">
                     <div class="navbar-nav w-100" style="max-height:410px;overflow-y:auto;">
                         @php
+                            // Root categories (Men's Jeans, Women's Jeans) — shown as parent headings
+                            // Their direct children with products shown as sub-links
                             $navCategories = \App\Models\Category::where('is_active', true)
                                 ->whereNull('parent_id')
                                 ->with(['children' => function($q){
-                                    // show only subcategories which have at least one ACTIVE product
                                     $q->where('is_active', true)
                                       ->whereHas('products', fn($p) => $p->where('is_active', true))
-                                      ->orderBy('name')
-                                      // keep enough children; final display is limited to 3 below
-                                      ->take(50);
+                                      ->orderBy('name');
                                 }])
-                                ->whereHas('children', fn($c) => $c->where('is_active', true)
-                                    ->whereHas('products', fn($p) => $p->where('is_active', true)))
-                                ->take(15)
-                                ->get();
+                                ->get()
+                                ->filter(fn($c) => $c->children->isNotEmpty()
+                                    || \App\Models\Product::where('category_id', $c->id)->where('is_active', true)->exists()
+                                );
                         @endphp
                         @forelse($navCategories as $cat)
                                <a href="{{ route('products.index', ['category' => $cat->id]) }}"

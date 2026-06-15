@@ -49,6 +49,9 @@ class DatabaseSeeder extends Seeder
         $this->call(CmsPageSeeder::class);
         $this->call(FaqSeeder::class);
 
+        // Seed blog content
+        $this->call(BlogSeeder::class);
+
         // Create admin user
         if (!User::where('email', 'admin@example.com')->exists()) {
             User::factory()->admin()->create([

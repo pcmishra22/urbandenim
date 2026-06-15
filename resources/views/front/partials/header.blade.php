@@ -311,7 +311,7 @@
 
         {{-- WOMEN --}}
         @php
-            $womensCat = \App\Models\Category::where('slug', 'womens-denim')->first();
+            $womensCat = \App\Models\Category::whereIn('slug', ['womens-jeans', 'womens-denim'])->first();
             // DB is flat: subcategories are direct children of Women's Jeans
             // Only show subcategories that actually have active products
             $womenSubcats = $womensCat
@@ -350,6 +350,7 @@
             @endif
         </div>
 
+        <a href="{{ route('blog.index') }}" class="{{ request()->routeIs('blog.*') ? 'active' : '' }}">Blog</a>
         <a href="{{ route('contact') }}" class="{{ request()->routeIs('contact') ? 'active' : '' }}">Contact</a>
 
     </div>
