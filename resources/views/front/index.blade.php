@@ -160,37 +160,70 @@
     <!-- Categories Start -->
     <div class="container-fluid pt-5">
         <div class="row px-xl-5 pb-3">
-            @php $categories = \App\Models\Category::where('is_active', true)->withCount('products')->take(6)->get(); @endphp
-            @forelse($categories as $category)
-            <div class="col-lg-4 col-md-6 pb-1">
-                <div class="cat-item d-flex flex-column border mb-4" style="padding: 30px;">
-                    <p class="text-right">{{ $category->products_count }} Products</p>
-                    <a href="{{ route('products.index', ['category' => $category->id]) }}" class="cat-img position-relative overflow-hidden mb-3">
-                        @if($category->image_url)
-                            <img class="img-fluid" src="{{ $category->image }}" alt="{{ $category->name }}">
-                        @else
-                            <img class="img-fluid" src="{{ asset('eshopper/img/cat-1.jpg') }}" alt="{{ $category->name }}">
-                        @endif
-                    </a>
-                    <h5 class="font-weight-semi-bold m-0">{{ $category->name }}</h5>
+            @php
+                // 1. Fetch all active categories
+                $allCategories = \App\Models\Category::where('is_active', true)->get();
+
+                // 2. Direct product counts per category_id
+                $productCountBycat = \App\Models\Product::where('is_active', true)
+                    ->whereNotNull('category_id')
+                    ->selectRaw('category_id, count(*) as total')
+                    ->groupBy('category_id')
+                    ->pluck('total', 'category_id')
+                    ->toArray();
+
+                // 3. Recursive function for total subtree product count
+                $getRecursiveCount = function($catId) use (&$getRecursiveCount, $allCategories, $productCountBycat) {
+                    $count = $productCountBycat[$catId] ?? 0;
+                    foreach ($allCategories->where('parent_id', $catId) as $child) {
+                        $count += $getRecursiveCount($child->id);
+                    }
+                    return $count;
+                };
+
+                // 4. Map all categories and filter those that contain products (directly or via children)
+                $categoriesToDisplay = $allCategories->map(function($cat) use ($getRecursiveCount) {
+                    $cat->dynamic_count = $getRecursiveCount($cat->id);
+                    return $cat;
+                })->filter(fn($c) => $c->dynamic_count > 0)->sortBy('name');
+            @endphp
+
+            @forelse($categoriesToDisplay as $category)
+                <div class="col-lg-4 col-md-6 pb-1">
+                    <div class="cat-item d-flex flex-column border mb-4" style="padding: 30px;">
+                        <p class="text-right">{{ $category->dynamic_count }} {{ \Illuminate\Support\Str::plural('Product', $category->dynamic_count) }}</p>
+                        <a href="{{ route('products.index', ['category' => $category->id]) }}" class="cat-img position-relative overflow-hidden mb-3">
+                            @php
+                                $imageUrl = $category->image_url;
+                                if ($imageUrl) {
+                                    $imageUrl = (str_starts_with($imageUrl, 'http') || str_starts_with($imageUrl, '/')) ? asset($imageUrl) : asset('storage/' . $imageUrl);
+                                } else {
+                                    $imageUrl = asset('eshopper/img/cat-' . (($loop->index % 6) + 1) . '.jpg');
+                                }
+                            @endphp
+                            <img class="img-fluid" src="{{ $imageUrl }}" alt="{{ $category->name }}">
+                        </a>
+                        <h5 class="font-weight-semi-bold m-0">{{ $category->name }}</h5>
+                    </div>
                 </div>
-            </div>
             @empty
-            @foreach(['cat-1','cat-2','cat-3','cat-4','cat-5','cat-6'] as $i => $img)
-            <div class="col-lg-4 col-md-6 pb-1">
-                <div class="cat-item d-flex flex-column border mb-4" style="padding: 30px;">
-                    <p class="text-right">15 Products</p>
-                    <a href="{{ route('products.index') }}" class="cat-img position-relative overflow-hidden mb-3">
-                        <img class="img-fluid" src="{{ asset('eshopper/img/' . $img . '.jpg') }}" alt="Category">
-                    </a>
-                    <h5 class="font-weight-semi-bold m-0">Category {{ $i + 1 }}</h5>
-                </div>
-            </div>
-            @endforeach
+                {{-- Fallback (should not happen unless DB empty) --}}
+                @foreach(['cat-1','cat-2','cat-3','cat-4','cat-5','cat-6'] as $i => $img)
+                    <div class="col-lg-4 col-md-6 pb-1">
+                        <div class="cat-item d-flex flex-column border mb-4" style="padding: 30px;">
+                            <p class="text-right">15 Products</p>
+                            <a href="{{ route('products.index') }}" class="cat-img position-relative overflow-hidden mb-3">
+                                <img class="img-fluid" src="{{ asset('eshopper/img/' . $img . '.jpg') }}" alt="Category">
+                            </a>
+                            <h5 class="font-weight-semi-bold m-0">Category {{ $i + 1 }}</h5>
+                        </div>
+                    </div>
+                @endforeach
             @endforelse
         </div>
     </div>
     <!-- Categories End -->
+
 
     <!-- Offer Start -->
     <div class="container-fluid offer pt-5">
