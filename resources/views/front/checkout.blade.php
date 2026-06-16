@@ -162,31 +162,43 @@
             <div class="j-order-summary mb-3">
                 <div class="summary-title"><i class="fa fa-credit-card mr-2" style="color:var(--j-primary);"></i>Payment Method</div>
 
-                <div class="mb-3">
-                    <div class="custom-control custom-radio mb-3">
-                        <input type="radio" class="custom-control-input" name="payment_method" id="pay_upi" value="upi"
-                               form="checkout-form" {{ old('payment_method') === 'upi' ? 'checked' : '' }}>
-                        <label class="custom-control-label" for="pay_upi">
-                            <i class="fa fa-mobile-alt mr-2" style="color:var(--j-primary);"></i>
-                            <strong>UPI / Net Banking</strong>
-                            <small class="d-block text-muted" style="margin-left:22px;">Google Pay, PhonePe, BHIM, IMPS</small>
-                        </label>
-                    </div>
-                    <div class="custom-control custom-radio">
-                        <input type="radio" class="custom-control-input" name="payment_method" id="pay_card" value="card"
-                               form="checkout-form" {{ old('payment_method') === 'card' ? 'checked' : '' }}>
-                        <label class="custom-control-label" for="pay_card">
-                            <i class="fa fa-credit-card mr-2" style="color:var(--j-primary);"></i>
-                            <strong>Credit / Debit Card</strong>
-                            <small class="d-block text-muted" style="margin-left:22px;">Visa, Mastercard, Rupay — via PayU</small>
-                        </label>
-                    </div>
+                {{-- UPI --}}
+                <div class="custom-control custom-radio mb-3">
+                    <input type="radio" class="custom-control-input" name="payment_method" id="pay_upi" value="upi"
+                           form="checkout-form" {{ old('payment_method') === 'upi' ? 'checked' : '' }}>
+                    <label class="custom-control-label" for="pay_upi">
+                        <i class="fa fa-mobile-alt mr-2" style="color:var(--j-primary);"></i>
+                        <strong>UPI / Net Banking</strong>
+                        <small class="d-block text-muted" style="margin-left:22px;">Google Pay, PhonePe, BHIM, IMPS</small>
+                    </label>
                 </div>
 
-                @error('payment_method')<small class="text-danger">{{ $message }}</small>@enderror
+                {{-- Card --}}
+                <div class="custom-control custom-radio mb-3">
+                    <input type="radio" class="custom-control-input" name="payment_method" id="pay_card" value="card"
+                           form="checkout-form" {{ old('payment_method') === 'card' ? 'checked' : '' }}>
+                    <label class="custom-control-label" for="pay_card">
+                        <i class="fa fa-credit-card mr-2" style="color:var(--j-primary);"></i>
+                        <strong>Credit / Debit Card</strong>
+                        <small class="d-block text-muted" style="margin-left:22px;">Visa, Mastercard, Rupay — via PayU</small>
+                    </label>
+                </div>
+
+                {{-- COD --}}
+                <div class="custom-control custom-radio mb-3">
+                    <input type="radio" class="custom-control-input" name="payment_method" id="pay_cod" value="cod"
+                           form="checkout-form" {{ old('payment_method') === 'cod' ? 'checked' : '' }}>
+                    <label class="custom-control-label" for="pay_cod">
+                        <i class="fa fa-money-bill-wave mr-2" style="color:var(--j-primary);"></i>
+                        <strong>Cash on Delivery</strong>
+                        <small class="d-block text-muted" style="margin-left:22px;">Pay in cash when your order arrives</small>
+                    </label>
+                </div>
+
+                @error('payment_method')<small class="text-danger d-block mb-2">{{ $message }}</small>@enderror
 
                 <div class="pt-2 mb-3" style="border-top:1px solid var(--j-border);">
-                    <small class="text-muted"><i class="fa fa-shield-alt text-success mr-1"></i>Payments secured by <strong>PayU</strong></small>
+                    <small class="text-muted"><i class="fa fa-shield-alt text-success mr-1"></i>Online payments secured by <strong>PayU</strong></small>
                 </div>
 
                 <div id="pay-error" class="alert alert-danger small py-2 mb-2" style="display:none;border-radius:8px;"></div>
@@ -197,7 +209,7 @@
 
                 <button type="submit" form="checkout-form" id="place-order-btn"
                         class="btn btn-primary btn-block py-3 font-weight-bold" style="border-radius:10px;font-size:1rem;">
-                    <i class="fa fa-lock mr-2"></i><span id="btn-label">Proceed to Pay ₹{{ number_format($grandTotal,2) }}</span>
+                    <i id="btn-icon" class="fa fa-lock mr-2"></i><span id="btn-label">Place Order</span>
                 </button>
             </div>
 
@@ -205,11 +217,11 @@
             <div class="j-section">
                 <div class="d-flex align-items-center mb-3">
                     <div class="action-icon mr-3"><i class="fa fa-shield-alt" style="color:var(--j-primary);"></i></div>
-                    <div><div class="font-weight-700" style="font-size:.9rem;">Secure Checkout</div><small class="text-muted">SSL encrypted & safe</small></div>
+                    <div><div class="font-weight-700" style="font-size:.9rem;">Secure Checkout</div><small class="text-muted">SSL encrypted &amp; safe</small></div>
                 </div>
                 <div class="d-flex align-items-center mb-3">
                     <div class="action-icon mr-3"><i class="fa fa-undo" style="color:var(--j-primary);"></i></div>
-                    <div><div class="font-weight-700" style="font-size:.9rem;">Easy Returns</div><small class="text-muted">14-day return policy</small></div>
+                    <div><div class="font-weight-700" style="font-size:.9rem;">Easy Returns</div><small class="text-muted">7-day return policy</small></div>
                 </div>
                 <div class="d-flex align-items-center">
                     <div class="action-icon mr-3"><i class="fa fa-headset" style="color:var(--j-primary);"></i></div>
@@ -224,18 +236,18 @@
 @endsection
 
 @push('scripts')
-{{-- PayU Payment Gateway — no external SDK needed --}}
 <script>
 (function ($) {
     var CSRF          = '{{ csrf_token() }}';
     var STORE_PENDING = '{{ route("checkout.store-pending") }}';
     var CREATE_ORDER  = '{{ route("payment.create-order") }}';
+    var COD_URL       = '{{ route("checkout.store") }}';
     var GRAND_TOTAL   = '{{ number_format($grandTotal, 2) }}';
 
+    /* ── spinner helpers ── */
     function spin(msg) {
         $('#pay-error').hide();
-        $('#pay-spinner').show();
-        $('#pay-spinner-msg').text(msg || 'Processing…');
+        $('#pay-spinner').show().find('#pay-spinner-msg').text(msg || 'Processing…');
         $('#place-order-btn').prop('disabled', true);
     }
     function unspin() { $('#pay-spinner').hide(); $('#place-order-btn').prop('disabled', false); }
@@ -245,6 +257,24 @@
         $('html,body').animate({ scrollTop: $('#pay-error').offset().top - 120 }, 250);
     }
 
+    /* ── dynamic button label ── */
+    function updateBtn() {
+        var m = $('input[name=payment_method]:checked').val();
+        if (m === 'cod') {
+            $('#btn-label').text('Place Order — Pay on Delivery');
+            $('#btn-icon').attr('class', 'fa fa-shopping-bag mr-2');
+        } else if (m === 'upi' || m === 'card') {
+            $('#btn-label').text('Proceed to Pay ₹' + GRAND_TOTAL);
+            $('#btn-icon').attr('class', 'fa fa-lock mr-2');
+        } else {
+            $('#btn-label').text('Place Order');
+            $('#btn-icon').attr('class', 'fa fa-lock mr-2');
+        }
+    }
+    $('input[name=payment_method]').on('change', updateBtn);
+    updateBtn();
+
+    /* ── saved address click ── */
     $(document).on('click', '.saved-addr', function () {
         $('.saved-addr').css({'border-color':'var(--j-border)','background':'#fff'});
         $(this).css({'border-color':'var(--j-primary)','background':'var(--j-primary-lt)'});
@@ -258,99 +288,133 @@
         $('[name=shipping_country]').val(d.country||'');
     });
 
+    /* ── field validation ── */
     function validateFields() {
         var checks = [
             ['shipping_full_name','Full Name'],['shipping_phone','Mobile No'],
             ['shipping_street','Street Address'],['shipping_city','City'],
-            ['shipping_state','State'],['shipping_postal_code','PIN Code'],['shipping_country','Country']
+            ['shipping_state','State'],['shipping_postal_code','PIN Code'],
+            ['shipping_country','Country']
         ];
-        for(var i=0;i<checks.length;i++){
-            if(!$('[name='+checks[i][0]+']').val().trim()){
-                showErr(checks[i][1]+' is required.');
-                $('[name='+checks[i][0]+']').focus();
+        for (var i = 0; i < checks.length; i++) {
+            if (!$('[name=' + checks[i][0] + ']').val().trim()) {
+                showErr(checks[i][1] + ' is required.');
+                $('[name=' + checks[i][0] + ']').focus();
                 return false;
             }
         }
         return true;
     }
 
+    /* ── collect form fields ── */
     function formData(method) {
         return {
-            shipping_full_name:$('[name=shipping_full_name]').val(),
-            shipping_phone:$('[name=shipping_phone]').val(),
-            shipping_street:$('[name=shipping_street]').val(),
-            shipping_city:$('[name=shipping_city]').val(),
-            shipping_state:$('[name=shipping_state]').val(),
-            shipping_postal_code:$('[name=shipping_postal_code]').val(),
-            shipping_country:$('[name=shipping_country]').val(),
-            notes:$('[name=notes]').val(),
-            coupon_code:$('[name=coupon_code]').val(),
-            payment_method:method
+            shipping_full_name:    $('[name=shipping_full_name]').val(),
+            shipping_phone:        $('[name=shipping_phone]').val(),
+            shipping_street:       $('[name=shipping_street]').val(),
+            shipping_city:         $('[name=shipping_city]').val(),
+            shipping_state:        $('[name=shipping_state]').val(),
+            shipping_postal_code:  $('[name=shipping_postal_code]').val(),
+            shipping_country:      $('[name=shipping_country]').val(),
+            notes:                 $('[name=notes]').val(),
+            coupon_code:           $('[name=coupon_code]').val(),
+            payment_method:        method
         };
     }
 
-    function postJson(url,data){
-        return fetch(url,{method:'POST',headers:{'Content-Type':'application/json','Accept':'application/json','X-CSRF-TOKEN':CSRF},body:JSON.stringify(data)})
-        .then(function(r){return r.text().then(function(text){
-            var json=null; try{json=text?JSON.parse(text):{}}catch(e){}
-            if(!r.ok){
-                if(json&&json.errors){var f=Object.values(json.errors)[0];throw new Error(Array.isArray(f)?f[0]:String(f));}
-                var msg=(json&&(json.error||json.message))||('Server error '+r.status);
-                if(r.status===401||(typeof msg==='string'&&(msg.toLowerCase()==='unauthenticated.'||msg.toLowerCase()==='unauthenticated'))){msg='Please login to continue...';}
-                throw new Error(msg);
-            }
-            return json||{};
-        });});
+    /* ── JSON POST helper ── */
+    function postJson(url, data) {
+        return fetch(url, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'Accept': 'application/json', 'X-CSRF-TOKEN': CSRF },
+            body: JSON.stringify(data)
+        }).then(function (r) {
+            return r.text().then(function (text) {
+                var json = null;
+                try { json = text ? JSON.parse(text) : {}; } catch (e) {}
+                if (!r.ok) {
+                    if (json && json.errors) {
+                        var f = Object.values(json.errors)[0];
+                        throw new Error(Array.isArray(f) ? f[0] : String(f));
+                    }
+                    var msg = (json && (json.error || json.message)) || ('Server error ' + r.status);
+                    if (r.status === 401 || (typeof msg === 'string' && msg.toLowerCase().indexOf('unauthenticated') !== -1)) {
+                        msg = 'Please login to continue...';
+                    }
+                    throw new Error(msg);
+                }
+                return json || {};
+            });
+        });
     }
 
-    /**
-     * Build a hidden form and auto-submit it to PayU's hosted payment page.
-     * PayU will handle the payment UI and redirect back to surl/furl.
-     */
+    /* ── PayU: build hidden form and auto-submit ── */
     function redirectToPayU(payuUrl, params) {
-        var form = $('<form>', {
-            method: 'POST',
-            action: payuUrl,
-            style:  'display:none;'
-        });
-        $.each(params, function(name, value) {
+        var form = $('<form>', { method: 'POST', action: payuUrl, style: 'display:none;' });
+        $.each(params, function (name, value) {
             form.append($('<input>', { type: 'hidden', name: name, value: value }));
         });
         $('body').append(form);
         form.submit();
     }
 
-    $('#checkout-form').on('submit', function(e) {
-        var method = $('input[name=payment_method]:checked').val();
-        e.preventDefault();
-        if (!method) { showErr('Please select a payment method.'); return; }
-        if (!validateFields()) return;
-        spin('Saving your order…');
+    /* ── COD: normal form POST to checkout.store ── */
+    function submitCod(data) {
+        var form = $('<form>', { method: 'POST', action: COD_URL, style: 'display:none;' });
+        form.append($('<input>', { type: 'hidden', name: '_token', value: CSRF }));
+        $.each(data, function (name, value) {
+            form.append($('<input>', { type: 'hidden', name: name, value: value || '' }));
+        });
+        $('body').append(form);
+        form.submit();
+    }
 
+    /* ── Main submit handler ── */
+    $('#checkout-form').on('submit', function (e) {
+        e.preventDefault();
+        var method = $('input[name=payment_method]:checked').val();
+        if (!method)          { showErr('Please select a payment method.'); return; }
+        if (!validateFields()) return;
+
+        /* COD — direct POST */
+        if (method === 'cod') {
+            spin('Placing your order…');
+            submitCod(formData('cod'));
+            return;
+        }
+
+        /* UPI / Card — PayU redirect */
+        spin('Saving your order…');
         postJson(STORE_PENDING, formData(method))
-        .then(function(od) {
+        .then(function (od) {
             if (!od.order_id) throw new Error('No order ID returned.');
             spin('Connecting to PayU…');
             return postJson(CREATE_ORDER, { order_id: od.order_id })
-                   .then(function(pu) { return { od: od, pu: pu }; });
+                .then(function (pu) { return { od: od, pu: pu }; });
         })
-        .then(function(res) {
+        .then(function (res) {
             var pu = res.pu;
             if (!pu.payu_url || !pu.params) throw new Error('PayU configuration error. Please try again.');
             spin('Redirecting to PayU…');
             redirectToPayU(pu.payu_url, pu.params);
         })
-        .catch(function(err) { showErr(err.message || 'Something went wrong. Please try again.'); });
+        .catch(function (err) { showErr(err.message || 'Something went wrong. Please try again.'); });
     });
 
-    $('#apply-coupon-btn').on('click', function() {
+    /* ── Coupon apply ── */
+    $('#apply-coupon-btn').on('click', function () {
         var code = $('#coupon_input').val().trim();
         if (!code) { $('#coupon-msg').html('<span class="text-danger">Please enter a coupon code.</span>'); return; }
-        $.post('{{ route("coupon.apply") }}', {_token:CSRF, coupon_code:code, subtotal:{{ $subtotal }}}, function(res) {
-            if (res.success) { $('#coupon-msg').html('<span class="text-success"><i class="fa fa-check mr-1"></i>'+res.message+'</span>'); setTimeout(function(){ location.reload(); }, 800); }
-            else { $('#coupon-msg').html('<span class="text-danger">'+res.message+'</span>'); }
-        }).fail(function() { $('#coupon-msg').html('<span class="text-danger">Error applying coupon.</span>'); });
+        $.post('{{ route("coupon.apply") }}', { _token: CSRF, coupon_code: code, subtotal: {{ $subtotal }} }, function (res) {
+            if (res.success) {
+                $('#coupon-msg').html('<span class="text-success"><i class="fa fa-check mr-1"></i>' + res.message + '</span>');
+                setTimeout(function () { location.reload(); }, 800);
+            } else {
+                $('#coupon-msg').html('<span class="text-danger">' + res.message + '</span>');
+            }
+        }).fail(function () { $('#coupon-msg').html('<span class="text-danger">Error applying coupon.</span>'); });
     });
+
 })(jQuery);
 </script>
 @endpush

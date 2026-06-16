@@ -390,6 +390,14 @@ Route::middleware('auth')->group(function () {
 Route::get('/blog', [BlogController::class, 'index'])->name('blog.index');
 Route::get('/blog/{slug}', [BlogController::class, 'show'])->name('blog.show');
 
+
+// ── Legal / Policy pages ───────────────────────────────────────────────────
+Route::get('/terms-and-conditions', fn() => view('front.legal.terms'))->name('legal.terms');
+Route::get('/privacy-policy',       fn() => view('front.legal.privacy'))->name('legal.privacy');
+Route::get('/return-refund-policy', fn() => view('front.legal.refund'))->name('legal.refund');
+Route::get('/shipping-policy',      fn() => view('front.legal.shipping'))->name('legal.shipping');
+Route::get('/cancellation-policy',  fn() => view('front.legal.cancellation'))->name('legal.cancellation');
+
 Route::get('/about', function () {
     return view('front.about');
 })->name('about');
@@ -417,7 +425,7 @@ Route::post('/newsletter/subscribe', [\App\Http\Controllers\Front\FaqController:
 // ── Front: Payment gateway (PayU) ──────────
 Route::post('/payment/create-order', [\App\Http\Controllers\PaymentController::class, 'createOrder'])->name('payment.create-order')->middleware('auth');
 
-// PayU return URL after payment (browser redirect POST to surl/furl)
+// PayU return URL after payment (browser redirect)
 // CSRF-exempt via bootstrap/app.php validateCsrfTokens(except: ['payment/verify', 'payment/webhook'])
 Route::match(['get', 'post'], '/payment/verify', [\App\Http\Controllers\PaymentController::class, 'verify'])->name('payment.verify');
 

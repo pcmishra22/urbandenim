@@ -65,6 +65,16 @@
                         </div>
                     </div>
                     <div class="col-md-4 mb-5">
+                        <h5 class="font-weight-bold text-dark mb-4">Legal</h5>
+                        <div class="d-flex flex-column justify-content-start">
+                            <a class="text-dark mb-2" href="{{ route('legal.terms') }}"><i class="fa fa-angle-right mr-2"></i>Terms &amp; Conditions</a>
+                            <a class="text-dark mb-2" href="{{ route('legal.privacy') }}"><i class="fa fa-angle-right mr-2"></i>Privacy Policy</a>
+                            <a class="text-dark mb-2" href="{{ route('legal.refund') }}"><i class="fa fa-angle-right mr-2"></i>Return &amp; Refund Policy</a>
+                            <a class="text-dark mb-2" href="{{ route('legal.shipping') }}"><i class="fa fa-angle-right mr-2"></i>Shipping Policy</a>
+                            <a class="text-dark" href="{{ route('legal.cancellation') }}"><i class="fa fa-angle-right mr-2"></i>Cancellation Policy</a>
+                        </div>
+                    </div>
+                    <div class="col-md-4 mb-5">
                         <h5 class="font-weight-bold text-dark mb-4">Newsletter</h5>
                         @if(session('newsletter_success'))
                             <div class="alert alert-success py-2 small">{{ session('newsletter_success') }}</div>
@@ -95,7 +105,12 @@
                 </p>
             </div>
             <div class="col-md-6 px-xl-0 text-center text-md-right">
-                <img class="img-fluid" src="{{ asset('eshopper/img/payments.png') }}" alt="Payment methods">
+                <small>
+                    <a class="text-dark mr-3" href="{{ route('legal.terms') }}">Terms</a>
+                    <a class="text-dark mr-3" href="{{ route('legal.privacy') }}">Privacy</a>
+                    <a class="text-dark mr-3" href="{{ route('legal.refund') }}">Returns</a>
+                    <a class="text-dark" href="{{ route('legal.shipping') }}">Shipping</a>
+                </small>
             </div>
         </div>
     </div>

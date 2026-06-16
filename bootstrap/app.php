@@ -19,7 +19,7 @@ return Application::configure(basePath: dirname(__DIR__))
             'role'   => \App\Http\Middleware\CheckRole::class,
         ]);
 
-        // Exclude PayU callbacks from CSRF — PayU POSTs back from an external server
+        // Exclude PayU callback from CSRF — PayU POSTs back from an external server
         // with no Laravel session/token. Security is enforced by SHA-512 hash verification.
         $middleware->validateCsrfTokens(except: [
             'payment/verify',
