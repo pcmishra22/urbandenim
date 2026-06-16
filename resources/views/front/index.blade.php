@@ -27,7 +27,8 @@
 .hero-wrap .carousel-item img {
     width: 100%; height: 100%;
     object-fit: cover; object-position: center top;
-    filter: brightness(.62);
+    /* Keep banner images bright */
+    filter: brightness(1) contrast(1);
 }
 .hero-caption {
     position: absolute; bottom: 0; left: 0; right: 0; top: 0;
@@ -475,7 +476,7 @@
                     <img src="{{ $imgUrl }}" alt="{{ $slide->title ?? '' }}">
                     <div class="hero-caption">
                         @if(!empty($slide->subtitle))<div class="hero-eyebrow">{{ $slide->subtitle }}</div>@endif
-                        <h1>{{ $slide->title ?? 'New Collection' }}</h1>
+                        <h1>{{ $slide->title ?? '' }}</h1>
                         @if($slide->link_url ?? null)
                             <div class="hero-btns">
                                 <a href="{{ $slide->link_url }}" class="btn-hero-solid">Shop Now</a>
@@ -491,7 +492,7 @@
                     <img src="{{ $fb['img'] }}" alt="{{ $fb['title'] }}">
                     <div class="hero-caption">
                         <div class="hero-eyebrow">{{ $fb['label'] }}</div>
-                        <h1>{{ $fb['title'] }}</h1>
+                        <h1>{{ $fb['title'] ?? '' }}</h1>
                         <div class="hero-sub">{{ $fb['sub'] }}</div>
                         <div class="hero-btns">
                             <a href="{{ $fb['link'] }}" class="btn-hero-solid">{{ $fb['cta'] }}</a>
