@@ -178,7 +178,7 @@
                         <label class="custom-control-label" for="pay_card">
                             <i class="fa fa-credit-card mr-2" style="color:var(--j-primary);"></i>
                             <strong>Credit / Debit Card</strong>
-                            <small class="d-block text-muted" style="margin-left:22px;">Visa, Mastercard, Rupay — via PayU</small>
+                            <small class="d-block text-muted" style="margin-left:22px;">Visa, Mastercard, Rupay — via Cashfree</small>
                         </label>
                     </div>
                 </div>
@@ -186,7 +186,7 @@
                 @error('payment_method')<small class="text-danger">{{ $message }}</small>@enderror
 
                 <div class="pt-2 mb-3" style="border-top:1px solid var(--j-border);">
-                    <small class="text-muted"><i class="fa fa-shield-alt text-success mr-1"></i>Payments secured by <strong>PayU</strong></small>
+                    <small class="text-muted"><i class="fa fa-shield-alt text-success mr-1"></i>Payments secured by <strong>Cashfree</strong></small>
                 </div>
 
                 <div id="pay-error" class="alert alert-danger small py-2 mb-2" style="display:none;border-radius:8px;"></div>
@@ -224,13 +224,16 @@
 @endsection
 
 @push('scripts')
+{{-- Cashfree JS SDK --}}
+<script src="https://sdk.cashfree.com/js/v3/cashfree.js"></script>
 <script>
 (function ($) {
-    var CSRF          = '{{ csrf_token() }}';
-    var STORE_PENDING = '{{ route("checkout.store-pending") }}';
-    var CREATE_PAYU   = '{{ route("payment.create-order") }}';
-    var VERIFY_URL    = '{{ route("payment.verify") }}';
-    var GRAND_TOTAL   = '{{ number_format($grandTotal, 2) }}';
+    var CSRF            = '{{ csrf_token() }}';
+    var STORE_PENDING   = '{{ route("checkout.store-pending") }}';
+    var CREATE_ORDER    = '{{ route("payment.create-order") }}';
+    var VERIFY_URL      = '{{ route("payment.verify") }}';
+    var GRAND_TOTAL     = '{{ number_format($grandTotal, 2) }}';
+    var CF_ENV          = '{{ config("services.cashfree.env", "sandbox") }}'; // 'sandbox' or 'production'
 
     function spin(msg) {
         $('#pay-error').hide();
@@ -309,26 +312,42 @@
         if(!method){showErr('Please select a payment method.');return;}
         if(!validateFields()) return;
         spin('Saving your order…');
-        postJson(STORE_PENDING,formData(method))
+
+        postJson(STORE_PENDING, formData(method))
         .then(function(od){
             if(!od.order_id) throw new Error('No order ID returned.');
-            spin('Redirecting to PayU…');
-            return postJson(CREATE_PAYU,{order_id:od.order_id}).then(function(payu){return{od:od,payu:payu};});
+            spin('Connecting to Cashfree…');
+            return postJson(CREATE_ORDER, {order_id: od.order_id}).then(function(cf){ return {od:od, cf:cf}; });
         })
         .then(function(res){
-            unspin();
-            var od=res.od,payu=res.payu;
-            if(!payu.endpoint||!payu.hash) throw new Error('PayU data missing from server.');
-            var form=document.createElement('form');
-            form.method='POST'; form.action=payu.endpoint;
-            var fields={'key':payu.merchantKey,'txnid':payu.txnid,'amount':payu.amount,
-                'productinfo':payu.productinfo||('Order #'+od.order_id),'firstname':payu.firstname||'',
-                'email':payu.email||'','phone':payu.phone||'','hash':payu.hash,
-                'udf1':payu.udf1||String(od.order_id),
-                'surl':VERIFY_URL+'?order_id='+encodeURIComponent(od.order_id),
-                'furl':VERIFY_URL+'?order_id='+encodeURIComponent(od.order_id)};
-            Object.keys(fields).forEach(function(k){var i=document.createElement('input');i.type='hidden';i.name=k;i.value=fields[k];form.appendChild(i);});
-            document.body.appendChild(form); form.submit();
+            var od = res.od, cf = res.cf;
+            if(!cf.payment_session_id) throw new Error('Payment session not created. Please try again.');
+
+            spin('Opening payment window…');
+
+            // Initialise Cashfree SDK
+            var mode = (CF_ENV === 'production') ? 'production' : 'sandbox';
+            var cashfree = Cashfree({ mode: mode });
+
+            var checkoutOptions = {
+                paymentSessionId: cf.payment_session_id,
+                redirectTarget:   '_self',  // redirect in same tab
+            };
+
+            cashfree.checkout(checkoutOptions).then(function(result){
+                if(result.error){
+                    showErr(result.error.message || 'Payment failed. Please try again.');
+                } else if(result.redirect){
+                    // Cashfree will redirect automatically — show a waiting message
+                    spin('Redirecting…');
+                } else if(result.paymentDetails){
+                    // Payment completed inline (some methods)
+                    spin('Verifying payment…');
+                    window.location.href = VERIFY_URL + '?order_id=' + encodeURIComponent(od.order_id) + '&cf_order_id=' + encodeURIComponent(cf.cashfree_order_id);
+                }
+            }).catch(function(err){
+                showErr(err.message || 'Payment window could not be opened. Please try again.');
+            });
         })
         .catch(function(err){showErr(err.message||'Something went wrong. Please try again.');});
     });

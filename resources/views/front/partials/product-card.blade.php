@@ -11,19 +11,29 @@
         {{-- Image — clickable --}}
         <div class="card-header product-img position-relative overflow-hidden bg-transparent border p-0">
             <a href="{{ $detailUrl }}">
-                @if($product->images && $product->images->isNotEmpty())
-                    @php
-                        $img          = $product->images->first();
+                @php
+                    $storageDisk = \Illuminate\Support\Facades\Storage::disk('public');
+                    if ($product->images && $product->images->isNotEmpty()) {
+                        $img = $product->images->first();
                         $relativePath = 'products/' . $product->id . '/images/' . ($img->image ?? '');
-                        $publicUrl    = asset('storage/' . $relativePath);
-                        $fallbackUrl  = asset('storage/default.jpeg');
-                    @endphp
-                    <img class="img-fluid w-100"
-                         src="{{ file_exists(public_path('storage/' . $relativePath)) ? $publicUrl : $fallbackUrl }}"
-                         alt="{{ $product->name }}">
-                @else
-                    <img class="img-fluid w-100" src="{{ asset('eshopper/img/product-1.jpg') }}" alt="{{ $product->name }}">
-                @endif
+                        if ($storageDisk->exists($relativePath)) {
+                            $cardImgSrc = $storageDisk->url($relativePath);
+                        } else {
+                            $cardImgSrc = file_exists(public_path('storage/default.jpg'))
+                                ? asset('storage/default.jpg')
+                                : (file_exists(public_path('storage/default.jpeg')) ? asset('storage/default.jpeg') : asset('eshopper/img/product-1.jpg'));
+                        }
+                    } else {
+                        $cardImgSrc = file_exists(public_path('storage/default.jpg'))
+                            ? asset('storage/default.jpg')
+                            : (file_exists(public_path('storage/default.jpeg')) ? asset('storage/default.jpeg') : asset('eshopper/img/product-1.jpg'));
+                    }
+                @endphp
+                <img class="img-fluid w-100"
+                     src="{{ $cardImgSrc }}"
+                     alt="{{ $product->name }}"
+                     onerror="this.onerror=null;this.src='{{ asset('storage/default.jpg') }}';"
+                     loading="lazy">
             </a>
         </div>
 

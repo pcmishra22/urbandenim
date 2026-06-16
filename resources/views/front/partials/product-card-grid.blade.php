@@ -6,18 +6,23 @@
 
     $img = $product->images->first();
 
-    // Prefer storage disk existence check (works even when public_path checks fail)
     $storageDisk = \Illuminate\Support\Facades\Storage::disk('public');
     $relativePath = $img
         ? 'products/' . $product->id . '/images/' . ($img->image ?? '')
         : null;
 
-    $imgSrc = null;
+    // Use default.jpg if image doesn't exist on disk
     if ($relativePath && $img && $storageDisk->exists($relativePath)) {
         $imgSrc = $storageDisk->url($relativePath);
     } else {
-        // Hard fallback to avoid broken images on homepage/products
-        $imgSrc = $img ? asset('storage/' . $relativePath) : asset('eshopper/img/product-1.jpg');
+        // Fallback to default.jpg
+        $imgSrc = asset('storage/default.jpg');
+        // Try default.jpeg if default.jpg doesn't exist
+        if (!file_exists(public_path('storage/default.jpg'))) {
+            $imgSrc = file_exists(public_path('storage/default.jpeg'))
+                ? asset('storage/default.jpeg')
+                : asset('eshopper/img/product-1.jpg');
+        }
     }
 
     $detailUrl    = route('products.detail', $product->slug);
@@ -29,7 +34,9 @@
     <div class="card product-item border-0 mb-4">
         <div class="card-header product-img position-relative overflow-hidden bg-transparent border p-0">
             <a href="{{ $detailUrl }}">
-                <img class="img-fluid w-100" src="{{ $imgSrc }}" alt="{{ $product->name }}">
+                <img class="img-fluid w-100" src="{{ $imgSrc }}" alt="{{ $product->name }}"
+                     onerror="this.onerror=null;this.src='{{ asset('storage/default.jpg') }}';"
+                     loading="lazy">
             </a>
         </div>
 

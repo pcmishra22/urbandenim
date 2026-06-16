@@ -34,6 +34,8 @@ class Order extends Model
         'razorpay_payment_id', // legacy name → payu_payment_id (migration renames it)
         'payu_txnid',
         'payu_payment_id',
+        'cf_order_id',         // Cashfree order ID (e.g. order_77_timestamp)
+        'cf_payment_id',       // Cashfree payment reference ID
     ];
 
     protected $casts = [

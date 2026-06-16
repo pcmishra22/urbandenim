@@ -414,14 +414,15 @@ Route::get('/faq', [\App\Http\Controllers\Front\FaqController::class, 'index'])-
 Route::get('/help', [\App\Http\Controllers\Front\FaqController::class, 'help'])->name('help');
 Route::post('/newsletter/subscribe', [\App\Http\Controllers\Front\FaqController::class, 'newsletter'])->name('newsletter.subscribe');
 
-// ── Front: Payment gateway (PayU Hosted Checkout) ──────────
+// ── Front: Payment gateway (Cashfree) ──────────
 Route::post('/payment/create-order', [\App\Http\Controllers\PaymentController::class, 'createOrder'])->name('payment.create-order')->middleware('auth');
 
-// PayU redirects the browser back via GET (surl/furl) and may also POST for server callbacks.
-// This route is CSRF-exempt via bootstrap/app.php validateCsrfTokens(except: ['payment/verify'])
-// because PayU is an external server with no Laravel session token.
-// Security is enforced by SHA-512 hash verification inside PaymentController@verify.
+// Cashfree return URL after payment (browser redirect)
+// CSRF-exempt via bootstrap/app.php validateCsrfTokens(except: ['payment/verify', 'payment/webhook'])
 Route::match(['get', 'post'], '/payment/verify', [\App\Http\Controllers\PaymentController::class, 'verify'])->name('payment.verify');
+
+// Cashfree webhook (server-to-server, no CSRF)
+Route::post('/payment/webhook', [\App\Http\Controllers\PaymentController::class, 'webhook'])->name('payment.webhook');
 
 // ── Front: Profile extras ──────────────────────────────────
 Route::middleware('auth')->group(function () {

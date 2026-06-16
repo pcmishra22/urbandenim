@@ -8,23 +8,44 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 
 /**
- * PayU Hosted Checkout (redirect) payment gateway controller.
+ * Cashfree Payment Gateway Controller
  *
- * Flow:
- *   1. JS calls checkout.store-pending  → order created, payment_status = awaiting_payment
- *   2. JS calls payment.create-order    → PayU hash + POST fields returned
- *   3. JS auto-submits a hidden form to PayU hosted checkout URL
- *   4. PayU redirects browser to surl/furl (GET) after payment
- *   5. verify() validates PayU response hash and marks order paid
+ * Uses cashfree/cashfree-pg SDK (master branch, v6.x).
+ * Install: composer require cashfree/cashfree-pg
+ *
+ * Verified namespaces from SDK source:
+ *   \Cashfree\Cashfree                    — main client (lib/Cashfree.php)
+ *   \Cashfree\Model\CreateOrderRequest    — (lib/Model/CreateOrderRequest.php)
+ *   \Cashfree\Model\CustomerDetails       — (lib/Model/CustomerDetails.php)
+ *   \Cashfree\Model\OrderMeta             — (lib/Model/OrderMeta.php)
+ *
+ * NOTE: $SANDBOX = 0 and $PRODUCTION = 1 are INSTANCE properties, not static.
+ *       Pass 0 (sandbox) or 1 (production) as the first constructor argument.
  */
 class PaymentController extends Controller
 {
     /**
-     * Create PayU Hosted Checkout payment redirect data for an already-saved pending order.
+     * Return a configured Cashfree client instance.
+     */
+    private function getCashfree(): \Cashfree\Cashfree
+    {
+        $env = config('services.cashfree.env', 'sandbox') === 'production' ? 1 : 0;
+
+        return new \Cashfree\Cashfree(
+            $env,                                          // 0 = sandbox, 1 = production
+            config('services.cashfree.app_id'),            // x-client-id
+            config('services.cashfree.secret_key'),        // x-client-secret
+            '',                                            // x-partner-api-key (unused)
+            '',                                            // x-partner-merchant-id (unused)
+            '',                                            // x-client-signature (unused)
+            false                                          // error analytics
+        );
+    }
+
+    /**
+     * Create a Cashfree order via SDK and return payment_session_id to JS.
      *
-     * Front-end contract:
-     *   - JS calls POST /payment/create-order with { order_id }
-     *   - we respond with endpoint URL + POST fields (including pre-computed hash)
+     * POST /payment/create-order  { order_id }
      */
     public function createOrder(Request $request)
     {
@@ -34,193 +55,213 @@ class PaymentController extends Controller
             ->where('payment_status', 'awaiting_payment')
             ->findOrFail($request->order_id);
 
-        $merchantKey = config('services.payu.merchant_key');
-        $salt        = config('services.payu.salt');
-        $baseUrl     = rtrim(config('services.payu.base_url'), '/');
-
-        if (!$merchantKey || !$salt) {
-            return response()->json(['error' => 'PayU credentials are not fully configured.'], 500);
+        if (!config('services.cashfree.app_id') || !config('services.cashfree.secret_key')) {
+            Log::error('Cashfree: credentials not set in .env');
+            return response()->json(['error' => 'Payment gateway not configured.'], 500);
         }
 
-        $txnid       = 'order_' . $order->id . '_' . time();
-        $amount      = number_format((float) $order->total_price, 2, '.', '');
-        $productinfo = 'Order #' . $order->id;
-        $firstname   = auth()->user()->name ?? '';
-        $email       = auth()->user()->email ?? '';
-        $phone       = $order->shipping_phone ?? '';
+        $user      = auth()->user();
+        $cfOrderId = 'order_' . $order->id . '_' . time();
+        $amount    = round((float) $order->total_price, 2);
+        $returnUrl = route('payment.verify')
+            . '?order_id=' . $order->id
+            . '&cf_order_id=' . urlencode($cfOrderId);
 
-        // PayU request hash — 17 parts, 16 pipes:
-        // key|txnid|amount|productinfo|firstname|email|udf1|udf2|udf3|udf4|udf5||||||salt
-        // After email: udf1 + 9 empty fields + salt  (verified against PayU error response)
-        $hashString = implode('|', [
-            $merchantKey,   // [0] key
-            $txnid,         // [1] txnid
-            $amount,        // [2] amount
-            $productinfo,   // [3] productinfo
-            $firstname,     // [4] firstname
-            $email,         // [5] email
-            $order->id,     // [6] udf1
-            '',             // [7] udf2
-            '',             // [8] udf3
-            '',             // [9] udf4
-            '',             // [10] udf5
-            '',             // [11] reserved
-            '',             // [12] reserved
-            '',             // [13] reserved
-            '',             // [14] reserved
-            '',             // [15] reserved
-            $salt,          // [16] salt
-        ]);
-        $hash = hash('sha512', $hashString);
+        try {
+            // Build customer details
+            $customerDetails = new \Cashfree\Model\CustomerDetails();
+            $customerDetails->setCustomerId('cust_' . $user->id);
+            $customerDetails->setCustomerName($user->name ?? 'Customer');
+            $customerDetails->setCustomerEmail($user->email ?? '');
+            $customerDetails->setCustomerPhone($order->shipping_phone ?? '9999999999');
 
-        // Store PayU txnid so we can look it up on callback.
-        $order->update(['payu_txnid' => $txnid]);
+            // Build order meta
+            $orderMeta = new \Cashfree\Model\OrderMeta();
+            $orderMeta->setReturnUrl($returnUrl);
+            $orderMeta->setNotifyUrl(route('payment.webhook'));
 
-        $endpoint = $baseUrl . '/_payment';
+            // Build create order request
+            $orderRequest = new \Cashfree\Model\CreateOrderRequest();
+            $orderRequest->setOrderId($cfOrderId);
+            $orderRequest->setOrderAmount($amount);
+            $orderRequest->setOrderCurrency('INR');
+            $orderRequest->setOrderNote('Order #' . $order->id . ' - Jeanzo');
+            $orderRequest->setCustomerDetails($customerDetails);
+            $orderRequest->setOrderMeta($orderMeta);
 
-        return response()->json([
-            'endpoint'    => $endpoint,
-            'merchantKey' => $merchantKey,
-            'txnid'       => $txnid,
-            'order_id'    => $order->id,
-            'amount'      => $amount,
-            'productinfo' => $productinfo,
-            'firstname'   => $firstname,
-            'email'       => $email,
-            'phone'       => $phone,
-            'hash'        => $hash,   // pre-computed; front-end posts this as `hash`
-            'udf1'        => (string) $order->id,
-        ]);
+            $response         = $this->getCashfree()->PGCreateOrder($orderRequest);
+            $paymentSessionId = $response->getPaymentSessionId();
+
+            if (!$paymentSessionId) {
+                Log::error('Cashfree: no payment_session_id returned', ['response' => $response]);
+                return response()->json(['error' => 'Failed to create payment session. Please try again.'], 500);
+            }
+
+            $order->update([
+                'cf_order_id' => $cfOrderId,
+                'payu_txnid'  => $cfOrderId,
+            ]);
+
+            Log::info('Cashfree order created', [
+                'order_id'    => $order->id,
+                'cf_order_id' => $cfOrderId,
+            ]);
+
+            return response()->json([
+                'payment_session_id' => $paymentSessionId,
+                'cashfree_order_id'  => $cfOrderId,
+                'order_id'           => $order->id,
+                'amount'             => $amount,
+                'cf_env'             => config('services.cashfree.env', 'sandbox'),
+            ]);
+
+        } catch (\Exception $e) {
+            Log::error('Cashfree createOrder error', [
+                'order_id' => $order->id,
+                'error'    => $e->getMessage(),
+            ]);
+            return response()->json(['error' => 'Payment gateway error: ' . $e->getMessage()], 500);
+        }
     }
 
     /**
-     * Handle PayU Hosted Checkout callback (browser redirect via surl/furl).
+     * Verify payment after Cashfree redirects the browser back.
      *
-     * PayU sends the browser back via GET (or POST depending on integration mode).
-     * We support both; the route registers both methods in web.php.
-     *
-     * PayU response hash (REVERSED order):
-     *   sha512(salt|status||udf5|udf4|udf3|udf2|udf1|email|firstname|productinfo|amount|txnid|key)
+     * GET /payment/verify?order_id=X&cf_order_id=Y
      */
     public function verify(Request $request)
     {
-        // order_id comes as query-string on GET redirects (?order_id=77)
-        // and may also be in POST body for server callbacks — read both.
-        $orderId = $request->query('order_id') ?? $request->input('order_id');
+        $orderId   = $request->query('order_id');
+        $cfOrderId = $request->query('cf_order_id');
 
         if (!$orderId || !is_numeric($orderId)) {
-            Log::error('PayU verify: missing or invalid order_id', ['all' => $request->all(), 'query' => $request->query()]);
             return redirect()->route('home')->with('error', 'Invalid payment callback. Please contact support.');
         }
 
         $order = Order::find((int) $orderId);
         if (!$order) {
-            Log::error('PayU verify: order not found', ['order_id' => $orderId]);
             return redirect()->route('home')->with('error', 'Order not found.');
         }
 
-        // Already paid — idempotent redirect
         if ($order->payment_status === 'paid') {
             return redirect()->route('checkout.confirmation', $order->id)
                 ->with('success', 'Payment already confirmed for Order #' . $order->id . '.');
         }
 
-        $merchantKey = config('services.payu.merchant_key');
-        $salt        = config('services.payu.salt');
+        $lookupId = $cfOrderId ?: $order->cf_order_id ?: $order->payu_txnid;
 
-        $status = $request->input('status', '');
-        $hash   = $request->input('hash', '');
-        $txnid  = $request->input('txnid', '');
-
-        // Temporary: log all PayU callback fields for debugging
-        Log::info('PayU callback fields', $request->all());
-
-        // PayU payment reference ID.
-        $payuPaymentId = $request->input('mihpayid')
-            ?? $request->input('payuMoneyId')
-            ?? $request->input('paymentId')
-            ?? '';
-
-        $isSuccess = in_array((string) $status, ['success', 'Success'], true);
-
-        if (!$isSuccess) {
+        if (!$lookupId) {
+            Log::error('Cashfree verify: no cf_order_id available', ['order_id' => $orderId]);
             return redirect()->route('checkout.confirmation', $order->id)
-                ->with('error', 'Payment was not successful for Order #' . $order->id . '. Status: ' . $status);
+                ->with('error', 'Unable to verify payment. Contact support with Order #' . $order->id);
         }
 
-        // Verify response hash if we have both salt and hash in the callback.
-        // TEMP: skip hash verification while debugging — re-enable after confirming fields
-        $skipHashVerification = true;
-        if (!$skipHashVerification && $salt && $hash) {
-            // PayU response hash uses REVERSED field order with additional UDF fields.
-            $udf5 = $request->input('udf5', '');
-            $udf4 = $request->input('udf4', '');
-            $udf3 = $request->input('udf3', '');
-            $udf2 = $request->input('udf2', '');
-            $udf1 = $request->input('udf1', (string) $order->id);
+        try {
+            $cfOrder  = $this->getCashfree()->PGFetchOrder($lookupId);
+            $cfStatus = $cfOrder->getOrderStatus();
 
-            $hashString = implode('|', [
-                $salt,
-                $status,
-                '',          // additionalCharges (empty if none)
-                $udf5,
-                $udf4,
-                $udf3,
-                $udf2,
-                $udf1,
-                $request->input('email', $order->user->email ?? ''),
-                $request->input('firstname', $order->user->name ?? ''),
-                $request->input('productinfo', 'Order #' . $order->id),
-                $request->input('amount', number_format((float) $order->total_price, 2, '.', '')),
-                $txnid,
-                $merchantKey,
-            ]);
+            Log::info('Cashfree verify: status', ['order_id' => $orderId, 'cf_status' => $cfStatus]);
 
-            $generated = hash('sha512', $hashString);
-
-            if (!hash_equals($generated, (string) $hash)) {
-                Log::warning('PayU hash mismatch', [
-                    'order_id' => $order->id,
-                    'txnid'    => $txnid,
-                    'received' => $hash,
-                    'computed' => $generated,
-                ]);
-
+            if ($cfStatus !== 'PAID') {
                 return redirect()->route('checkout.confirmation', $order->id)
-                    ->with('error', 'Payment verification failed. Please contact support with Order #' . $order->id);
+                    ->with('error', 'Payment not successful for Order #' . $order->id
+                        . ' (status: ' . $cfStatus . '). If amount was deducted, contact support.');
             }
-        } else {
-            Log::warning('PayU verification skipped (missing salt/hash)', [
-                'order_id' => $order->id,
-                'salt_set' => (bool) $salt,
-                'hash_set' => (bool) $hash,
+
+            $paymentId = (string) ($cfOrder->getCfOrderId() ?? $lookupId);
+
+            $order->update([
+                'payment_status'  => 'paid',
+                'status'          => 'processing',
+                'cf_payment_id'   => $paymentId,
+                'payu_payment_id' => $paymentId,
             ]);
+
+            Log::info('Cashfree verify: order paid', ['order_id' => $order->id]);
+
+            app(\App\Services\CartService::class)->clear();
+            session()->forget(['coupon_code', 'coupon_discount']);
+
+            $order = $order->fresh(['products', 'user']);
+            app(CheckoutController::class)->sendOrderEmails($order);
+
+            return redirect()->route('checkout.confirmation', $order->id)
+                ->with('success', 'Payment successful! Order #' . $order->id . ' confirmed.');
+
+        } catch (\Exception $e) {
+            Log::error('Cashfree verify error', ['order_id' => $orderId, 'error' => $e->getMessage()]);
+            return redirect()->route('checkout.confirmation', $order->id)
+                ->with('error', 'Unable to verify payment. Contact support with Order #' . $order->id);
+        }
+    }
+
+    /**
+     * Cashfree webhook — server-to-server async payment confirmation.
+     * POST /payment/webhook  (CSRF-exempt)
+     *
+     * Uses the SDK's built-in PGVerifyWebhookSignature() method.
+     */
+    public function webhook(Request $request)
+    {
+        $rawBody   = $request->getContent();
+        $timestamp = $request->header('x-webhook-timestamp');
+        $signature = $request->header('x-webhook-signature');
+
+        $cashfree = $this->getCashfree();
+
+        // Verify signature using SDK helper
+        try {
+            $event = $cashfree->PGVerifyWebhookSignature($signature, $rawBody, $timestamp);
+        } catch (\Exception $e) {
+            Log::warning('Cashfree webhook: signature verification failed', ['error' => $e->getMessage()]);
+            return response()->json(['error' => 'Invalid signature'], 401);
         }
 
-        // Mark order paid — update BOTH payment_status and order status
-        $updated = $order->update([
+        $eventType = $event->type ?? '';
+        Log::info('Cashfree webhook received', ['type' => $eventType]);
+
+        if ($eventType !== 'PAYMENT_SUCCESS_WEBHOOK') {
+            return response()->json(['status' => 'ignored']);
+        }
+
+        $cfOrderId = $event->object->data->order->order_id ?? null;
+        if (!$cfOrderId) {
+            return response()->json(['status' => 'missing_order_id']);
+        }
+
+        $order = Order::where('cf_order_id', $cfOrderId)
+            ->orWhere('payu_txnid', $cfOrderId)
+            ->first();
+
+        if (!$order) {
+            Log::warning('Cashfree webhook: order not found', ['cf_order_id' => $cfOrderId]);
+            return response()->json(['status' => 'order_not_found']);
+        }
+
+        if ($order->payment_status === 'paid') {
+            return response()->json(['status' => 'already_paid']);
+        }
+
+        $paymentId = (string) ($event->object->data->payment->cf_payment_id ?? $cfOrderId);
+
+        $order->update([
             'payment_status'  => 'paid',
             'status'          => 'processing',
-            'payu_payment_id' => $payuPaymentId ?: ($hash ?: 'payu_paid'),
+            'cf_payment_id'   => $paymentId,
+            'payu_payment_id' => $paymentId,
         ]);
 
-        Log::info('PayU order updated', [
-            'order_id'        => $order->id,
-            'updated'         => $updated,
-            'payment_status'  => 'paid',
-            'status'          => 'processing',
-            'payu_payment_id' => $payuPaymentId,
-        ]);
+        Log::info('Cashfree webhook: order paid', ['order_id' => $order->id]);
 
-        // Clear cart + coupon after successful payment.
-        app(\App\Services\CartService::class)->clear();
-        session()->forget(['coupon_code', 'coupon_discount']);
+        try {
+            app(\App\Services\CartService::class)->clear();
+            session()->forget(['coupon_code', 'coupon_discount']);
+            $order = $order->fresh(['products', 'user']);
+            app(CheckoutController::class)->sendOrderEmails($order);
+        } catch (\Exception $e) {
+            Log::error('Cashfree webhook: post-payment error', ['error' => $e->getMessage()]);
+        }
 
-        // Reload fresh from DB — ensures email sees payment_status=paid, status=confirmed
-        $order = $order->fresh(['products', 'user']);
-        app(CheckoutController::class)->sendOrderEmails($order);
-
-        return redirect()->route('checkout.confirmation', $order->id)
-            ->with('success', 'Payment successful! Your order has been confirmed.');
+        return response()->json(['status' => 'ok']);
     }
 }

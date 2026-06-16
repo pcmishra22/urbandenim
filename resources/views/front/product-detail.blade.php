@@ -170,25 +170,46 @@
                 <!-- Variants -->
                 @if($product->variants->isNotEmpty())
                 <div class="mb-4">
-                    <p class="font-weight-bold mb-2" style="font-size:.9rem;">Select Size:</p>
-                    <div class="d-flex flex-wrap" style="gap:8px;">
+                    <p class="font-weight-bold mb-3" style="font-size:1rem;color:#2d2d2d;letter-spacing:.3px;">
+                        <i class="fa fa-ruler-horizontal mr-1" style="color:var(--j-primary);font-size:.85rem;"></i> Select Size:
+                    </p>
+                    <div class="d-flex flex-wrap" style="gap:10px;">
                         @foreach($product->variants as $variant)
                         <label for="variant-{{ $variant->id }}"
-                               class="d-flex align-items-center justify-content-center"
-                               style="min-width:52px;height:40px;padding:0 12px;border:1.5px solid #ddd;border-radius:6px;cursor:pointer;font-size:.85rem;font-weight:600;transition:.2s;user-select:none;"
-                               onclick="this.style.borderColor='var(--j-primary)';this.style.background='var(--j-primary-lt)';this.style.color='var(--j-primary)';">
+                               class="size-selector-label d-flex flex-column align-items-center justify-content-center"
+                               style="min-width:60px;height:52px;padding:0 14px;border:2px solid #bbb;border-radius:8px;cursor:pointer;font-size:.9rem;font-weight:700;transition:.2s;user-select:none;background:#fff;color:#333;box-shadow:0 1px 3px rgba(0,0,0,.08);">
                             <input type="radio" class="custom-control-input variant-radio" id="variant-{{ $variant->id }}"
                                    name="variant_id" value="{{ $variant->id }}" form="add-to-cart-form" required style="display:none;">
-                            {{ $variant->waist_size }}{{ $variant->color ? ' · '.$variant->color : '' }}
-                            @if($variant->quantity <= 0)<small style="font-size:.65rem;display:block;color:#e74c3c;">OOS</small>@endif
+                            <span>{{ $variant->waist_size }}{{ $variant->color ? ' · '.$variant->color : '' }}</span>
+                            @if($variant->quantity <= 0)<small style="font-size:.6rem;color:#e74c3c;font-weight:500;line-height:1;">OOS</small>@endif
                         </label>
                         @endforeach
                     </div>
+                    <style>
+                    .size-selector-label:hover {
+                        border-color: var(--j-primary) !important;
+                        background: var(--j-primary-lt) !important;
+                        color: var(--j-primary) !important;
+                        box-shadow: 0 2px 8px rgba(0,0,0,.12) !important;
+                    }
+                    .size-selector-label.selected {
+                        border-color: var(--j-primary) !important;
+                        background: var(--j-primary) !important;
+                        color: #fff !important;
+                        box-shadow: 0 2px 8px rgba(0,0,0,.18) !important;
+                    }
+                    </style>
                 </div>
                 @endif
 
                 <!-- Add to cart -->
                 <div class="mb-4">
+                    @if($product->variants->isNotEmpty())
+                        <div id="select-size-message" class="mb-3 align-items-center"
+                             style="background:#fff3cd;border:1.5px solid #ffc107;border-radius:8px;padding:8px 14px;font-size:.88rem;font-weight:600;color:#856404;display:none;">
+                            <i class="fa fa-exclamation-triangle mr-2" style="color:#e67e22;"></i> Please select a size before adding to cart
+                        </div>
+                    @endif
                     <form method="POST" action="{{ route('cart.add') }}" id="add-to-cart-form">
                         @csrf
                         <input type="hidden" name="product_id" value="{{ $product->id }}">
@@ -210,12 +231,6 @@
 
                         </div>
                     </form>
-
-                    @if($product->variants->isNotEmpty())
-                        <div id="select-size-message" class="mt-2 small text-danger" style="display:none;">
-                            Please select size
-                        </div>
-                    @endif
 
                     {{-- Go to Cart + Wishlist on separate row --}}
 
@@ -379,17 +394,13 @@ $(document).on('click','.btn-minus',function(){var $i=$(this).closest('.quantity
 $('.star-btn').on('click',function(){var v=$(this).data('val');$('#rating-val').val(v);$('.star-btn').each(function(){$(this).toggleClass('fas',$(this).data('val')<=v).toggleClass('far',$(this).data('val')>v);});});
 // Variant label highlight
 $('.variant-radio').on('change',function(){
-    $('label[for^="variant-"]').css({borderColor:'#ddd',background:'#fff',color:'#333'});
-$('label[for="'+this.id+'" ]').css({borderColor:'var(--j-primary)',background:'var(--j-primary-lt)',color:'var(--j-primary)'});
-
-
+    $('label[for^="variant-"]').removeClass('selected').css({borderColor:'#bbb',background:'#fff',color:'#333'});
+    $('label[for="'+this.id+'"]').addClass('selected').css({borderColor:'',background:'',color:''});
     // Toggle Add to Cart button based on selected size
-
-
     var hasSelection = $('input[name="variant_id"]:checked').length > 0;
     if(hasSelection){
         $('#add-to-cart-button').prop('disabled', false);
-        $('#select-size-message').hide();
+        $('#select-size-message').css('display','none');
     }
 });
 
@@ -399,10 +410,10 @@ $('label[for="'+this.id+'" ]').css({borderColor:'var(--j-primary)',background:'v
     if($('#add-to-cart-button').length){
         if(hasSelection){
             $('#add-to-cart-button').prop('disabled', false);
-            $('#select-size-message').hide();
+            $('#select-size-message').css('display','none');
         }else{
             $('#add-to-cart-button').prop('disabled', true);
-            $('#select-size-message').show();
+            $('#select-size-message').css('display','flex');
         }
     }
 })();
