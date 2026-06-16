@@ -5,7 +5,7 @@
 @section('og_type', 'product')
 @section('og_title', $product->meta_title ?: $product->name)
 @section('og_description', $product->meta_description ?: \Illuminate\Support\Str::limit(strip_tags($product->short_description ?? $product->description ?? ''), 155))
-@section('og_image', $product->images->first() ? asset('storage/' . $product->images->first()->image_path) : asset('eshopper/img/og-default.jpg'))
+@section('og_image', $product->images->first() ? asset('storage/products/' . $product->id . '/images/' . $product->images->first()->image) : asset('eshopper/img/og-default.jpg'))
 
 @push('json_ld')
 @php
@@ -13,7 +13,7 @@
     $inStock    = ($product->variants->isNotEmpty() || ($product->quantity ?? 0) > 0);
     $ratingVal  = round($product->reviews ? $product->reviews->where('is_approved', true)->avg('rating') : 0, 1);
     $ratingCnt  = $product->reviews ? $product->reviews->where('is_approved', true)->count() : 0;
-    $imgUrl     = $product->images->first() ? asset('storage/' . $product->images->first()->image_path) : asset('eshopper/img/og-default.jpg');
+    $imgUrl     = $product->images->first() ? asset('storage/products/' . $product->id . '/images/' . $product->images->first()->image) : asset('eshopper/img/og-default.jpg');
     $jsonld = [
         '@context'    => 'https://schema.org',
         '@type'       => 'Product',

@@ -20,7 +20,7 @@ class ProductDetailController extends Controller
         // Fetch the product by slug with all necessary relationships
         $product = Product::where('slug', $slug)
             ->where('is_active', true)
-            ->with(['category', 'brand', 'images', 'variants' => function($q) {
+            ->with(['category', 'brand', 'images', 'reviews', 'variants' => function($q) {
                 $q->where('is_active', true)->where('quantity', '>', 0);
             }])
             ->firstOrFail();
@@ -29,6 +29,7 @@ class ProductDetailController extends Controller
         $relatedProducts = Product::where('category_id', $product->category_id)
             ->where('id', '!=', $product->id)
             ->where('is_active', true)
+            ->with(['images', 'reviews'])
             ->take(20)
             ->get();
 

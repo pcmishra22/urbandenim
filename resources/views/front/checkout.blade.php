@@ -178,7 +178,7 @@
                         <label class="custom-control-label" for="pay_card">
                             <i class="fa fa-credit-card mr-2" style="color:var(--j-primary);"></i>
                             <strong>Credit / Debit Card</strong>
-                            <small class="d-block text-muted" style="margin-left:22px;">Visa, Mastercard, Rupay — via Cashfree</small>
+                            <small class="d-block text-muted" style="margin-left:22px;">Visa, Mastercard, Rupay — via PayU</small>
                         </label>
                     </div>
                 </div>
@@ -186,7 +186,7 @@
                 @error('payment_method')<small class="text-danger">{{ $message }}</small>@enderror
 
                 <div class="pt-2 mb-3" style="border-top:1px solid var(--j-border);">
-                    <small class="text-muted"><i class="fa fa-shield-alt text-success mr-1"></i>Payments secured by <strong>Cashfree</strong></small>
+                    <small class="text-muted"><i class="fa fa-shield-alt text-success mr-1"></i>Payments secured by <strong>PayU</strong></small>
                 </div>
 
                 <div id="pay-error" class="alert alert-danger small py-2 mb-2" style="display:none;border-radius:8px;"></div>
@@ -224,16 +224,13 @@
 @endsection
 
 @push('scripts')
-{{-- Cashfree JS SDK --}}
-<script src="https://sdk.cashfree.com/js/v3/cashfree.js"></script>
+{{-- PayU Payment Gateway — no external SDK needed --}}
 <script>
 (function ($) {
-    var CSRF            = '{{ csrf_token() }}';
-    var STORE_PENDING   = '{{ route("checkout.store-pending") }}';
-    var CREATE_ORDER    = '{{ route("payment.create-order") }}';
-    var VERIFY_URL      = '{{ route("payment.verify") }}';
-    var GRAND_TOTAL     = '{{ number_format($grandTotal, 2) }}';
-    var CF_ENV          = '{{ config("services.cashfree.env", "sandbox") }}'; // 'sandbox' or 'production'
+    var CSRF          = '{{ csrf_token() }}';
+    var STORE_PENDING = '{{ route("checkout.store-pending") }}';
+    var CREATE_ORDER  = '{{ route("payment.create-order") }}';
+    var GRAND_TOTAL   = '{{ number_format($grandTotal, 2) }}';
 
     function spin(msg) {
         $('#pay-error').hide();
@@ -306,59 +303,53 @@
         });});
     }
 
-    $('#checkout-form').on('submit',function(e){
-        var method=$('input[name=payment_method]:checked').val();
+    /**
+     * Build a hidden form and auto-submit it to PayU's hosted payment page.
+     * PayU will handle the payment UI and redirect back to surl/furl.
+     */
+    function redirectToPayU(payuUrl, params) {
+        var form = $('<form>', {
+            method: 'POST',
+            action: payuUrl,
+            style:  'display:none;'
+        });
+        $.each(params, function(name, value) {
+            form.append($('<input>', { type: 'hidden', name: name, value: value }));
+        });
+        $('body').append(form);
+        form.submit();
+    }
+
+    $('#checkout-form').on('submit', function(e) {
+        var method = $('input[name=payment_method]:checked').val();
         e.preventDefault();
-        if(!method){showErr('Please select a payment method.');return;}
-        if(!validateFields()) return;
+        if (!method) { showErr('Please select a payment method.'); return; }
+        if (!validateFields()) return;
         spin('Saving your order…');
 
         postJson(STORE_PENDING, formData(method))
-        .then(function(od){
-            if(!od.order_id) throw new Error('No order ID returned.');
-            spin('Connecting to Cashfree…');
-            return postJson(CREATE_ORDER, {order_id: od.order_id}).then(function(cf){ return {od:od, cf:cf}; });
+        .then(function(od) {
+            if (!od.order_id) throw new Error('No order ID returned.');
+            spin('Connecting to PayU…');
+            return postJson(CREATE_ORDER, { order_id: od.order_id })
+                   .then(function(pu) { return { od: od, pu: pu }; });
         })
-        .then(function(res){
-            var od = res.od, cf = res.cf;
-            if(!cf.payment_session_id) throw new Error('Payment session not created. Please try again.');
-
-            spin('Opening payment window…');
-
-            // Initialise Cashfree SDK
-            var mode = (CF_ENV === 'production') ? 'production' : 'sandbox';
-            var cashfree = Cashfree({ mode: mode });
-
-            var checkoutOptions = {
-                paymentSessionId: cf.payment_session_id,
-                redirectTarget:   '_self',  // redirect in same tab
-            };
-
-            cashfree.checkout(checkoutOptions).then(function(result){
-                if(result.error){
-                    showErr(result.error.message || 'Payment failed. Please try again.');
-                } else if(result.redirect){
-                    // Cashfree will redirect automatically — show a waiting message
-                    spin('Redirecting…');
-                } else if(result.paymentDetails){
-                    // Payment completed inline (some methods)
-                    spin('Verifying payment…');
-                    window.location.href = VERIFY_URL + '?order_id=' + encodeURIComponent(od.order_id) + '&cf_order_id=' + encodeURIComponent(cf.cashfree_order_id);
-                }
-            }).catch(function(err){
-                showErr(err.message || 'Payment window could not be opened. Please try again.');
-            });
+        .then(function(res) {
+            var pu = res.pu;
+            if (!pu.payu_url || !pu.params) throw new Error('PayU configuration error. Please try again.');
+            spin('Redirecting to PayU…');
+            redirectToPayU(pu.payu_url, pu.params);
         })
-        .catch(function(err){showErr(err.message||'Something went wrong. Please try again.');});
+        .catch(function(err) { showErr(err.message || 'Something went wrong. Please try again.'); });
     });
 
-    $('#apply-coupon-btn').on('click',function(){
-        var code=$('#coupon_input').val().trim();
-        if(!code){$('#coupon-msg').html('<span class="text-danger">Please enter a coupon code.</span>');return;}
-        $.post('{{ route("coupon.apply") }}',{_token:CSRF,coupon_code:code,subtotal:{{ $subtotal }}},function(res){
-            if(res.success){$('#coupon-msg').html('<span class="text-success"><i class="fa fa-check mr-1"></i>'+res.message+'</span>');setTimeout(function(){location.reload();},800);}
-            else{$('#coupon-msg').html('<span class="text-danger">'+res.message+'</span>');}
-        }).fail(function(){$('#coupon-msg').html('<span class="text-danger">Error applying coupon.</span>');});
+    $('#apply-coupon-btn').on('click', function() {
+        var code = $('#coupon_input').val().trim();
+        if (!code) { $('#coupon-msg').html('<span class="text-danger">Please enter a coupon code.</span>'); return; }
+        $.post('{{ route("coupon.apply") }}', {_token:CSRF, coupon_code:code, subtotal:{{ $subtotal }}}, function(res) {
+            if (res.success) { $('#coupon-msg').html('<span class="text-success"><i class="fa fa-check mr-1"></i>'+res.message+'</span>'); setTimeout(function(){ location.reload(); }, 800); }
+            else { $('#coupon-msg').html('<span class="text-danger">'+res.message+'</span>'); }
+        }).fail(function() { $('#coupon-msg').html('<span class="text-danger">Error applying coupon.</span>'); });
     });
 })(jQuery);
 </script>

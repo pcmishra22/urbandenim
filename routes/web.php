@@ -414,14 +414,14 @@ Route::get('/faq', [\App\Http\Controllers\Front\FaqController::class, 'index'])-
 Route::get('/help', [\App\Http\Controllers\Front\FaqController::class, 'help'])->name('help');
 Route::post('/newsletter/subscribe', [\App\Http\Controllers\Front\FaqController::class, 'newsletter'])->name('newsletter.subscribe');
 
-// ── Front: Payment gateway (Cashfree) ──────────
+// ── Front: Payment gateway (PayU) ──────────
 Route::post('/payment/create-order', [\App\Http\Controllers\PaymentController::class, 'createOrder'])->name('payment.create-order')->middleware('auth');
 
-// Cashfree return URL after payment (browser redirect)
+// PayU return URL after payment (browser redirect POST to surl/furl)
 // CSRF-exempt via bootstrap/app.php validateCsrfTokens(except: ['payment/verify', 'payment/webhook'])
 Route::match(['get', 'post'], '/payment/verify', [\App\Http\Controllers\PaymentController::class, 'verify'])->name('payment.verify');
 
-// Cashfree webhook (server-to-server, no CSRF)
+// PayU webhook (server-to-server, no CSRF)
 Route::post('/payment/webhook', [\App\Http\Controllers\PaymentController::class, 'webhook'])->name('payment.webhook');
 
 // ── Front: Profile extras ──────────────────────────────────
