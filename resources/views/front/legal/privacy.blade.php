@@ -9,7 +9,7 @@
         <div class="col-lg-9">
 
             <div class="card border-0 shadow-sm" style="border-radius:14px;overflow:hidden;">
-                {-- Header --}
+                {{-- Header --}}
                 <div class="card-header d-flex align-items-center py-4 px-4 border-0" style="background:#fff;border-bottom:2px solid #f0eded;">
                     <div style="width:46px;height:46px;border-radius:50%;background:var(--j-primary-lt,#fdf0ef);display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-right:14px;">
                         <i class="fa fa-shield-alt" style="color:var(--j-primary,#D19C97);font-size:1.2rem;"></i>
@@ -19,7 +19,7 @@
                         <small class="text-muted">Last updated: {{ date('d F Y') }}</small>
                     </div>
                 </div>
-                {-- Body --}
+                {{-- Body --}}
                 <div class="card-body px-4 py-4" style="font-size:.93rem;line-height:1.75;color:#333;">
 
         <p>At <strong>Jeanzo</strong>, your privacy matters. This policy explains what data we collect and how we use it when you visit <strong>jeanzo.in</strong>.</p>
@@ -56,7 +56,7 @@
                 </div>
             </div>
 
-            {-- Navigation pills --}
+            {{-- Navigation pills --}}
             <div class="mt-4 d-flex flex-wrap" style="gap:8px;">
         <a href="{{ route('legal.terms') }}" class="btn btn-outline-secondary btn-sm">Terms &amp; Conditions</a>
         <span class="btn btn-primary btn-sm" style="cursor:default;">Privacy Policy</span>
