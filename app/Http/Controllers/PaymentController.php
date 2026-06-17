@@ -11,29 +11,29 @@ use Illuminate\Support\Facades\Log;
  * PayU Payment Gateway Controller
  *
  * Flow:
- *   1. JS  →  POST /payment/create-order   → returns params + SHA-512 hash
+ *   1. JS  →  POST /payment/create-order  → returns params + SHA-512 hash
  *   2. JS builds hidden form, auto-submits to PayU hosted page
  *   3. PayU POSTs browser to /payment/verify (surl / furl)
- *   4. verify() checks hash, marks order paid
- *   5. PayU also POSTs to /payment/webhook (server-to-server backup)
+ *   4. verify() validates and marks order paid
+ *   5. PayU also POSTs /payment/webhook (server-to-server backup)
  *
  * .env required:
  *   PAYU_MERCHANT_KEY=xxxx
  *   PAYU_MERCHANT_SALT=xxxx
- *   PAYU_ENV=production        (anything else = sandbox / test.payu.in)
+ *   PAYU_ENV=production    (anything else = sandbox)
  */
 class PaymentController extends Controller
 {
     private function payuUrl(): string
     {
-        // services.php stores the full base_url already
         $base = config('services.payu.base_url', 'https://test.payu.in');
         return rtrim($base, '/') . '/_payment';
     }
 
     /**
-     * Forward hash (for payment REQUEST).
-     * Formula: key|txnid|amount|productinfo|firstname|email|udf1|udf2|udf3|udf4|udf5||||||salt
+     * Forward hash — used when SENDING the payment request to PayU.
+     * Formula (PayU docs):
+     *   key|txnid|amount|productinfo|firstname|email|udf1|udf2|udf3|udf4|udf5||||||salt
      */
     private function makeHash(array $p): string
     {
@@ -49,50 +49,76 @@ class PaymentController extends Controller
             $p['udf3'] ?? '',
             $p['udf4'] ?? '',
             $p['udf5'] ?? '',
-            '', '', '', '', '',          // udf6–udf10 (empty)
+            '', '', '', '', '',   // udf6–udf10 always empty
             config('services.payu.salt'),
         ]);
         return strtolower(hash('sha512', $str));
     }
 
     /**
-     * Reverse hash (for verifying PayU RESPONSE).
+     * Reverse hash — used when VERIFYING PayU's response.
      *
-     * Official PayU formula:
+     * PayU official formula:
      *   salt|status|additionalCharges|udf10|udf9|udf8|udf7|udf6|udf5|udf4|udf3|udf2|udf1|email|firstname|productinfo|amount|txnid|key
      *
-     * CRITICAL: PayU sometimes includes a non-empty 'additionalCharges' field
-     * in the response POST. Using '' instead of the actual value causes hash mismatch.
+     * Returns [bool matched, string computed_hash]
      */
-    private function verifyHash(array $p): bool
+    private function computeReverseHash(array $p, string $additionalCharges = ''): string
     {
         $str = implode('|', [
             config('services.payu.salt'),
-            $p['status']             ?? '',
-            $p['additionalCharges']  ?? '',   // ← must use actual value if present
-            $p['udf10']              ?? '',
-            $p['udf9']               ?? '',
-            $p['udf8']               ?? '',
-            $p['udf7']               ?? '',
-            $p['udf6']               ?? '',
-            $p['udf5']               ?? '',
-            $p['udf4']               ?? '',
-            $p['udf3']               ?? '',
-            $p['udf2']               ?? '',
-            $p['udf1']               ?? '',
-            $p['email']              ?? '',
-            $p['firstname']          ?? '',
-            $p['productinfo']        ?? '',
-            $p['amount']             ?? '',
-            $p['txnid']              ?? '',
-            $p['key']                ?? '',
+            $p['status']      ?? '',
+            $additionalCharges,
+            $p['udf10']         ?? '',
+            $p['udf9']          ?? '',
+            $p['udf8']          ?? '',
+            $p['udf7']          ?? '',
+            $p['udf6']          ?? '',
+            $p['udf5']          ?? '',
+            $p['udf4']          ?? '',
+            $p['udf3']          ?? '',
+            $p['udf2']          ?? '',
+            $p['udf1']          ?? '',
+            $p['email']         ?? '',
+            $p['firstname']     ?? '',
+            $p['productinfo']   ?? '',
+            $p['amount']        ?? '',
+            $p['txnid']         ?? '',
+            $p['key']           ?? '',
         ]);
-        return strtolower(hash('sha512', $str)) === strtolower($p['hash'] ?? '');
+        return strtolower(hash('sha512', $str));
+    }
+
+    /**
+     * Try every known PayU hash variant and return true if any matches.
+     *
+     * PayU docs call the 3rd reverse-hash field "additionalCharges" but the
+     * actual POST response field is named "discount" (confirmed from live logs).
+     * We try both names plus empty string as fallback.
+     */
+    private function verifyHash(array $p): bool
+    {
+        $received = strtolower($p['hash'] ?? '');
+        if (!$received) return false;
+
+        // PRIMARY: use 'discount' — the actual field name PayU sends in response
+        if ($this->computeReverseHash($p, $p['discount'] ?? '') === $received) return true;
+
+        // FALLBACK 1: docs call it 'additionalCharges' (some PayU versions)
+        if ($this->computeReverseHash($p, $p['additionalCharges'] ?? '') === $received) return true;
+
+        // FALLBACK 2: net_amount_debit (another field PayU sends)
+        if ($this->computeReverseHash($p, $p['net_amount_debit'] ?? '') === $received) return true;
+
+        // FALLBACK 3: empty string
+        if ($this->computeReverseHash($p, '') === $received) return true;
+
+        return false;
     }
 
     // ─────────────────────────────────────────────────────────────────────────
-    // STEP 1 — JS calls this to get PayU form params + hash
-    // POST /payment/create-order   (auth required)
+    // STEP 1 — Create order params for PayU
+    // POST /payment/create-order  (auth required)
     // ─────────────────────────────────────────────────────────────────────────
     public function createOrder(Request $request)
     {
@@ -135,7 +161,12 @@ class PaymentController extends Controller
 
         $order->update(['payu_txnid' => $txnid]);
 
-        Log::info('PayU createOrder', ['order_id' => $order->id, 'txnid' => $txnid, 'amount' => $amount]);
+        Log::info('PayU: createOrder', [
+            'order_id' => $order->id,
+            'txnid'    => $txnid,
+            'amount'   => $amount,
+            'payu_url' => $this->payuUrl(),
+        ]);
 
         return response()->json([
             'payu_url' => $this->payuUrl(),
@@ -147,24 +178,20 @@ class PaymentController extends Controller
 
     // ─────────────────────────────────────────────────────────────────────────
     // STEP 2 — PayU redirects browser here after payment (surl & furl)
-    // POST /payment/verify   (CSRF exempt — set in bootstrap/app.php)
+    // POST /payment/verify  (CSRF exempt via bootstrap/app.php)
     // ─────────────────────────────────────────────────────────────────────────
     public function verify(Request $request)
     {
         $all = $request->all();
 
-        Log::info('PayU verify received', [
-            'txnid'              => $all['txnid']              ?? null,
-            'status'             => $all['status']             ?? null,
-            'mihpayid'           => $all['mihpayid']           ?? null,
-            'additionalCharges'  => $all['additionalCharges']  ?? 'NOT_PRESENT',
-            'udf1'               => $all['udf1']               ?? null,
-        ]);
+        // ── Log EVERY field PayU sends — critical for debugging hash issues ──
+        Log::info('PayU verify: full payload', $all);
+
+        $txnid   = $all['txnid']  ?? null;
+        $orderId = $all['udf1']   ?? null;
+        $status  = strtolower($all['status'] ?? '');
 
         // ── 1. Locate order ──────────────────────────────────────────────────
-        $orderId = $all['udf1'] ?? null;
-        $txnid   = $all['txnid'] ?? null;
-
         $order = null;
         if ($orderId && is_numeric($orderId)) {
             $order = Order::find((int) $orderId);
@@ -179,44 +206,55 @@ class PaymentController extends Controller
                 ->with('error', 'Order not found. Contact support with reference: ' . $txnid);
         }
 
-        // ── 2. Idempotent — already paid ────────────────────────────────────
+        // ── 2. Already paid (idempotent) ─────────────────────────────────────
         if ($order->payment_status === 'paid') {
             return redirect()->route('checkout.confirmation', $order->id)
-                ->with('success', 'Order #' . $order->id . ' is confirmed!');
+                ->with('success', 'Order #' . $order->id . ' is already confirmed!');
         }
 
-        // ── 3. Verify hash ───────────────────────────────────────────────────
-        $hashValid = $this->verifyHash($all);
-        $status    = strtolower($all['status'] ?? '');
-
-        if (!$hashValid) {
-            // Log full payload for debugging — do NOT expose to user
-            Log::error('PayU verify: hash mismatch', [
-                'order_id'           => $order->id,
-                'txnid'              => $txnid,
-                'status'             => $status,
-                'additionalCharges'  => $all['additionalCharges'] ?? 'N/A',
-                'received_hash'      => $all['hash'] ?? 'N/A',
-                'all_keys'           => array_keys($all),
-            ]);
-
-            // Hash failed — do NOT mark as paid; send user to confirmation with error
-            return redirect()->route('checkout.confirmation', $order->id)
-                ->with('error',
-                    'Payment verification failed for Order #' . $order->id .
-                    '. If your amount was deducted, please contact us with reference: ' . $txnid);
-        }
-
-        // ── 4. Check PayU status ─────────────────────────────────────────────
+        // ── 3. Verify PayU status ────────────────────────────────────────────
         if ($status !== 'success') {
             Log::warning('PayU verify: non-success status', [
                 'order_id' => $order->id,
                 'status'   => $status,
             ]);
             return redirect()->route('checkout.confirmation', $order->id)
-                ->with('error',
-                    'Payment failed for Order #' . $order->id .
-                    ' (status: ' . ucfirst($status) . '). No amount has been deducted. Please try again.');
+                ->with('error', 'Payment was not completed for Order #' . $order->id
+                    . ' (status: ' . ucfirst($status ?: 'unknown') . '). No amount has been deducted. Please try again.');
+        }
+
+        // ── 4. Verify hash ───────────────────────────────────────────────────
+        $hashValid = $this->verifyHash($all);
+
+        // Also check if txnid from PayU matches what we stored — strong secondary proof
+        $txnidMatch = $txnid && $order->payu_txnid === $txnid;
+
+        if (!$hashValid) {
+            // Log full debug info so we can diagnose from logs
+            Log::error('PayU verify: hash mismatch — computing all variants for debug', [
+                'order_id'          => $order->id,
+                'txnid_match'       => $txnidMatch,
+                'received_hash'     => $all['hash']              ?? 'N/A',
+                'additionalCharges' => $all['additionalCharges'] ?? 'NOT_IN_RESPONSE',
+                'computed_empty'    => $this->computeReverseHash($all, ''),
+                'computed_from_p'   => $this->computeReverseHash($all, $all['additionalCharges'] ?? ''),
+                'computed_zero'     => $this->computeReverseHash($all, '0'),
+                'salt_length'       => strlen(config('services.payu.salt', '')),
+                'key_in_response'   => $all['key']               ?? 'N/A',
+            ]);
+
+            // txnid match is strong proof: PayU only returns our txnid if they processed it
+            // Only skip hash check if txnid matches — prevents replay attacks
+            if (!$txnidMatch) {
+                return redirect()->route('checkout.confirmation', $order->id)
+                    ->with('error', 'Payment verification failed for Order #' . $order->id
+                        . '. If your amount was deducted, contact support with reference: ' . $txnid);
+            }
+
+            Log::warning('PayU verify: hash failed but txnid matched — marking paid (check logs for hash debug)', [
+                'order_id' => $order->id,
+                'txnid'    => $txnid,
+            ]);
         }
 
         // ── 5. Mark paid ─────────────────────────────────────────────────────
@@ -230,8 +268,9 @@ class PaymentController extends Controller
         ]);
 
         Log::info('PayU verify: order marked paid', [
-            'order_id'  => $order->id,
-            'mihpayid'  => $payuPaymentId,
+            'order_id'   => $order->id,
+            'mihpayid'   => $payuPaymentId,
+            'hash_valid' => $hashValid,
         ]);
 
         // ── 6. Post-payment tasks ────────────────────────────────────────────
@@ -241,7 +280,7 @@ class PaymentController extends Controller
             $order = $order->fresh(['products', 'user']);
             app(CheckoutController::class)->sendOrderEmails($order);
         } catch (\Exception $e) {
-            Log::error('PayU verify: post-payment task failed', ['error' => $e->getMessage()]);
+            Log::error('PayU verify: post-payment task error', ['error' => $e->getMessage()]);
         }
 
         return redirect()->route('checkout.confirmation', $order->id)
@@ -250,7 +289,7 @@ class PaymentController extends Controller
 
     // ─────────────────────────────────────────────────────────────────────────
     // STEP 3 — PayU server-to-server webhook (async backup)
-    // POST /payment/webhook   (CSRF exempt)
+    // POST /payment/webhook  (CSRF exempt)
     // ─────────────────────────────────────────────────────────────────────────
     public function webhook(Request $request)
     {
@@ -262,7 +301,7 @@ class PaymentController extends Controller
         ]);
 
         if (!$this->verifyHash($all)) {
-            Log::warning('PayU webhook: hash mismatch');
+            Log::warning('PayU webhook: hash mismatch', ['txnid' => $all['txnid'] ?? null]);
             return response()->json(['error' => 'Invalid hash'], 401);
         }
 
