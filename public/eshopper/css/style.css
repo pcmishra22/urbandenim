@@ -9582,3 +9582,19 @@ a.text-dark:hover, a.text-dark:focus {
     transform: translateY(-15px);
   }
 }
+
+/* ============================================================
+   JEANZO — GLOBAL RESPONSIVE FIXES
+   Appended to style.css — handles overflow, mobile base
+   ============================================================ */
+
+/* Prevent any section from causing horizontal scroll */
+html, body { overflow-x: hidden !important; max-width: 100%; }
+*, *::before, *::after { box-sizing: border-box; }
+img { max-width: 100%; height: auto; }
+
+/* Utility: full-width on mobile */
+@media (max-width: 575px) {
+    .px-xl-5 { padding-left: 12px !important; padding-right: 12px !important; }
+    .container-fluid { padding-left: 12px !important; padding-right: 12px !important; }
+}

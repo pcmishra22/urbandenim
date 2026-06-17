@@ -277,3 +277,89 @@
     .profile-sidebar-card { position: static; }
 }
 </style>
+
+<style>
+/* ============================================================
+   JEANZO — GLOBAL RESPONSIVE ADDITIONS
+   Applies to all front pages (cart, checkout, products, detail)
+   ============================================================ */
+
+/* ── Prevent horizontal scroll globally ── */
+html, body { overflow-x: hidden !important; }
+
+/* ── Page banner mobile ── */
+@media (max-width: 575px) {
+    .j-page-banner      { min-height: 140px; }
+    .j-page-banner-content { min-height: 140px; padding: 24px 16px; }
+    .j-page-banner-title { font-size: 1.2rem; letter-spacing: 1px; }
+}
+
+/* ── Cart page ── */
+@media (max-width: 767px) {
+    .j-cart-item { padding: 12px; }
+    .j-cart-item img { width: 70px !important; height: 70px !important; }
+    .j-order-summary { position: static; }
+}
+@media (max-width: 575px) {
+    .j-cart-item .row > div { margin-bottom: 8px; }
+}
+
+/* ── Checkout ── */
+@media (max-width: 767px) {
+    .j-order-summary { position: static; top: auto; }
+    .checkout-steps  { gap: 0; overflow-x: auto; padding-bottom: 4px; }
+    .checkout-step-label { font-size: .65rem; }
+}
+
+/* ── Product listing page ── */
+@media (max-width: 991px) {
+    /* Filter sidebar becomes collapsible on mobile */
+    .filter-sidebar-wrap { position: static !important; max-height: none !important; }
+}
+@media (max-width: 575px) {
+    .products-row .col-6 { padding-left: 6px; padding-right: 6px; }
+}
+
+/* ── Product detail ── */
+@media (max-width: 767px) {
+    .product-detail-gallery { margin-bottom: 24px; }
+    .product-detail-info    { padding: 0; }
+}
+@media (max-width: 575px) {
+    .product-detail-thumb   { display: none; } /* hide thumbs on tiny screens */
+    .product-variants-wrap  { gap: 8px; }
+    .product-variant-btn    { min-width: 44px; padding: 6px 10px; }
+}
+
+/* ── Profile pages ── */
+@media (max-width: 767px) {
+    .profile-sidebar-card { position: static; margin-bottom: 20px; }
+    .j-section { padding: 16px; }
+}
+
+/* ── Tables on mobile — horizontal scroll ── */
+@media (max-width: 575px) {
+    .j-table-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+    .j-table      { min-width: 500px; }
+    .j-table tbody td, .j-table thead th { padding: 8px 10px; font-size: .8rem; }
+}
+
+/* ── Footer ── */
+@media (max-width: 767px) {
+    .container-fluid.bg-secondary .row.px-xl-5 > div { margin-bottom: 32px; }
+    .container-fluid.bg-secondary h5 { font-size: .95rem; margin-bottom: 12px !important; }
+}
+@media (max-width: 575px) {
+    .container-fluid.bg-secondary { padding-top: 32px !important; }
+    .container-fluid.bg-secondary .row.border-top { flex-direction: column; gap: 8px; text-align: center !important; }
+    .container-fluid.bg-secondary .col-md-6 { text-align: center !important; }
+}
+
+/* ── Utility helpers ── */
+@media (max-width: 575px) {
+    .hide-mobile { display: none !important; }
+    .text-sm-center { text-align: center !important; }
+    .btn-block-mobile { display: block !important; width: 100% !important; }
+    .px-mobile-2 { padding-left: 8px !important; padding-right: 8px !important; }
+}
+</style>
