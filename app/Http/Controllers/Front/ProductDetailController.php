@@ -21,7 +21,9 @@ class ProductDetailController extends Controller
         $product = Product::where('slug', $slug)
             ->where('is_active', true)
             ->with(['category', 'brand', 'images', 'reviews', 'variants' => function($q) {
-                $q->where('is_active', true)->where('quantity', '>', 0);
+                // Load ALL active variants (including OOS) so user can see greyed-out sizes
+                // Stock check happens per-variant in the view
+                $q->where('is_active', true)->orderBy('waist_size')->orderBy('length');
             }])
             ->firstOrFail();
 

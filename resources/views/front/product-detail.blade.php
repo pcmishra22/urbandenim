@@ -170,35 +170,84 @@
                 <!-- Variants -->
                 @if($product->variants->isNotEmpty())
                 <div class="mb-4">
-                    <p class="font-weight-bold mb-3" style="font-size:1rem;color:#2d2d2d;letter-spacing:.3px;">
-                        <i class="fa fa-ruler-horizontal mr-1" style="color:var(--j-primary);font-size:.85rem;"></i> Select Size:
+                    <p class="font-weight-bold mb-2" style="font-size:1rem;color:#2d2d2d;letter-spacing:.3px;">
+                        <i class="fa fa-ruler-horizontal mr-1" style="color:var(--j-primary);font-size:.85rem;"></i>
+                        Select Size: <span id="selected-size-label" style="color:var(--j-primary);font-weight:800;"></span>
                     </p>
-                    <div class="d-flex flex-wrap" style="gap:10px;">
-                        @foreach($product->variants as $variant)
-                        <label for="variant-{{ $variant->id }}"
-                               class="size-selector-label d-flex flex-column align-items-center justify-content-center"
-                               style="min-width:60px;height:52px;padding:0 14px;border:2px solid #bbb;border-radius:8px;cursor:pointer;font-size:.9rem;font-weight:700;transition:.2s;user-select:none;background:#fff;color:#333;box-shadow:0 1px 3px rgba(0,0,0,.08);">
-                            <input type="radio" class="custom-control-input variant-radio" id="variant-{{ $variant->id }}"
-                                   name="variant_id" value="{{ $variant->id }}" form="add-to-cart-form" required style="display:none;">
-                            <span>{{ $variant->waist_size }}{{ $variant->color ? ' · '.$variant->color : '' }}</span>
-                            @if($variant->quantity <= 0)<small style="font-size:.6rem;color:#e74c3c;font-weight:500;line-height:1;">OOS</small>@endif
-                        </label>
-                        @endforeach
-                    </div>
                     <style>
-                    .size-selector-label:hover {
-                        border-color: var(--j-primary) !important;
-                        background: var(--j-primary-lt) !important;
-                        color: var(--j-primary) !important;
-                        box-shadow: 0 2px 8px rgba(0,0,0,.12) !important;
+                    .size-btn {
+                        display: inline-flex;
+                        flex-direction: column;
+                        align-items: center;
+                        justify-content: center;
+                        min-width: 64px;
+                        height: 52px;
+                        padding: 0 14px;
+                        border: 2px solid #d0d0d0;
+                        border-radius: 8px;
+                        cursor: pointer;
+                        font-size: .9rem;
+                        font-weight: 700;
+                        transition: all .18s ease;
+                        user-select: none;
+                        background: #fff;
+                        color: #333;
+                        box-shadow: 0 1px 3px rgba(0,0,0,.06);
+                        position: relative;
                     }
-                    .size-selector-label.selected {
+                    .size-btn:hover:not(.size-btn-oos) {
+                        border-color: var(--j-primary);
+                        background: var(--j-primary-lt);
+                        color: var(--j-primary);
+                        box-shadow: 0 2px 8px rgba(209,156,151,.25);
+                    }
+                    .size-btn.size-btn-selected {
                         border-color: var(--j-primary) !important;
                         background: var(--j-primary) !important;
                         color: #fff !important;
-                        box-shadow: 0 2px 8px rgba(0,0,0,.18) !important;
+                        box-shadow: 0 3px 12px rgba(209,156,151,.45) !important;
+                        transform: translateY(-1px);
                     }
+                    .size-btn.size-btn-oos {
+                        border-color: #e8e8e8;
+                        background: #f8f8f8;
+                        color: #bbb;
+                        cursor: not-allowed;
+                        text-decoration: line-through;
+                    }
+                    .size-btn .oos-tag {
+                        font-size: .58rem;
+                        font-weight: 600;
+                        color: #e74c3c;
+                        text-decoration: none;
+                        line-height: 1;
+                        margin-top: 2px;
+                        letter-spacing: .3px;
+                    }
+                    .size-btn.size-btn-oos .oos-tag { color: #ccc; }
                     </style>
+                    <div class="d-flex flex-wrap" style="gap:10px;">
+                        @foreach($product->variants as $variant)
+                        @php $isOos = $variant->quantity <= 0; @endphp
+                        <button type="button"
+                                class="size-btn {{ $isOos ? 'size-btn-oos' : '' }}"
+                                data-variant-id="{{ $variant->id }}"
+                                data-variant-label="{{ $variant->waist_size }}{{ $variant->length ? '×'.$variant->length : '' }}{{ $variant->color ? ' · '.$variant->color : '' }}"
+                                data-variant-qty="{{ $variant->quantity }}"
+                                data-variant-price="{{ $variant->price ?? $product->price }}"
+                                {{ $isOos ? 'disabled' : '' }}>
+                            <span>{{ $variant->waist_size }}</span>
+                            @if($variant->length)<small style="font-size:.65rem;font-weight:500;line-height:1;">L{{ $variant->length }}</small>@endif
+                            @if($isOos)<span class="oos-tag">Out of Stock</span>@endif
+                        </button>
+                        @endforeach
+                    </div>
+                    {{-- Hidden radio group for form submission --}}
+                    @foreach($product->variants as $variant)
+                    <input type="radio" name="variant_id" id="variant-{{ $variant->id }}"
+                           value="{{ $variant->id }}" form="add-to-cart-form"
+                           style="display:none;" {{ $variant->quantity <= 0 ? 'disabled' : '' }}>
+                    @endforeach
                 </div>
                 @endif
 
@@ -312,8 +361,15 @@
                                     <tr><td class="text-muted">Country</td><td>{{ $product->country_of_origin ?? '—' }}</td></tr>
                                     @if($product->sku)<tr><td class="text-muted">SKU</td><td>{{ $product->sku }}</td></tr>@endif
                                     <tr><td class="text-muted">Gender</td><td>{{ ucfirst($product->gender ?? '—') }}</td></tr>
+                                    @php
+                                        // Stock = sum of all active variant quantities (if variants exist)
+                                        // Fall back to product-level quantity if no variants
+                                        $totalStock = $product->variants->isNotEmpty()
+                                            ? $product->variants->sum('quantity')
+                                            : ($product->quantity ?? 0);
+                                    @endphp
                                     <tr><td class="text-muted">Stock</td>
-                                        <td><span class="j-badge {{ $product->quantity > 0 ? 'j-badge-delivered' : 'j-badge-cancelled' }}">{{ $product->quantity > 0 ? 'In Stock ('.$product->quantity.')' : 'Out of Stock' }}</span></td>
+                                        <td><span class="j-badge {{ $totalStock > 0 ? 'j-badge-delivered' : 'j-badge-cancelled' }}">{{ $totalStock > 0 ? 'In Stock ('.$totalStock.' units)' : 'Out of Stock' }}</span></td>
                                     </tr>
                                 </table>
                             </div>
@@ -389,35 +445,68 @@
 
 @push('scripts')
 <script>
-$(document).on('click','.btn-plus',function(){var $i=$(this).closest('.quantity').find('input');$i.val(parseInt($i.val())||1+1);});
-$(document).on('click','.btn-minus',function(){var $i=$(this).closest('.quantity').find('input');var v=parseInt($i.val())||1;if(v>1)$i.val(v-1);});
-$('.star-btn').on('click',function(){var v=$(this).data('val');$('#rating-val').val(v);$('.star-btn').each(function(){$(this).toggleClass('fas',$(this).data('val')<=v).toggleClass('far',$(this).data('val')>v);});});
-// Variant label highlight
-$('.variant-radio').on('change',function(){
-    $('label[for^="variant-"]').removeClass('selected').css({borderColor:'#bbb',background:'#fff',color:'#333'});
-    $('label[for="'+this.id+'"]').addClass('selected').css({borderColor:'',background:'',color:''});
-    // Toggle Add to Cart button based on selected size
-    var hasSelection = $('input[name="variant_id"]:checked').length > 0;
-    if(hasSelection){
-        $('#add-to-cart-button').prop('disabled', false);
-        $('#select-size-message').css('display','none');
-    }
+/* ── Qty stepper ── */
+$(document).on('click', '.btn-plus', function () {
+    var $i = $(this).closest('.quantity').find('input');
+    $i.val((parseInt($i.val()) || 1) + 1);
+});
+$(document).on('click', '.btn-minus', function () {
+    var $i = $(this).closest('.quantity').find('input');
+    var v  = parseInt($i.val()) || 1;
+    if (v > 1) $i.val(v - 1);
 });
 
-// Initial toggle on page load
-(function(){
-    var hasSelection = $('input[name="variant_id"]:checked').length > 0;
-    if($('#add-to-cart-button').length){
-        if(hasSelection){
-            $('#add-to-cart-button').prop('disabled', false);
-            $('#select-size-message').css('display','none');
-        }else{
-            $('#add-to-cart-button').prop('disabled', true);
-            $('#select-size-message').css('display','flex');
-        }
-    }
-})();
+/* ── Star rating ── */
+$('.star-btn').on('click', function () {
+    var v = $(this).data('val');
+    $('#rating-val').val(v);
+    $('.star-btn').each(function () {
+        $(this).toggleClass('fas', $(this).data('val') <= v)
+               .toggleClass('far', $(this).data('val') >  v);
+    });
+});
 
+/* ── Size / Variant selection ── */
+$(document).on('click', '.size-btn:not(.size-btn-oos)', function () {
+    var variantId    = $(this).data('variant-id');
+    var variantLabel = $(this).data('variant-label');
+    var variantQty   = parseInt($(this).data('variant-qty')) || 0;
+
+    // Visually select
+    $('.size-btn').removeClass('size-btn-selected');
+    $(this).addClass('size-btn-selected');
+
+    // Check the hidden radio
+    $('input[name="variant_id"]').prop('checked', false);
+    $('#variant-' + variantId).prop('checked', true);
+
+    // Update label
+    $('#selected-size-label').text(variantLabel);
+
+    // Enable/disable Add to Cart
+    if (variantQty > 0) {
+        $('#add-to-cart-button').prop('disabled', false);
+        $('#select-size-message').hide();
+    } else {
+        $('#add-to-cart-button').prop('disabled', true);
+        $('#select-size-message').show();
+    }
+
+    // Cap max qty stepper to available stock
+    var $qtyInput = $('input[name="quantity"]');
+    var currentQty = parseInt($qtyInput.val()) || 1;
+    if (currentQty > variantQty) $qtyInput.val(Math.max(1, variantQty));
+});
+
+/* ── Init on load ── */
+(function () {
+    var hasVariants = $('.size-btn').length > 0;
+    if (!hasVariants) return;
+
+    // Start with Add to Cart disabled until size is picked
+    $('#add-to-cart-button').prop('disabled', true);
+    $('#select-size-message').show();
+})();
 </script>
 @endpush
 @endsection
