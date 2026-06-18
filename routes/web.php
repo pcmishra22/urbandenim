@@ -419,7 +419,15 @@ Route::match(['get','post'], '/contact', function (\Illuminate\Http\Request $req
             'subject' => 'required|string|max:200',
             'message' => 'required|string|min:10|max:2000',
         ]);
-        // TODO: send email via Mail::to('info@eshopper.com')->send(...)
+
+        \Illuminate\Support\Facades\Mail::to('support@jeanzo.in')
+            ->send(new \App\Mail\ContactMail(
+                senderName:    $request->name,
+                senderEmail:   $request->email,
+                contactSubject: $request->subject,
+                userMessage:   $request->message,
+            ));
+
         return redirect()->route('contact')->with('success', 'Your message has been sent. We will get back to you shortly!');
     }
     return view('front.contact');

@@ -655,8 +655,10 @@ function handleOfferSignup(){
             @elseif($product->is_featured)
                 <span class="prod-badge" style="background:#1a1a1a;">Hot</span>
             @endif
-            <img src="{{ $imgUrl }}" alt="{{ $product->name }}" loading="lazy"
-                 onerror="this.onerror=null;this.src='{{ asset('storage/default.jpeg') }}'">
+            <a href="{{ route('products.detail', $product->slug) }}" title="{{ $product->name }}">
+                <img src="{{ $imgUrl }}" alt="{{ $product->name }}" loading="lazy"
+                     onerror="this.onerror=null;this.src='{{ asset('storage/default.jpeg') }}'">
+            </a>
             <div class="prod-hover">
                 <a href="{{ route('products.detail', $product->slug) }}" title="View"><i class="fas fa-eye"></i></a>
                 @auth
