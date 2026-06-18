@@ -36,7 +36,7 @@ class CustomerAuthController extends Controller
 
         if (Auth::attempt($credentials) && Auth::user()->role === 'customer') {
             $request->session()->regenerate();
-            return redirect()->route('customer.dashboard')->with('success', 'Welcome back!');
+            return redirect()->intended(route('customer.dashboard'))->with('success', 'Welcome back!');
         }
 
         return back()->withErrors(['email' => 'Invalid credentials or not a customer account.'])->onlyInput('email');

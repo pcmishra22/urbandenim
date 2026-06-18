@@ -355,9 +355,13 @@ Route::get('/products/category/{slug}', [\App\Http\Controllers\Front\CategoryPro
 Route::get('/products/{slug}', [\App\Http\Controllers\Front\ProductDetailController::class, 'show'])
     ->name('products.detail');
 
-Route::get('/checkout', [\App\Http\Controllers\Front\CheckoutController::class, 'index'])->name('checkout.index');
-Route::post('/checkout', [\App\Http\Controllers\Front\CheckoutController::class, 'store'])->name('checkout.store');
-Route::post('/checkout/pending', [\App\Http\Controllers\Front\CheckoutController::class, 'storePending'])->name('checkout.store-pending')->middleware('auth');
+// All checkout routes require auth — user_id must never be null on orders
+Route::middleware('auth')->group(function () {
+    Route::get('/checkout', [\App\Http\Controllers\Front\CheckoutController::class, 'index'])->name('checkout.index');
+    Route::post('/checkout', [\App\Http\Controllers\Front\CheckoutController::class, 'store'])->name('checkout.store');
+    Route::post('/checkout/pending', [\App\Http\Controllers\Front\CheckoutController::class, 'storePending'])->name('checkout.store-pending');
+});
+// Confirmation has no auth — session may be gone after external payment redirect
 Route::get('/checkout/confirmation/{orderId}', [\App\Http\Controllers\Front\CheckoutController::class, 'confirmation'])->name('checkout.confirmation');
 
 Route::get('/cart', [\App\Http\Controllers\Front\CartController::class, 'index'])->name('cart.index');

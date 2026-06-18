@@ -21,6 +21,12 @@
                             </div>
                         @endif
 
+                        @if (session('error'))
+                            <div class="alert alert-warning">
+                                <i class="fa fa-lock mr-1"></i> {{ session('error') }}
+                            </div>
+                        @endif
+
                         @if (session('status'))
                             <div class="alert alert-success">{{ session('status') }}</div>
                         @endif

@@ -57,6 +57,7 @@
             {{-- Col 3: Legal --}}
             <div class="col-lg-3 col-md-6 mb-5">
                 <h5 class="font-weight-bold text-dark mb-4">Legal</h5>
+                <p class="mb-3 text-dark"><i class="fa fa-store text-primary mr-2"></i>This website is owned &amp; operated by <strong>Sonam Collection</strong>.</p>
                 <div class="d-flex flex-column justify-content-start">
                     <a class="text-dark mb-2" href="{{ route('legal.terms') }}"><i class="fa fa-angle-right mr-2"></i>Terms &amp; Conditions</a>
                     <a class="text-dark mb-2" href="{{ route('legal.privacy') }}"><i class="fa fa-angle-right mr-2"></i>Privacy Policy</a>
@@ -95,7 +96,8 @@
         <div class="row border-top border-light mx-xl-5 py-4">
             <div class="col-md-6 px-xl-0">
                 <p class="mb-md-0 text-center text-md-left text-dark">
-                    &copy; {{ date('Y') }} <a class="text-dark font-weight-semi-bold" href="{{ url('/') }}">Jeanzo</a>. All Rights Reserved.
+                    &copy; {{ date('Y') }} <a class="text-dark font-weight-semi-bold" href="{{ url('/') }}">Jeanzo</a>. All Rights Reserved. |
+                    A brand of <strong>Sonam Collection</strong>
                 </p>
             </div>
             <div class="col-md-6 px-xl-0 text-center text-md-right">

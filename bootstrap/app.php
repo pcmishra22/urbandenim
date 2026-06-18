@@ -1,9 +1,7 @@
 <?php
-
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
-
 return Application::configure(basePath: dirname(__DIR__))
     ->withRouting(
         web: __DIR__.'/../routes/web.php',
@@ -18,9 +16,12 @@ return Application::configure(basePath: dirname(__DIR__))
             'vendor' => \App\Http\Middleware\EnsureVendor::class,
             'role'   => \App\Http\Middleware\CheckRole::class,
         ]);
-
-        // Exclude PayU callback from CSRF — PayU POSTs back from an external server
-        // with no Laravel session/token. Security is enforced by SHA-512 hash verification.
+        // Tell Laravel's auth middleware to redirect unauthenticated users to
+        // the customer login page (our login route is named 'customer.login')
+        $middleware->redirectGuestsTo(fn () => route('customer.login'));
+        // Exclude Cashfree callbacks from CSRF — Cashfree GETs/POSTs back from an external
+        // server with no Laravel session/token. Security is enforced by the Cashfree SDK
+        // order status verification (PGFetchOrder) and webhook HMAC-SHA256 signature check.
         $middleware->validateCsrfTokens(except: [
             'payment/verify',
             'payment/webhook',

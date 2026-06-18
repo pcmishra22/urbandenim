@@ -8,9 +8,9 @@ use App\Mail\OrderConfirmedMail;
 use App\Models\Order;
 use App\Models\User;
 use App\Services\CartService;
+use App\Models\ProductVariant;
 use App\Services\CouponService;
 use Illuminate\Http\Request;
-use App\Models\ProductVariant;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
@@ -30,9 +30,9 @@ class CheckoutController extends Controller
             return redirect()->route('cart.index')->with('error', 'Your cart is empty.');
         }
 
-        $subtotal   = $this->cartService->getSubtotal();
-        $shipping   = $this->calculateShipping($subtotal);
-        $discount   = session('coupon_discount', 0);
+        $subtotal  = $this->cartService->getSubtotal();
+        $shipping  = $this->calculateShipping($subtotal);
+        $discount  = session('coupon_discount', 0);
         $couponCode = session('coupon_code');
         $grandTotal = max(0, $subtotal + $shipping - $discount);
 
@@ -48,19 +48,20 @@ class CheckoutController extends Controller
 
     public function confirmation($orderId)
     {
-        $order = Order::with('products.images')
-            ->where('user_id', auth()->id())
-            ->findOrFail($orderId);
+        // No auth check here — session may be lost after PayU external redirect.
+        $order = Order::with('products.images')->findOrFail($orderId);
 
         return view('front.checkout-confirmation', compact('order'));
     }
 
-    /**
-     * COD: save order + items, clear cart, send emails, redirect to confirmation.
-     * UPI/Card: handled via storePending → PaymentController → verify.
-     */
     public function store(Request $request)
     {
+        // Safety net: route middleware should catch this, but guard anyway
+        if (!auth()->check()) {
+            return redirect()->route('login')
+                ->with('error', 'Please sign in to complete your order. Your cart is saved.');
+        }
+
         $cartItems = $this->cartService->getCartWithProducts();
         if (empty($cartItems)) {
             return redirect()->route('cart.index')->with('error', 'Your cart is empty.');
@@ -79,7 +80,7 @@ class CheckoutController extends Controller
             'notes'                => 'nullable|string|max:500',
         ]);
 
-        // Only COD hits this route directly — UPI/card go through storePending
+        // Only COD hits this route directly.
         if ($request->payment_method !== 'cod') {
             return redirect()->back()->with('error', 'Please use the online payment option properly.');
         }
@@ -98,36 +99,21 @@ class CheckoutController extends Controller
 
     /**
      * Called via AJAX for UPI/card payments.
-     * Creates the order in DB with payment_status = 'awaiting_payment',
-     * returns order_id as JSON so the frontend can initiate PayU Hosted Checkout.
+     * Creates the order in DB with payment_status = 'awaiting_payment'.
      */
     public function storePending(Request $request)
     {
         Log::info('storePending called', [
             'payment_method' => $request->input('payment_method'),
-            'expectsJson' => $request->expectsJson(),
-            'isAjax' => $request->ajax(),
             'user_id' => auth()->check() ? auth()->id() : null,
         ]);
-
-        // Accept even if headers don't mark it as ajax/JSON; many frontends don't set them.
-        if (!$request->expectsJson() && !$request->ajax()) {
-            Log::warning('storePending header mismatch (continuing anyway)', [
-                'expectsJson' => $request->expectsJson(),
-                'isAjax' => $request->ajax(),
-                'payment_method' => $request->input('payment_method'),
-                'user_id' => auth()->check() ? auth()->id() : null,
-            ]);
-        }
-
-
 
         $cartItems = $this->cartService->getCartWithProducts();
         if (empty($cartItems)) {
             return response()->json(['error' => 'Your cart is empty.'], 400);
         }
 
-        $validated = $request->validate([
+        $request->validate([
             'shipping_full_name'   => 'required|string|max:255',
             'shipping_phone'       => 'required|string|max:20',
             'shipping_street'      => 'required|string|max:255',
@@ -152,25 +138,26 @@ class CheckoutController extends Controller
             return response()->json(['error' => 'Could not create order: ' . $e->getMessage()], 500);
         }
 
-
         return response()->json([
-            'success'  => true,
+            'success' => true,
             'order_id' => $order->id,
-            'total'    => $order->total_price,
+            'total' => $order->total_price,
         ]);
     }
 
-    /* ── Shared helpers ─────────────────────────────────── */
-
     protected function createOrder(Request $request, string $paymentStatus): Order
     {
-        $cartItems  = $this->cartService->getCartWithProducts();
-        $subtotal   = $this->cartService->getSubtotal();
-        $shipping   = $this->calculateShipping($subtotal);
-        $discount   = session('coupon_discount', 0);
+        $cartItems = $this->cartService->getCartWithProducts();
+        $subtotal  = $this->cartService->getSubtotal();
+        $shipping  = $this->calculateShipping($subtotal);
+        $discount  = session('coupon_discount', 0);
         $couponCode = session('coupon_code');
 
-        if (!$discount && $request->filled('coupon_code') && Schema::hasTable('coupons')) {
+        if (
+            (!$discount)
+            && $request->filled('coupon_code')
+            && Schema::hasTable('coupons')
+        ) {
             $coupon = \App\Models\Coupon::where('code', strtoupper($request->coupon_code))->first();
             if ($coupon && $coupon->isValidForUser(auth()->user())) {
                 $discount   = $this->couponService->calculateDiscount($coupon, $subtotal);
@@ -229,19 +216,32 @@ class CheckoutController extends Controller
 
     public function sendOrderEmails(Order $order): void
     {
+        // Customer confirmation email
         try {
             Mail::to($order->user->email)->send(new OrderConfirmedMail($order));
+            Log::info('Order confirmation email sent', ['order_id' => $order->id, 'to' => $order->user->email]);
         } catch (\Throwable $e) {
-            Log::warning('Order confirmation email failed', ['order_id' => $order->id, 'error' => $e->getMessage()]);
+            Log::error('Order confirmation email FAILED', [
+                'order_id' => $order->id,
+                'to'       => $order->user->email ?? 'unknown',
+                'error'    => $e->getMessage(),
+                'mailer'   => config('mail.default'),
+            ]);
         }
 
+        // Admin notification email
         try {
             $adminEmails = User::where('role', 'admin')->pluck('email')->toArray();
             if ($adminEmails) {
                 Mail::to($adminEmails)->send(new NewOrderAdminMail($order));
+                Log::info('Admin order email sent', ['order_id' => $order->id, 'to' => $adminEmails]);
             }
         } catch (\Throwable $e) {
-            Log::warning('Admin order email failed', ['order_id' => $order->id, 'error' => $e->getMessage()]);
+            Log::error('Admin order email FAILED', [
+                'order_id' => $order->id,
+                'error'    => $e->getMessage(),
+                'mailer'   => config('mail.default'),
+            ]);
         }
     }
 
@@ -249,4 +249,5 @@ class CheckoutController extends Controller
     {
         return $subtotal >= 500 ? 0.0 : 50.0;
     }
+
 }

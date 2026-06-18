@@ -56,6 +56,12 @@ class CheckoutController extends Controller
 
     public function store(Request $request)
     {
+        // Safety net: route middleware should catch this, but guard anyway
+        if (!auth()->check()) {
+            return redirect()->route('login')
+                ->with('error', 'Please sign in to complete your order. Your cart is saved.');
+        }
+
         $cartItems = $this->cartService->getCartWithProducts();
         if (empty($cartItems)) {
             return redirect()->route('cart.index')->with('error', 'Your cart is empty.');
