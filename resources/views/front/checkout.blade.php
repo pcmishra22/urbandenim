@@ -180,7 +180,7 @@
                     <label class="custom-control-label" for="pay_card">
                         <i class="fa fa-credit-card mr-2" style="color:var(--j-primary);"></i>
                         <strong>Credit / Debit Card</strong>
-                        <small class="d-block text-muted" style="margin-left:22px;">Visa, Mastercard, Rupay — via PayU</small>
+                        <small class="d-block text-muted" style="margin-left:22px;">Visa, Mastercard, Rupay — via Cashfree</small>
                     </label>
                 </div>
 
@@ -198,7 +198,7 @@
                 @error('payment_method')<small class="text-danger d-block mb-2">{{ $message }}</small>@enderror
 
                 <div class="pt-2 mb-3" style="border-top:1px solid var(--j-border);">
-                    <small class="text-muted"><i class="fa fa-shield-alt text-success mr-1"></i>Online payments secured by <strong>PayU</strong></small>
+                    <small class="text-muted"><i class="fa fa-shield-alt text-success mr-1"></i>Online payments secured by <strong>Cashfree</strong></small>
                 </div>
 
                 <div id="pay-error" class="alert alert-danger small py-2 mb-2" style="display:none;border-radius:8px;"></div>
@@ -236,6 +236,8 @@
 @endsection
 
 @push('scripts')
+{{-- Cashfree JS SDK v3 --}}
+<script src="https://sdk.cashfree.com/js/v3/cashfree.js"></script>
 <script>
 (function ($) {
     var CSRF          = '{{ csrf_token() }}';
@@ -348,14 +350,20 @@
         });
     }
 
-    /* ── PayU: build hidden form and auto-submit ── */
-    function redirectToPayU(payuUrl, params) {
-        var form = $('<form>', { method: 'POST', action: payuUrl, style: 'display:none;' });
-        $.each(params, function (name, value) {
-            form.append($('<input>', { type: 'hidden', name: name, value: value }));
+    /* ── Cashfree: open JS SDK checkout with payment_session_id ── */
+    function openCashfreeCheckout(paymentSessionId, cfEnv) {
+        // cfEnv is 'sandbox' or 'production' from the server
+        var cashfree = Cashfree({ mode: cfEnv === 'production' ? 'production' : 'sandbox' });
+        cashfree.checkout({
+            paymentSessionId: paymentSessionId,
+            redirectTarget: '_self'   // full-page redirect back to return_url
+        }).then(function (result) {
+            if (result && result.error) {
+                showErr(result.error.message || 'Payment could not be completed. Please try again.');
+            }
+        }).catch(function (err) {
+            showErr(err && err.message ? err.message : 'Something went wrong opening the payment page.');
         });
-        $('body').append(form);
-        form.submit();
     }
 
     /* ── COD: normal form POST to checkout.store ── */
@@ -383,20 +391,20 @@
             return;
         }
 
-        /* UPI / Card — PayU redirect */
+        /* UPI / Card — Cashfree checkout */
         spin('Saving your order…');
         postJson(STORE_PENDING, formData(method))
         .then(function (od) {
             if (!od.order_id) throw new Error('No order ID returned.');
-            spin('Connecting to PayU…');
+            spin('Connecting to Cashfree…');
             return postJson(CREATE_ORDER, { order_id: od.order_id })
-                .then(function (pu) { return { od: od, pu: pu }; });
+                .then(function (cf) { return { od: od, cf: cf }; });
         })
         .then(function (res) {
-            var pu = res.pu;
-            if (!pu.payu_url || !pu.params) throw new Error('PayU configuration error. Please try again.');
-            spin('Redirecting to PayU…');
-            redirectToPayU(pu.payu_url, pu.params);
+            var cf = res.cf;
+            if (!cf.payment_session_id) throw new Error('Cashfree configuration error. Please try again.');
+            spin('Opening secure payment…');
+            openCashfreeCheckout(cf.payment_session_id, cf.env || 'sandbox');
         })
         .catch(function (err) { showErr(err.message || 'Something went wrong. Please try again.'); });
     });
