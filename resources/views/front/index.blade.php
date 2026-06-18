@@ -1,11 +1,15 @@
 @extends('layouts.eshopper')
-@section('title', 'Jeanzo — Premium Denim Jeans for Men & Women in India')
-@section('meta_description', 'Shop premium denim jeans for men and women at Jeanzo. Slim fit, skinny, straight and relaxed fits. Fast delivery across India. Free shipping above ₹999.')
-@section('og_title', 'Jeanzo — Premium Denim Jeans for Men & Women in India')
-@section('og_description', 'Shop premium denim jeans for men and women at Jeanzo. Slim fit, skinny, straight and relaxed fits. Fast delivery across India.')
+@section('title', 'Premium Denim Jeans for Men & Women Online in India | Jeanzo')
+@section('meta_description', 'Shop premium denim jeans for men and women at Jeanzo. Explore slim fit, straight fit, regular fit, wide leg, bootcut and high-rise jeans with fast delivery across India.')
+@section('og_title', 'Premium Denim Jeans for Men & Women Online in India | Jeanzo')
+@section('og_description', 'Shop premium denim jeans for men and women at Jeanzo. Explore slim fit, straight fit, regular fit, wide leg, bootcut and high-rise jeans with fast delivery across India.')
 @section('canonical', url('/'))
 
 @push('styles')
+<style>
+/* ensure carousel titles do not create extra H1s */
+.jz-hero-title{margin:0;}
+</style>
 <style>
 /* =============================================================
    JEANZO HOME — Fully Responsive
@@ -40,7 +44,8 @@ section, .jz-section, .gender-grid, .collection-grid, .fit-grid, .products-grid,
     letter-spacing: 4px; text-transform: uppercase;
     color: #D19C97; margin-bottom: 14px;
 }
-.hero-caption h1 {
+.hero-caption h1,
+.hero-caption .jz-hero-title {
     font-size: clamp(1.6rem, 4.5vw, 3.6rem);
     font-weight: 900; color: #fff; line-height: 1.08;
     text-transform: uppercase; margin-bottom: 16px;
@@ -358,6 +363,7 @@ section, .jz-section, .gender-grid, .collection-grid, .fit-grid, .products-grid,
 <div class="hero-wrap">
     <div id="hero-carousel" class="carousel slide h-100" data-ride="carousel" data-interval="5000">
         <div class="carousel-inner h-100">
+            <h1 style="display:none;">Premium Denim Jeans for Men &amp; Women</h1>
             @php
                 $slides = $banners ?? collect();
                 $fallbackSlides = [
@@ -382,7 +388,7 @@ section, .jz-section, .gender-grid, .collection-grid, .fit-grid, .products-grid,
                     <img src="{{ $imgUrl }}" alt="{{ $slide->title ?? '' }}">
                     <div class="hero-caption">
                         @if(!empty($slide->subtitle))<div class="hero-eyebrow">{{ $slide->subtitle }}</div>@endif
-                        <h1>{{ $slide->title ?? '' }}</h1>
+                        <h2 class="jz-hero-title">{{ $slide->title ?? '' }}</h2>
                         @if($slide->link_url ?? null)
                         <div class="hero-btns">
                             <a href="{{ $slide->link_url }}" class="btn-hero-solid">Shop Now</a>
@@ -398,7 +404,7 @@ section, .jz-section, .gender-grid, .collection-grid, .fit-grid, .products-grid,
                     <img src="{{ $fb['img'] }}" alt="{{ $fb['title'] }}">
                     <div class="hero-caption">
                         <div class="hero-eyebrow">{{ $fb['label'] }}</div>
-                        <h1>{{ $fb['title'] }}</h1>
+                        <h2 class="jz-hero-title">{{ $fb['title'] }}</h2>
                         <p class="hero-sub">{{ $fb['sub'] }}</p>
                         <div class="hero-btns">
                             <a href="{{ $fb['link'] }}" class="btn-hero-solid">{{ $fb['cta'] }}</a>
