@@ -1,5 +1,9 @@
 @extends('layouts.eshopper')
-@section('title', 'FAQs - Jeanzo')
+@section('title', 'Frequently Asked Questions — Jeanzo')
+@section('meta_description', 'Got questions about Jeanzo? Find answers about shipping, returns, sizing, payment methods, exchanges and more in our FAQ page.')
+@section('canonical', route('faq'))
+@section('og_title', 'FAQs — Jeanzo Denim')
+@section('og_description', 'Answers to common questions about orders, shipping, returns, sizing and payment at Jeanzo.')
 @section('content')
 
 <div class="container-fluid px-xl-5 pt-4 pb-5" style="background:#faf8f8;">

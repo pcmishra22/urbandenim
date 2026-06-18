@@ -1,6 +1,10 @@
 @extends('layouts.eshopper')
 
-@section('title', 'Shop - Jeanzo')
+@section('title', 'Shop All Jeans — Men\'s & Women\'s Denim | Jeanzo')
+@section('meta_description', 'Browse our full collection of premium jeans for men and women. Slim, skinny, straight and relaxed fits. Free shipping above ₹999. Shop now at Jeanzo.')
+@section('canonical', route('products.index'))
+@section('og_title', 'Shop All Jeans — Men\'s & Women\'s Denim | Jeanzo')
+@section('og_description', 'Browse our full collection of premium jeans for men and women at Jeanzo.')
 
 @section('content')
 @include('front.partials.design-system')

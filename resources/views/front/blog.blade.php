@@ -1,5 +1,9 @@
 @extends('layouts.eshopper')
-@section('title', 'Blog - Jeanzo')
+@section('title', 'Denim Style Blog — Tips, Trends & Fits | Jeanzo')
+@section('meta_description', 'Explore Jeanzo\'s denim style blog. Expert tips on finding the perfect fit, caring for your jeans, and the latest denim trends for men and women.')
+@section('canonical', route('blog.index'))
+@section('og_title', 'Denim Style Blog — Tips, Trends & Fits | Jeanzo')
+@section('og_description', 'Expert tips on finding the perfect fit, caring for your jeans, and the latest denim trends.')
 
 @section('content')
 @include('front.partials.design-system')

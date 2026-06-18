@@ -41,7 +41,7 @@
     {{-- Product pages --}}
     @foreach($products as $product)
     <url>
-        <loc>{{ $product->canonical_url ?: route('products.detail', $product->slug) }}</loc>
+        <loc>{{ route('products.detail', $product->slug) }}</loc>
         <lastmod>{{ $product->updated_at->tz('UTC')->toAtomString() }}</lastmod>
         <changefreq>weekly</changefreq>
         <priority>0.8</priority>
@@ -51,7 +51,7 @@
     {{-- Blog posts --}}
     @foreach($posts as $post)
     <url>
-        <loc>{{ $post->canonical_url ?: route('blog.show', $post->slug) }}</loc>
+        <loc>{{ route('blog.show', $post->slug) }}</loc>
         <lastmod>{{ $post->updated_at->tz('UTC')->toAtomString() }}</lastmod>
         <changefreq>monthly</changefreq>
         <priority>0.6</priority>

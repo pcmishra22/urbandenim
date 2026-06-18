@@ -1,4 +1,9 @@
 @extends('layouts.eshopper')
+@section('title', 'About Us — Jeanzo | Premium Denim Brand India')
+@section('meta_description', 'Learn about Jeanzo — India\'s premium denim brand for men and women. Quality jeans crafted for every fit and occasion. Fast delivery, easy returns.')
+@section('canonical', route('about'))
+@section('og_title', 'About Jeanzo — Premium Denim Brand India')
+@section('og_description', 'India\'s premium denim brand for men and women. Quality jeans crafted for every fit and occasion.')
 
 @section('content')
     <!-- Page Header Start -->

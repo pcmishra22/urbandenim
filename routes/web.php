@@ -23,15 +23,15 @@ Route::get('/', function () {
 });
 
 Route::get('/sitemap.xml', function () {
-    $products   = Product::where('is_active', true)->select('slug', 'canonical_url', 'updated_at')->get();
-    $categories = Category::where('is_active', true)->select('slug', 'updated_at')->get();
-    $posts      = BlogPost::where('status', 'published')
-                    ->select('slug', 'canonical_url', 'updated_at')
+    $products   = \App\Models\Product::where('is_active', true)->select('id', 'slug', 'name', 'updated_at')->get();
+    $categories = \App\Models\Category::where('is_active', true)->select('slug', 'updated_at')->get();
+    $posts      = \App\Models\BlogPost::where('status', 'published')
+                    ->select('slug', 'updated_at')
                     ->latest('updated_at')
                     ->get();
 
     return response()->view('front.sitemap', compact('products', 'categories', 'posts'))
-                     ->header('Content-Type', 'text/xml');
+                     ->header('Content-Type', 'application/xml');
 });
 
 Route::get('/robots.txt', function () {
@@ -39,11 +39,15 @@ Route::get('/robots.txt', function () {
         'User-agent: *',
         'Allow: /',
         'Disallow: /admin',
+        'Disallow: /admin/',
         'Disallow: /checkout',
         'Disallow: /cart',
         'Disallow: /profile',
+        'Disallow: /profile/',
         'Disallow: /login',
         'Disallow: /register',
+        'Disallow: /forgot-password',
+        'Disallow: /reset-password',
         '',
         'Sitemap: ' . url('/sitemap.xml'),
     ]);

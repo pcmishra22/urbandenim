@@ -1,5 +1,9 @@
 @extends('layouts.eshopper')
-@section('title', 'Jeanzo — Premium Denim for Men & Women')
+@section('title', 'Jeanzo — Premium Denim Jeans for Men & Women in India')
+@section('meta_description', 'Shop premium denim jeans for men and women at Jeanzo. Slim fit, skinny, straight and relaxed fits. Fast delivery across India. Free shipping above ₹999.')
+@section('og_title', 'Jeanzo — Premium Denim Jeans for Men & Women in India')
+@section('og_description', 'Shop premium denim jeans for men and women at Jeanzo. Slim fit, skinny, straight and relaxed fits. Fast delivery across India.')
+@section('canonical', url('/'))
 
 @push('styles')
 <style>
@@ -460,11 +464,13 @@ function handleOfferSignup(){
         return $n;
     };
 
-    function jzCatImg($cat, $fallbackNum = 1) {
-        if (!$cat || !$cat->image_url) return asset('eshopper/img/cat-' . $fallbackNum . '.jpg');
-        $url = $cat->image_url;
-        if (str_starts_with($url,'http') || str_starts_with($url,'/')) return asset($url);
-        return asset('storage/' . $url);
+    if (!function_exists('jzCatImg')) {
+        function jzCatImg($cat, $fallbackNum = 1) {
+            if (!$cat || !$cat->image_url) return asset('eshopper/img/cat-' . $fallbackNum . '.jpg');
+            $url = $cat->image_url;
+            if (str_starts_with($url,'http') || str_starts_with($url,'/')) return asset($url);
+            return asset('storage/' . $url);
+        }
     }
 
     $collections = $allActive->whereNull('parent_id')
@@ -614,15 +620,17 @@ function handleOfferSignup(){
         $trending = $trending->merge($extra);
     }
 
-    function jzProdImg($product) {
-        $img = $product->images->first();
-        if ($img && $img->image) {
-            $path = 'products/' . $product->id . '/images/' . $img->image;
-            if (\Illuminate\Support\Facades\Storage::disk('public')->exists($path)) {
-                return \Illuminate\Support\Facades\Storage::disk('public')->url($path);
+    if (!function_exists('jzProdImg')) {
+        function jzProdImg($product) {
+            $img = $product->images->first();
+            if ($img && $img->image) {
+                $path = 'products/' . $product->id . '/images/' . $img->image;
+                if (\Illuminate\Support\Facades\Storage::disk('public')->exists($path)) {
+                    return \Illuminate\Support\Facades\Storage::disk('public')->url($path);
+                }
             }
+            return asset('storage/default.jpeg');
         }
-        return asset('storage/default.jpeg');
     }
 @endphp
 

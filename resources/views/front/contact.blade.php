@@ -1,5 +1,10 @@
 @extends('layouts.eshopper')
-@section('title', 'Contact Us - Jeanzo')
+@section('title', 'Contact Us — Jeanzo Customer Support')
+@section('meta_description', 'Get in touch with Jeanzo. We\'re here to help with orders, returns, sizing and more. Email us at support@jeanzo.in or use our contact form.')
+@section('canonical', route('contact'))
+@section('meta_robots', 'noindex, follow')
+@section('og_title', 'Contact Jeanzo — We\'re Here to Help')
+@section('og_description', 'Get in touch with Jeanzo for order support, returns, or general queries.')
 
 @section('content')
 @include('front.partials.design-system')
