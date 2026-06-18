@@ -1,5 +1,7 @@
 @extends('layouts.eshopper')
-@section('title', 'Order Confirmed — Jeanzo')
+@section('title', 'Order Confirmed — Thank You | Jeanzo India')
+@section('meta_description', 'Your Jeanzo order has been placed successfully. Check your email for your order confirmation and estimated delivery details.')
+@section('meta_robots', 'noindex, nofollow')
 
 @section('content')
 @include('front.partials.design-system')

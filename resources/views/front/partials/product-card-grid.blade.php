@@ -33,8 +33,8 @@
 <div class="col-lg-4 col-md-6 col-sm-12 pb-1">
     <div class="card product-item border-0 mb-4">
         <div class="card-header product-img position-relative overflow-hidden bg-transparent border p-0">
-            <a href="{{ $detailUrl }}">
-                <img class="img-fluid w-100" src="{{ $imgSrc }}" alt="{{ $product->name }}"
+            <a href="{{ $detailUrl }}" class="d-block" style="height:400px;overflow:hidden;">
+                <img style="width:100%;height:100%;object-fit:cover;object-position:top;" src="{{ $imgSrc }}" alt="{{ $product->name }}"
                      onerror="this.onerror=null;this.src='{{ asset('storage/default.jpg') }}';"
                      loading="lazy">
             </a>

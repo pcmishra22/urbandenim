@@ -1,5 +1,9 @@
 @extends('layouts.eshopper')
-@section('title', 'Help Center - Jeanzo')
+@section('title', 'Help Center — Jeanzo India')
+@section('meta_description', 'Find answers to common questions about orders, sizing, delivery, returns and payment at Jeanzo. Our help centre is here for you.')
+@section('canonical', route('help'))
+@section('og_title', 'Help Center — Jeanzo')
+@section('og_description', 'Find answers to common questions about orders, sizing, delivery, returns and payment at Jeanzo.')
 @section('content')
 
 @include('front.partials.page-banner', ['title' => 'Help Center', 'breadcrumb' => 'Help'])

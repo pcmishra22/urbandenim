@@ -1,5 +1,7 @@
 @extends('layouts.eshopper')
-@section('title', 'My Account - Jeanzo')
+@section('title', 'My Account — Dashboard | Jeanzo India')
+@section('meta_description', 'Manage your Jeanzo account. View orders, track shipments, manage addresses, wishlist and personal information.')
+@section('meta_robots', 'noindex, nofollow')
 
 @section('content')
 

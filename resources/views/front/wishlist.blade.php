@@ -1,5 +1,8 @@
 @extends('layouts.eshopper')
-@section('title', 'My Wishlist - Jeanzo')
+@section('title', 'My Wishlist | Jeanzo India')
+@section('meta_description', 'View your saved jeans and items in your Jeanzo wishlist. Save your favourite styles and buy them when you are ready.')
+@section('meta_robots', 'noindex, nofollow')
+@section('canonical', route('wishlist.index'))
 
 @section('content')
 

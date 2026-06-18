@@ -1,6 +1,7 @@
 @extends('layouts.eshopper')
-
-@section('title', 'Customer Registration')
+@section('title', 'Create a Jeanzo Account | India')
+@section('meta_description', 'Create a free Jeanzo account to enjoy faster checkout, order tracking, wishlist and exclusive member offers on premium denim jeans.')
+@section('meta_robots', 'noindex, follow')
 
 @section('content')
     <div class="container" style="padding-top: 30px;">

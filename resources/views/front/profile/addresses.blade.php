@@ -1,5 +1,7 @@
 @extends('layouts.eshopper')
-@section('title', 'My Addresses - Jeanzo')
+@section('title', 'My Addresses | Jeanzo India')
+@section('meta_description', 'Manage your saved delivery addresses in your Jeanzo account for faster checkout on every order.')
+@section('meta_robots', 'noindex, nofollow')
 
 @section('content')
 

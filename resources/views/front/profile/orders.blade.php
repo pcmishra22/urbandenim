@@ -1,5 +1,7 @@
 @extends('layouts.eshopper')
-@section('title', 'My Orders - Jeanzo')
+@section('title', 'My Orders | Jeanzo India')
+@section('meta_description', 'View and track all your Jeanzo orders. Check order status, shipment tracking and delivery updates from your account.')
+@section('meta_robots', 'noindex, nofollow')
 
 @section('content')
 

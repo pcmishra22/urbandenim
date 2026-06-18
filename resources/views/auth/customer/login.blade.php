@@ -1,6 +1,7 @@
 @extends('layouts.eshopper')
-
-@section('title', 'Customer Login')
+@section('title', 'Login to Your Jeanzo Account | India')
+@section('meta_description', 'Log in to your Jeanzo account to view orders, track shipments, manage returns and update your details. Fast and secure login.')
+@section('meta_robots', 'noindex, follow')
 
 @section('content')
     <div class="container" style="padding-top: 30px;">

@@ -1,5 +1,8 @@
 @extends('layouts.eshopper')
-@section('title', 'Checkout - Jeanzo')
+@section('title', 'Secure Checkout | Jeanzo India')
+@section('meta_description', 'Complete your Jeanzo order securely. Enter your delivery address and payment details for fast, safe checkout with multiple payment options.')
+@section('meta_robots', 'noindex, nofollow')
+@section('canonical', route('checkout.index'))
 
 @section('content')
 @include('front.partials.design-system')

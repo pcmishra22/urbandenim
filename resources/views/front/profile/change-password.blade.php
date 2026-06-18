@@ -1,5 +1,7 @@
 @extends('layouts.eshopper')
-@section('title', 'Change Password - Jeanzo')
+@section('title', 'Change Password | Jeanzo India')
+@section('meta_description', 'Update your Jeanzo account password securely. Keep your account safe by using a strong, unique password.')
+@section('meta_robots', 'noindex, nofollow')
 
 @section('content')
 

@@ -1,5 +1,7 @@
 @extends('layouts.eshopper')
-@section('title', 'Order #' . $order->id . ' - Jeanzo')
+@section('title', 'Order #' . $order->id . ' — Details | Jeanzo India')
+@section('meta_description', 'View the details, items and tracking information for your Jeanzo order #' . $order->id . '.')
+@section('meta_robots', 'noindex, nofollow')
 
 @section('content')
 

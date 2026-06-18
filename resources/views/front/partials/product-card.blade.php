@@ -10,7 +10,7 @@
 
         {{-- Image — clickable --}}
         <div class="card-header product-img position-relative overflow-hidden bg-transparent border p-0">
-            <a href="{{ $detailUrl }}">
+            <a href="{{ $detailUrl }}" class="d-block" style="height:280px;overflow:hidden;">
                 @php
                     $storageDisk = \Illuminate\Support\Facades\Storage::disk('public');
                     if ($product->images && $product->images->isNotEmpty()) {
@@ -29,7 +29,7 @@
                             : (file_exists(public_path('storage/default.jpeg')) ? asset('storage/default.jpeg') : asset('eshopper/img/product-1.jpg'));
                     }
                 @endphp
-                <img class="img-fluid w-100"
+                <img style="width:100%;height:100%;object-fit:cover;object-position:top;"
                      src="{{ $cardImgSrc }}"
                      alt="{{ $product->name }}"
                      onerror="this.onerror=null;this.src='{{ asset('storage/default.jpg') }}';"

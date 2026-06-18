@@ -1,10 +1,10 @@
 @extends('layouts.eshopper')
 
 @section('title', 'Shop All Jeans — Men\'s & Women\'s Denim | Jeanzo')
-@section('meta_description', 'Browse our full collection of premium jeans for men and women. Slim, skinny, straight and relaxed fits. Free shipping above ₹999. Shop now at Jeanzo.')
+@section('meta_description', 'Shop all premium denim jeans for men and women at Jeanzo. Wide leg, high rise, slim fit, straight fit and relaxed fit styles. Fast delivery across India.')
 @section('canonical', route('products.index'))
 @section('og_title', 'Shop All Jeans — Men\'s & Women\'s Denim | Jeanzo')
-@section('og_description', 'Browse our full collection of premium jeans for men and women at Jeanzo.')
+@section('og_description', 'Shop all premium denim jeans for men and women at Jeanzo. Wide leg, high rise, slim fit and relaxed fit styles. Fast delivery across India.')
 
 @section('content')
 @include('front.partials.design-system')

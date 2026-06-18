@@ -1,5 +1,7 @@
 @extends('layouts.eshopper')
-@section('title', 'Personal Info - Jeanzo')
+@section('title', 'Personal Information | Jeanzo India')
+@section('meta_description', 'Update your personal information, name, email and phone number in your Jeanzo account.')
+@section('meta_robots', 'noindex, nofollow')
 
 @section('content')
 

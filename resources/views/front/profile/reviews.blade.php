@@ -1,5 +1,7 @@
 @extends('layouts.eshopper')
-@section('title', 'My Reviews - Jeanzo')
+@section('title', 'My Reviews | Jeanzo India')
+@section('meta_description', 'View and manage all the product reviews you have submitted on Jeanzo. Help other shoppers find the perfect pair of jeans.')
+@section('meta_robots', 'noindex, nofollow')
 
 @section('content')
 

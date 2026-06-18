@@ -1,5 +1,8 @@
 @extends('layouts.eshopper')
-@section('title', 'Shopping Cart - Jeanzo')
+@section('title', 'Shopping Cart | Jeanzo India')
+@section('meta_description', 'Review the jeans and items in your Jeanzo shopping cart. Update quantities, apply discount codes and proceed to secure checkout.')
+@section('meta_robots', 'noindex, nofollow')
+@section('canonical', route('cart.index'))
 
 @section('content')
 @include('front.partials.design-system')
