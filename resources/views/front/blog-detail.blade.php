@@ -6,9 +6,7 @@
 @section('og_type', 'article')
 @section('og_title', $post->og_title ?: $post->meta_title ?: $post->title)
 @section('og_description', $post->og_description ?: $post->meta_description ?: \Illuminate\Support\Str::limit(strip_tags($post->excerpt ?? ''), 155))
-@if($post->featured_image_url)
-@section('og_image', $post->featured_image_url)
-@endif
+@section('og_image', $post->og_image)
 
 @push('json_ld')
 @php
@@ -27,9 +25,7 @@
         'dateModified'     => $post->updated_at->toIso8601String(),
         'mainEntityOfPage' => ['@type' => 'WebPage', '@id' => route('blog.show', $post->slug)],
     ];
-    if ($post->featured_image_url) {
-        $jsonld['image'] = $post->featured_image_url;
-    }
+    $jsonld['image'] = $post->og_image;
 @endphp
 <script type="application/ld+json">{{ json_encode($jsonld, JSON_UNESCAPED_SLASHES|JSON_UNESCAPED_UNICODE) }}</script>
 @endpush
@@ -57,11 +53,7 @@
             <!-- Main Content -->
             <div class="col-lg-8">
                 @if($post)
-                    @if($post->featured_image)
-                    <img src="{{ asset('storage/' . $post->featured_image) }}" class="img-fluid w-100 mb-4" alt="{{ $post->title }}">
-                    @else
-                    <img src="{{ asset('eshopper/img/blog-1.jpg') }}" class="img-fluid w-100 mb-4" alt="">
-                    @endif
+                    <img src="{{ $post->image_url }}" class="img-fluid w-100 mb-4" alt="{{ $post->title }}" style="max-height:420px;object-fit:cover;border-radius:8px;">
                     <div class="d-flex mb-3">
                         <small class="text-body mr-3"><i class="fa fa-calendar-alt text-primary mr-2"></i>{{ ($post->published_at ?? $post->created_at)->format('d M Y') }}</small>
                         @if($post->author)<small class="text-body mr-3"><i class="fa fa-user text-primary mr-2"></i>{{ $post->author }}</small>@endif
@@ -131,11 +123,7 @@
                     <h5 class="font-weight-semi-bold border-bottom pb-2 mb-4">Recent Posts</h5>
                     @foreach($recentPosts as $recent)
                     <div class="d-flex mb-3">
-                        @if($recent->featured_image)
-                            <img src="{{ asset('storage/' . $recent->featured_image) }}" class="img-fluid mr-3" style="width:80px;height:60px;object-fit:cover;" alt="">
-                        @else
-                            <img src="{{ asset('eshopper/img/blog-1.jpg') }}" class="img-fluid mr-3" style="width:80px;height:60px;object-fit:cover;" alt="">
-                        @endif
+                        <img src="{{ $recent->image_url }}" class="img-fluid mr-3" style="width:80px;height:60px;object-fit:cover;" alt="">
                         <div>
                             <a href="{{ route('blog.show', $recent->slug) }}" class="text-dark d-block font-weight-semi-bold mb-1">{{ $recent->title }}</a>
                             <small class="text-muted">{{ ($recent->published_at ?? $recent->created_at)->format('d M Y') }}</small>

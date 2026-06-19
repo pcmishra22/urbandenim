@@ -40,10 +40,10 @@ class BlogController extends Controller
             });
         }
 
-        $posts = $query->paginate(6);
+        $posts = $query->with('category')->where('status', 'published')->paginate(6);
         $categories = BlogCategory::withCount('posts')->get();
         $tags = BlogTag::all();
-        $recentPosts = BlogPost::latest()->take(3)->get();
+        $recentPosts = BlogPost::with('category')->where('status', 'published')->latest()->take(3)->get();
 
         return view('front.blog', compact('posts', 'categories', 'tags', 'recentPosts'));
     }
@@ -53,10 +53,10 @@ class BlogController extends Controller
      */
     public function show($slug)
     {
-        $post = BlogPost::where('slug', $slug)->firstOrFail();
+        $post = BlogPost::with('category')->where('slug', $slug)->where('status', 'published')->firstOrFail();
         $categories = BlogCategory::withCount('posts')->get();
         $tags = BlogTag::all();
-        $recentPosts = BlogPost::where('id', '!=', $post->id)->latest()->take(3)->get();
+        $recentPosts = BlogPost::with('category')->where('id', '!=', $post->id)->where('status', 'published')->latest()->take(3)->get();
 
         return view('front.blog-detail', compact('post', 'categories', 'tags', 'recentPosts'));
     }

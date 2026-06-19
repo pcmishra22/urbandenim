@@ -47,7 +47,7 @@
                 <div style="flex-shrink:0;width:220px;height:180px;overflow:hidden;" class="d-none d-md-block">
                     <img class="w-100 h-100" style="object-fit:cover;transition:transform .4s;"
                          onmouseover="this.style.transform='scale(1.05)'" onmouseout="this.style.transform='scale(1)'"
-                         src="{{ $post->featured_image ? asset('storage/'.$post->featured_image) : asset('eshopper/img/blog-1.jpg') }}"
+                         src="{{ $post->image_url }}"
                          alt="{{ $post->title }}">
                 </div>
                 {{-- Content --}}
@@ -142,7 +142,7 @@
                 @foreach($recentPosts as $recent)
                 <div class="d-flex align-items-center gap-3 mb-3 {{ !$loop->last ? 'pb-3 border-bottom' : '' }}">
                     <div style="flex-shrink:0;width:64px;height:52px;overflow:hidden;border-radius:6px;">
-                        <img src="{{ $recent->featured_image ? asset('storage/'.$recent->featured_image) : asset('eshopper/img/blog-1.jpg') }}"
+                        <img src="{{ $recent->image_url }}"
                              class="w-100 h-100" style="object-fit:cover;" alt="">
                     </div>
                     <div>
