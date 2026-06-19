@@ -13,6 +13,43 @@
 <div class="container-fluid px-xl-5 py-4" style="background:#faf8f8;">
     <div class="row">
 
+        @php
+            $fitCopyMap = [
+                'Slim Fit' => "Discover premium men's slim fit jeans at Jeanzo. Crafted from high-quality denim, our slim fit collection offers comfort, durability, and modern style for everyday wear. A slim cut provides a streamlined silhouette that works well with casual tees, button-down shirts, and layered outerwear—so you can move confidently from daytime errands to evening plans. Built for long-lasting wear, these jeans hold their shape and resist everyday fading while keeping the fabric breathable for all-day comfort. Whether you prefer a clean, minimal look or want to build a fashion-forward wardrobe, slim fit jeans are designed to highlight your shape without feeling restrictive. Explore trusted washes, versatile styling options, and sizes that help you find the right fit.",
+                'Straight Fit' => "Explore classic men's straight fit jeans at Jeanzo, made for everyday comfort and effortless style. Our straight fit collection features premium denim designed to last, with a balanced cut that sits comfortably through the thigh and falls straight down for a timeless look. Straight fit jeans are versatile enough to pair with sneakers and hoodies for a relaxed vibe or dress up with shirts and jackets for a sharper appearance. With quality stitching, durable fabric, and a comfortable feel, these jeans are built to withstand regular wear while maintaining a polished finish. Choose from a range of washes and finishes to match your personal style, from clean everyday blues to deeper, more statement shades. If you’re looking for a flattering fit that adapts to every season, Jeanzo’s straight fit jeans deliver comfort, durability, and modern appeal in one great pair.",
+                'Regular Fit' => "Shop dependable men's regular fit jeans at Jeanzo—crafted for comfort, durability, and classic everyday style. Our regular fit collection is designed to provide an easy, relaxed feel through the seat and thigh, making it ideal for daily wear without sacrificing structure. Premium denim helps these jeans stay durable and comfortable, while the balanced fit offers room to move so you can stay at ease all day long. Regular fit jeans are perfect for styling with everything from casual t-shirts and workwear shirts to layered sweaters during cooler months. If you want a versatile pair that looks good on its own and pairs effortlessly with your wardrobe, you’ll love the design choices and quality finish of Jeanzo’s regular fit jeans. Discover your next go-to denim essential and enjoy reliable comfort, year after year.",
+                'Skinny' => "Find stylish men's skinny jeans at Jeanzo, designed to deliver a sharp silhouette with all-day comfort. Our skinny fit collection is crafted from high-quality denim that feels smooth, comfortable, and made for regular wear. The close-to-the-body cut creates a modern look that pairs easily with sneakers, boots, and statement tops. Whether you prefer a clean, minimal style or want a more bold fashion edge, skinny jeans help you create a confident outfit with less effort. Built for durability, these jeans maintain shape and resist wear from everyday use while offering a comfortable feel for walking, sitting, and commuting. Explore quality washes, dependable construction, and a fit that suits your personal style—then add your favorite pair to your rotation.",
+                'Wide Leg' => "Discover fashion-forward men's wide leg jeans at Jeanzo, crafted from premium denim for comfort, durability, and a bold modern silhouette. The wide-leg cut creates a relaxed, statement look that flows naturally from the waist to the hem—perfect for styling with fitted tops, oversized shirts, or casual jackets. Wide leg jeans are designed to be comfortable and breathable, making them ideal for everyday wear and trend-led outfits. With quality stitching and long-lasting fabric, our wide leg collection is made to handle regular use while keeping your jeans looking polished. Explore a range of washes and finishes that suit your style, from classic indigo to deeper tones, and enjoy the versatility of a denim piece that stands out. Step into modern comfort with Jeanzo wide leg jeans.",
+                'Bootcut' => "Shop premium men's bootcut jeans at Jeanzo—crafted to deliver comfort, durability, and classic style with a modern touch. Bootcut jeans feature a fitted rise and a slightly flared leg opening, creating a silhouette that balances structure and movement. This timeless cut pairs well with boots, sneakers, and casual footwear, making it an easy choice for everyday outfits. Made from high-quality denim, our bootcut collection offers long-lasting wear, dependable stitching, and a comfortable feel that keeps you moving through your day. Whether you’re dressing for work, going out for dinner, or simply building a go-to casual wardrobe, bootcut jeans provide a flattering fit and versatile styling potential. Explore quality washes and premium construction—then find the pair that fits your style and lifestyle."
+            ];
+
+            $categoryName = (string) request('category_name', '');
+            $categoryId = request('category');
+
+            // Best-effort: resolve category name from ID if possible.
+            if (!$categoryName && $categoryId) {
+                try {
+                    $categoryName = \App\Models\Category::where('id', $categoryId)->value('name') ?? '';
+                } catch (\Throwable $e) {
+                    $categoryName = '';
+                }
+            }
+
+            $fitKey = trim($categoryName);
+            $seoCopy = $fitCopyMap[$fitKey] ?? null;
+        @endphp
+
+        @if($seoCopy)
+            <div class="col-12 mb-4">
+                <div style="background:#fff;border:1px solid #eee;border-radius:12px;padding:18px 18px 14px;">
+                    <h2 style="font-size:1.15rem;margin:0 0 8px;letter-spacing:-0.2px;">{{ $fitKey }} Jeans</h2>
+                    <p style="margin:0;color:#444;line-height:1.7;max-width:860px;">
+                        {{ $seoCopy }}
+                    </p>
+                </div>
+            </div>
+        @endif
+
         <!-- Sidebar -->
         <div class="col-lg-3 mb-4">
             <div class="j-section" style="position:sticky;top:80px;max-height:calc(100vh - 100px);overflow-y:auto;">

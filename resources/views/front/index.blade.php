@@ -363,7 +363,7 @@ section, .jz-section, .gender-grid, .collection-grid, .fit-grid, .products-grid,
 <div class="hero-wrap">
     <div id="hero-carousel" class="carousel slide h-100" data-ride="carousel" data-interval="5000">
         <div class="carousel-inner h-100">
-            <h1 style="display:none;">Premium Denim Jeans for Men &amp; Women</h1>
+            <h1 class="jz-hero-title" style="margin:0; padding:0; font-size:1px; line-height:1px; position:absolute; left:-9999px;">Premium Denim Jeans for Men &amp; Women</h1>
             @php
                 $slides = $banners ?? collect();
                 $fallbackSlides = [

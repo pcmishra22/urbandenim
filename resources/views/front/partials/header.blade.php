@@ -265,9 +265,84 @@
         .header-logo h1 { font-size: 1.15rem; }
         .header-icon-btn { font-size: 1rem; }
     }
+    /* ============================================================
+       WHATSAPP FLOATING BUTTON — visible on every page
+       ============================================================ */
+
+    .whatsapp-float-wrap{
+        position: fixed;
+        right: 18px;
+        bottom: 18px;
+        z-index: 9999;
+        display:flex;
+        flex-direction: column;
+        align-items: flex-end;
+        gap: 10px;
+        pointer-events: none; /* allow click-through unless on button */
+    }
+
+    .whatsapp-help-text{
+        background: rgba(0,0,0,.72);
+        color: #fff;
+        padding: 10px 12px;
+        border-radius: 12px;
+        font-size: 12px;
+        line-height: 1.2;
+        box-shadow: 0 10px 30px rgba(0,0,0,.25);
+        pointer-events: none;
+        max-width: 220px;
+    }
+
+    .whatsapp-help-text strong{ display:block; font-size: 13px; margin-bottom: 3px; }
+
+    .whatsapp-float-link{
+        width: 56px;
+        height: 56px;
+        border-radius: 50%;
+        background: #25D366;
+        color: #fff;
+        display:flex;
+        align-items:center;
+        justify-content:center;
+        text-decoration:none;
+        box-shadow: 0 12px 30px rgba(37, 211, 102, .35);
+        pointer-events: auto;
+        transition: transform .15s ease, box-shadow .15s ease;
+    }
+
+    .whatsapp-float-link:hover{
+        transform: translateY(-2px);
+        box-shadow: 0 16px 36px rgba(37, 211, 102, .45);
+        color:#fff;
+    }
+
+    .whatsapp-float-link i{ font-size: 24px; }
+
+    @media (max-width: 480px){
+        .whatsapp-float-wrap{ right: 12px; bottom: 12px; }
+        .whatsapp-float-link{ width: 52px; height: 52px; }
+        .whatsapp-help-text{ padding: 9px 10px; font-size: 11.5px; max-width: 200px; }
+    }
+
     </style>
 </head>
 <body>
+
+    @php
+        $whatsappPhone = '7340753780'; // from WhatsApp E.164 digits without +
+        $whatsappText = 'Need help choosing your size?';
+        $whatsappUrl  = 'https://wa.me/' . $whatsappPhone . '?text=' . urlencode($whatsappText);
+    @endphp
+
+    <div class="whatsapp-float-wrap" aria-label="Chat on WhatsApp">
+        <div class="whatsapp-help-text">
+            <strong>Need help choosing your size?</strong>
+            <span>Chat on WhatsApp</span>
+        </div>
+        <a class="whatsapp-float-link" href="{{ $whatsappUrl }}" target="_blank" rel="noopener" aria-label="Chat on WhatsApp">
+            <i class="fab fa-whatsapp"></i>
+        </a>
+    </div>
 
 <!-- PROMO BAR -->
 <div id="promo-bar">
