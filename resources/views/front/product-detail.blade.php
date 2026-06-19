@@ -299,18 +299,55 @@
                     </div>
                 </div>
 
-                <!-- Delivery badges -->
-                <div class="d-flex flex-wrap pt-3 border-top" style="gap:12px;">
-                    <div class="d-flex align-items-center gap-1 small text-muted">
-                        <i class="fa fa-truck" style="color:var(--j-primary);"></i> Free shipping above ₹500
-                    </div>
-                    <div class="d-flex align-items-center gap-1 small text-muted">
-                        <i class="fa fa-undo" style="color:var(--j-primary);"></i> 14-day returns
-                    </div>
-                    <div class="d-flex align-items-center gap-1 small text-muted">
-                        <i class="fa fa-shield-alt" style="color:var(--j-primary);"></i> Secure checkout
+                <!-- ── Trust Badges ── -->
+                <div class="mt-3 pt-3 border-top">
+                    <div class="row text-center" style="row-gap:10px;">
+                        <div class="col-4">
+                            <div style="background:#f8f9fa;border-radius:10px;padding:10px 6px;">
+                                <i class="fa fa-lock fa-lg mb-1" style="color:#27ae60;"></i>
+                                <div style="font-size:.72rem;font-weight:700;color:#333;">100% Secure</div>
+                                <div style="font-size:.65rem;color:#777;">Payments</div>
+                            </div>
+                        </div>
+                        <div class="col-4">
+                            <div style="background:#f8f9fa;border-radius:10px;padding:10px 6px;">
+                                <i class="fa fa-undo fa-lg mb-1" style="color:#e67e22;"></i>
+                                <div style="font-size:.72rem;font-weight:700;color:#333;">Easy Returns</div>
+                                <div style="font-size:.65rem;color:#777;">Within 7 Days</div>
+                            </div>
+                        </div>
+                        <div class="col-4">
+                            <div style="background:#f8f9fa;border-radius:10px;padding:10px 6px;">
+                                <i class="fa fa-truck fa-lg mb-1" style="color:#2980b9;"></i>
+                                <div style="font-size:.72rem;font-weight:700;color:#333;">Free Shipping</div>
+                                <div style="font-size:.65rem;color:#777;">Above ₹999</div>
+                            </div>
+                        </div>
+                        <div class="col-4">
+                            <div style="background:#f8f9fa;border-radius:10px;padding:10px 6px;">
+                                <i class="fa fa-money-bill-wave fa-lg mb-1" style="color:#8e44ad;"></i>
+                                <div style="font-size:.72rem;font-weight:700;color:#333;">Cash on</div>
+                                <div style="font-size:.65rem;color:#777;">Delivery</div>
+                            </div>
+                        </div>
+                        <div class="col-4">
+                            <div style="background:#f8f9fa;border-radius:10px;padding:10px 6px;">
+                                <i class="fa fa-star fa-lg mb-1" style="color:#f39c12;"></i>
+                                <div style="font-size:.72rem;font-weight:700;color:#333;">Premium</div>
+                                <div style="font-size:.65rem;color:#777;">Quality Denim</div>
+                            </div>
+                        </div>
+                        <div class="col-4">
+                            <div style="background:#f8f9fa;border-radius:10px;padding:10px 6px;">
+                                <i class="fa fa-map-marker-alt fa-lg mb-1" style="color:#c0392b;"></i>
+                                <div style="font-size:.72rem;font-weight:700;color:#333;">Made in</div>
+                                <div style="font-size:.65rem;color:#777;">India 🇮🇳</div>
+                            </div>
+                        </div>
                     </div>
                 </div>
+
+
 
                 <!-- Share -->
                 <div class="d-flex align-items-center pt-3 mt-2" style="gap:10px;">

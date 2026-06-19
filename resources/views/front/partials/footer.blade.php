@@ -115,21 +115,21 @@
     <!-- Back to Top -->
     <a href="#" class="btn btn-primary back-to-top"><i class="fa fa-angle-double-up"></i></a>
 
+
+    <style>
+        #wa-tooltip { animation: wa-pulse 3s ease-in-out infinite; }
+        @keyframes wa-pulse {
+            0%,100% { opacity:1; transform:translateY(0); }
+            50%      { opacity:.7; transform:translateY(-4px); }
+        }
+    </style>
+
     <!-- JavaScript Libraries -->
     <script src="https://code.jquery.com/jquery-3.4.1.min.js"></script>
     <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/js/bootstrap.bundle.min.js"></script>
     <script src="{{ asset('eshopper/lib/easing/easing.min.js') }}"></script>
     <script src="{{ asset('eshopper/lib/owlcarousel/owl.carousel.min.js') }}"></script>
     <script src="{{ asset('eshopper/js/main.js') }}"></script>
-    <!-- Google tag (gtag.js) -->
-    <script async src="https://www.googletagmanager.com/gtag/js?id=G-FKT9P78GTQ"></script>
-    <script>
-      window.dataLayer = window.dataLayer || [];
-      function gtag(){dataLayer.push(arguments);}
-      gtag('js', new Date());
-
-      gtag('config', 'G-FKT9P78GTQ');
-    </script>
     @stack('scripts')
 </body>
 </html>

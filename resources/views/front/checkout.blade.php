@@ -135,6 +135,22 @@
         {{-- Right: Summary + Payment --}}
         <div class="col-lg-4 mb-5">
 
+            {{-- Trust Badges --}}
+            <div class="mb-3 p-3" style="background:#f8f9fa;border-radius:12px;border:1px solid #eee;">
+                <div class="d-flex align-items-center mb-2" style="gap:8px;">
+                    <i class="fa fa-lock" style="color:#27ae60;"></i>
+                    <span style="font-size:.8rem;font-weight:700;color:#333;">Safe & Secure Checkout</span>
+                </div>
+                <div style="font-size:.75rem;color:#555;line-height:1.9;">
+                    ✅ &nbsp;100% Secure Payment<br>
+                    ✅ &nbsp;Cash on Delivery Available<br>
+                    ✅ &nbsp;Easy 7-Day Returns<br>
+                    ✅ &nbsp;Free Shipping Above ₹999<br>
+                    ✅ &nbsp;Premium Quality Denim<br>
+                    ✅ &nbsp;Made in India 🇮🇳
+                </div>
+            </div>
+
             {{-- Order Summary --}}
             <div class="j-order-summary mb-3">
                 <div class="summary-title"><i class="fa fa-shopping-bag mr-2" style="color:var(--j-primary);"></i>Order Summary</div>
