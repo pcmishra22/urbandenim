@@ -130,6 +130,15 @@
     <script src="{{ asset('eshopper/lib/easing/easing.min.js') }}"></script>
     <script src="{{ asset('eshopper/lib/owlcarousel/owl.carousel.min.js') }}"></script>
     <script src="{{ asset('eshopper/js/main.js') }}"></script>
+    <!-- Google tag (gtag.js) -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-FKT9P78GTQ"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+
+      gtag('config', 'G-FKT9P78GTQ');
+    </script>
     @stack('scripts')
 </body>
 </html>
