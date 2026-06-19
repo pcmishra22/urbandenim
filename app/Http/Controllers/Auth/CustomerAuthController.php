@@ -3,6 +3,8 @@
 namespace App\Http\Controllers\Auth;
 
 use App\Mail\NewUserAdminMail;
+use App\Mail\UserLoginAdminMail;
+use App\Mail\UserLoginMail;
 use App\Mail\WelcomeMail;
 use App\Mail\VerifyEmailMail;
 use Illuminate\Support\Facades\URL;
@@ -36,6 +38,25 @@ class CustomerAuthController extends Controller
 
         if (Auth::attempt($credentials) && Auth::user()->role === 'customer') {
             $request->session()->regenerate();
+
+            // Notify user of login
+            try {
+                Mail::to(Auth::user()->email)->send(new UserLoginMail(
+                    user:    Auth::user(),
+                    loginAt: now()->format('d M Y, h:i A'),
+                    ip:      $request->ip(),
+                ));
+            } catch (\Throwable $e) { Log::warning('Login user email failed', ['error' => $e->getMessage()]); }
+
+            // Notify admin of login
+            try {
+                Mail::to('admin@jeanzo.in')->send(new UserLoginAdminMail(
+                    user:    Auth::user(),
+                    loginAt: now()->format('d M Y, h:i A'),
+                    ip:      $request->ip(),
+                ));
+            } catch (\Throwable $e) { Log::warning('Login admin email failed', ['error' => $e->getMessage()]); }
+
             return redirect()->intended(route('customer.dashboard'))->with('success', 'Welcome back!');
         }
 
@@ -92,11 +113,10 @@ class CustomerAuthController extends Controller
             Log::warning('Verification email send failed', ['error' => $e->getMessage()]);
         }
 
-        // Notify all admins
+        // Notify admin
         try {
-            $adminEmails = User::where('role', 'admin')->pluck('email')->toArray();
-            if ($adminEmails) Mail::to($adminEmails)
-                ->send((new NewUserAdminMail($user))->subject("New Customer Registered — Jeanzo"));
+            Mail::to('admin@jeanzo.in')
+                ->send(new NewUserAdminMail($user));
         } catch (\Throwable $e) { Log::warning('New user admin email failed', ['error' => $e->getMessage()]); }
 
         return redirect()->route('customer.dashboard')->with('success', 'Account created! Check your email.');
