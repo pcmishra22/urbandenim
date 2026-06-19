@@ -171,6 +171,7 @@ Route::prefix('admin')->name('admin.')->group(function () {
 
         // Product management
         Route::resource('products', \App\Http\Controllers\Admin\ProductController::class);
+        Route::post('/products/{product}/generate-images', [\App\Http\Controllers\Admin\GenerateProductImagesController::class, 'generate'])->name('products.generate-images');
 
         // Inventory management (Admin)
         Route::get('/inventory', [\App\Http\Controllers\Admin\InventoryAdminController::class, 'index'])->name('inventory.index');

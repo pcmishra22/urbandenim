@@ -52,5 +52,10 @@ return [
                             : 'https://sandbox.cashfree.com/pg',
     ],
 
+
+    'huggingface' => [
+        'token' => env('HUGGINGFACE_TOKEN'),
+    ],
+
 ];
 
