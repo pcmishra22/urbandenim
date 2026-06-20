@@ -26,7 +26,20 @@
                         <form action="{{ route('customer.register.submit') }}" method="POST">
                             @csrf
 
+                            @php($captchaQuestion = \App\Services\SimpleCaptcha::generate())
+
                             <div class="mb-3">
+                                <label class="form-label">Captcha</label>
+                                <div class="text-muted small mb-2">Solve: <strong>{{ $captchaQuestion }}</strong></div>
+                                <input type="text" class="form-control @error('captcha_answer') is-invalid @enderror" name="captcha_answer" required>
+                                @error('captcha_answer')
+                                    <div class="invalid-feedback">{{ $message }}</div>
+                                @enderror
+                            </div>
+
+                            <div class="mb-3">
+
+
                                 <label for="name" class="form-label">Full Name</label>
                                 <input type="text" class="form-control" id="name" name="name" value="{{ old('name') }}" required>
                             </div>
@@ -89,6 +102,9 @@
             background: #ffffff;
         }
     </style>
+
+
 @endsection
+
 
 

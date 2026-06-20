@@ -9,6 +9,7 @@ use App\Mail\WelcomeMail;
 use App\Mail\VerifyEmailMail;
 use Illuminate\Support\Facades\URL;
 use App\Models\User;
+use App\Services\SimpleCaptcha;
 use Illuminate\Auth\Events\Verified;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -31,10 +32,14 @@ class CustomerAuthController extends Controller
 
     public function login(Request $request)
     {
-        $credentials = $request->validate([
+        $request->validate([
             'email'    => 'required|email',
             'password' => 'required|min:6',
         ]);
+
+
+        $credentials = $request->only('email', 'password');
+
 
         if (Auth::attempt($credentials) && Auth::user()->role === 'customer') {
             $request->session()->regenerate();
@@ -79,6 +84,8 @@ class CustomerAuthController extends Controller
             'email'    => 'required|email|unique:users,email',
             'password' => 'required|min:6|confirmed',
         ]);
+
+
 
         $user = User::create([
             'name'     => $validated['name'],
@@ -170,7 +177,17 @@ class CustomerAuthController extends Controller
 
     public function sendResetLink(Request $request)
     {
-        $request->validate(['email' => 'required|email']);
+        $request->validate([
+            'email' => 'required|email',
+            SimpleCaptcha::fieldName() => ['required','string'],
+        ]);
+
+        if (!SimpleCaptcha::verify($request->input(SimpleCaptcha::fieldName()))) {
+            return back()->withErrors([
+                SimpleCaptcha::fieldName() => 'Captcha verification failed. Please try again.',
+            ])->onlyInput('email');
+        }
+
         $status = Password::sendResetLink($request->only('email'));
         return $status === Password::RESET_LINK_SENT
             ? back()->with('status', __($status))
@@ -184,7 +201,19 @@ class CustomerAuthController extends Controller
 
     public function resetPassword(Request $request)
     {
-        $request->validate(['token'=>'required','email'=>'required|email','password'=>'required|min:6|confirmed']);
+        $request->validate([
+            'token'=>'required',
+            'email'=>'required|email',
+            'password'=>'required|min:6|confirmed',
+            SimpleCaptcha::fieldName() => ['required','string'],
+        ]);
+
+        if (!SimpleCaptcha::verify($request->input(SimpleCaptcha::fieldName()))) {
+            return back()->withErrors([
+                SimpleCaptcha::fieldName() => 'Captcha verification failed. Please try again.',
+            ])->onlyInput('email');
+        }
+
         $status = Password::reset(
             $request->only('email','password','password_confirmation','token'),
             function (User $user, string $password) {
