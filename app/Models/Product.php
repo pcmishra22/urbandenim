@@ -33,6 +33,8 @@ class Product extends Model
         'color_family',
         'is_featured',
         'is_active',
+        'model_info',
+        'fabric_info',
     ];
 
     /**

@@ -61,6 +61,31 @@
                 @enderror
             </div>
 
+            <div class="row">
+                <div class="col-md-6 mb-3">
+                    <label for="model_info" class="form-label">Model Info <small class="text-muted">(shown on product page)</small></label>
+                    <input type="text" class="form-control @error('model_info') is-invalid @enderror"
+                           id="model_info" name="model_info"
+                           placeholder="e.g. Model is 5'5&quot;, wearing size 30"
+                           value="{{ old('model_info', $product->model_info) }}">
+                    @error('model_info')
+                        <div class="invalid-feedback">{{ $message }}</div>
+                    @enderror
+                    <small class="text-muted">Helps buyers choose the right size. Example: <em>Model is 5'4", 58 kg, wearing size 28</em></small>
+                </div>
+                <div class="col-md-6 mb-3">
+                    <label for="fabric_info" class="form-label">Fabric Info <small class="text-muted">(shown on product page)</small></label>
+                    <input type="text" class="form-control @error('fabric_info') is-invalid @enderror"
+                           id="fabric_info" name="fabric_info"
+                           placeholder="e.g. 98% Cotton, 2% Elastane — Medium Stretch"
+                           value="{{ old('fabric_info', $product->fabric_info) }}">
+                    @error('fabric_info')
+                        <div class="invalid-feedback">{{ $message }}</div>
+                    @enderror
+                    <small class="text-muted">Example: <em>99% Cotton, 1% Lycra — High Stretch</em></small>
+                </div>
+            </div>
+
             <div class="mb-3">
                 <label for="description" class="form-label">Description</label>
                 <textarea class="form-control @error('description') is-invalid @enderror"

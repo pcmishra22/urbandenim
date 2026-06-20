@@ -162,6 +162,22 @@
                 <a href="{{ route('checkout.index') }}" class="btn btn-primary btn-block mt-4 py-3 font-weight-bold" style="border-radius:10px;font-size:1rem;">
                     <i class="fa fa-lock mr-2"></i>Proceed to Checkout
                 </a>
+
+                @guest
+                {{-- Guest checkout option --}}
+                <div class="mt-2 text-center">
+                    <small class="text-muted">or</small>
+                </div>
+                <a href="{{ route('checkout.index') }}" class="btn btn-outline-success btn-block py-2 font-weight-bold mt-2" style="border-radius:10px;">
+                    <i class="fa fa-bolt mr-2"></i>Guest Checkout — No account needed
+                </a>
+                <div class="text-center mt-2">
+                    <small class="text-muted">
+                        Already have an account?
+                        <a href="{{ route('customer.login') }}?redirect=checkout" style="color:var(--j-primary);font-weight:600;">Sign in</a>
+                    </small>
+                </div>
+                @endguest
             </div>
         </div>
 

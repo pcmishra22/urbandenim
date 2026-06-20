@@ -32,6 +32,14 @@
                             <div class="alert alert-success">{{ session('status') }}</div>
                         @endif
 
+                        @if(request('redirect') && str_contains(request('redirect'), 'checkout'))
+                        <div class="alert alert-info py-2 mb-3" style="border-radius:10px;font-size:.88rem;">
+                            <i class="fa fa-shopping-bag mr-1"></i>
+                            <strong>You're almost there!</strong> Sign in to complete your order, or
+                            <a href="{{ route('checkout.index') }}" style="font-weight:700;text-decoration:underline;">checkout as guest →</a>
+                        </div>
+                        @endif
+
                         <form action="{{ route('customer.login.submit') }}" method="POST">
                             @csrf
 

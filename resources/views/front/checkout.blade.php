@@ -29,6 +29,28 @@
             <form method="POST" action="{{ route('checkout.store') }}" id="checkout-form">
             @csrf
 
+            {{-- Guest email capture --}}
+            @if($isGuest)
+            <div class="j-section mb-3" style="background:#fffbf0;border:1.5px solid #ffe082;border-radius:12px;">
+                <div class="j-section-title" style="color:#f57f17;">
+                    <i class="fa fa-bolt mr-2" style="color:#f9a825;"></i>Guest Checkout — No account needed
+                </div>
+                <p class="text-muted small mb-3">Enter your email to receive your order confirmation. No password required.</p>
+                <div class="form-group mb-2">
+                    <label class="font-weight-600">Your Email <span class="text-danger">*</span></label>
+                    <input class="form-control @error('guest_email') is-invalid @enderror"
+                           type="email" name="guest_email"
+                           value="{{ old('guest_email') }}"
+                           placeholder="your@email.com" required>
+                    @error('guest_email')<div class="invalid-feedback">{{ $message }}</div>@enderror
+                </div>
+                <small class="text-muted">
+                    Have an account?
+                    <a href="{{ route('customer.login') }}?redirect={{ urlencode(route('checkout.index')) }}" style="color:var(--j-primary);font-weight:600;">Sign in instead →</a>
+                </small>
+            </div>
+            @endif
+
             {{-- Saved Addresses --}}
             @if($addresses->isNotEmpty())
             <div class="j-section mb-3">
@@ -142,10 +164,10 @@
                     <span style="font-size:.8rem;font-weight:700;color:#333;">Safe & Secure Checkout</span>
                 </div>
                 <div style="font-size:.75rem;color:#555;line-height:1.9;">
-                    ✅ &nbsp;100% Secure Payment<br>
-                    ✅ &nbsp;Cash on Delivery Available<br>
+                    ✅ &nbsp;Cash on Delivery — No advance payment needed<br>
+                    ✅ &nbsp;100% Secure Online Payment<br>
+                    ✅ &nbsp;FREE Shipping on Every Order<br>
                     ✅ &nbsp;Easy 7-Day Returns<br>
-                    ✅ &nbsp;Free Shipping Above ₹999<br>
                     ✅ &nbsp;Premium Quality Denim<br>
                     ✅ &nbsp;Made in India 🇮🇳
                 </div>
@@ -177,15 +199,32 @@
                 </div>
             </div>
 
-            {{-- Payment Method --}}
             <div class="j-order-summary mb-3">
                 <div class="summary-title"><i class="fa fa-credit-card mr-2" style="color:var(--j-primary);"></i>Payment Method</div>
 
+                {{-- COD — shown first, highlighted, pre-selected --}}
+                <div class="mb-3" style="background:#e8f5e9;border:2px solid #27ae60;border-radius:12px;padding:14px 16px;">
+                    <div class="custom-control custom-radio">
+                        <input type="radio" class="custom-control-input" name="payment_method" id="pay_cod" value="cod"
+                               form="checkout-form" {{ old('payment_method', 'cod') === 'cod' ? 'checked' : '' }}>
+                        <label class="custom-control-label" for="pay_cod" style="cursor:pointer;">
+                            <div class="d-flex align-items-center" style="gap:8px;">
+                                <i class="fa fa-money-bill-wave fa-lg" style="color:#27ae60;"></i>
+                                <div>
+                                    <strong style="font-size:.95rem;color:#1b5e20;">Cash on Delivery (COD)</strong>
+                                    <span style="background:#27ae60;color:#fff;font-size:.65rem;font-weight:700;padding:2px 8px;border-radius:20px;margin-left:8px;">RECOMMENDED</span>
+                                    <div class="text-muted small mt-1">Pay in cash when your order arrives at your door. No advance payment needed.</div>
+                                </div>
+                            </div>
+                        </label>
+                    </div>
+                </div>
+
                 {{-- UPI --}}
-                <div class="custom-control custom-radio mb-3">
+                <div class="custom-control custom-radio mb-3" style="padding:10px 14px;border:1.5px solid #e0e0e0;border-radius:10px;">
                     <input type="radio" class="custom-control-input" name="payment_method" id="pay_upi" value="upi"
                            form="checkout-form" {{ old('payment_method') === 'upi' ? 'checked' : '' }}>
-                    <label class="custom-control-label" for="pay_upi">
+                    <label class="custom-control-label" for="pay_upi" style="cursor:pointer;">
                         <i class="fa fa-mobile-alt mr-2" style="color:var(--j-primary);"></i>
                         <strong>UPI / Net Banking</strong>
                         <small class="d-block text-muted" style="margin-left:22px;">Google Pay, PhonePe, BHIM, IMPS</small>
@@ -193,24 +232,13 @@
                 </div>
 
                 {{-- Card --}}
-                <div class="custom-control custom-radio mb-3">
+                <div class="custom-control custom-radio mb-3" style="padding:10px 14px;border:1.5px solid #e0e0e0;border-radius:10px;">
                     <input type="radio" class="custom-control-input" name="payment_method" id="pay_card" value="card"
                            form="checkout-form" {{ old('payment_method') === 'card' ? 'checked' : '' }}>
-                    <label class="custom-control-label" for="pay_card">
+                    <label class="custom-control-label" for="pay_card" style="cursor:pointer;">
                         <i class="fa fa-credit-card mr-2" style="color:var(--j-primary);"></i>
                         <strong>Credit / Debit Card</strong>
                         <small class="d-block text-muted" style="margin-left:22px;">Visa, Mastercard, Rupay — via PayU</small>
-                    </label>
-                </div>
-
-                {{-- COD --}}
-                <div class="custom-control custom-radio mb-3">
-                    <input type="radio" class="custom-control-input" name="payment_method" id="pay_cod" value="cod"
-                           form="checkout-form" {{ old('payment_method') === 'cod' ? 'checked' : '' }}>
-                    <label class="custom-control-label" for="pay_cod">
-                        <i class="fa fa-money-bill-wave mr-2" style="color:var(--j-primary);"></i>
-                        <strong>Cash on Delivery</strong>
-                        <small class="d-block text-muted" style="margin-left:22px;">Pay in cash when your order arrives</small>
                     </label>
                 </div>
 
@@ -291,7 +319,7 @@
         }
     }
     $('input[name=payment_method]').on('change', updateBtn);
-    updateBtn();
+    updateBtn(); // COD is pre-selected so button will show "Place Order — Pay on Delivery" on load
 
     /* ── saved address click ── */
     $(document).on('click', '.saved-addr', function () {

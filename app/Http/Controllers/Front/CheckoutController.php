@@ -7,6 +7,9 @@ use App\Mail\NewOrderAdminMail;
 use App\Mail\OrderConfirmedMail;
 use App\Models\Order;
 use App\Models\User;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Str;
 use App\Services\CartService;
 use App\Models\ProductVariant;
 use App\Services\CouponService;
@@ -37,12 +40,14 @@ class CheckoutController extends Controller
         $grandTotal = max(0, $subtotal + $shipping - $discount);
 
         $addresses = collect();
-        if (auth()->check() && Schema::hasTable('customer_addresses')) {
+        if (auth()->check() && !auth()->user()->is_guest && Schema::hasTable('customer_addresses')) {
             $addresses = auth()->user()->addresses()->get();
         }
 
+        $isGuest = !auth()->check() || auth()->user()->is_guest;
+
         return view('front.checkout', compact(
-            'cartItems', 'subtotal', 'shipping', 'discount', 'couponCode', 'grandTotal', 'addresses'
+            'cartItems', 'subtotal', 'shipping', 'discount', 'couponCode', 'grandTotal', 'addresses', 'isGuest'
         ));
     }
 
@@ -56,12 +61,6 @@ class CheckoutController extends Controller
 
     public function store(Request $request)
     {
-        // Safety net: route middleware should catch this, but guard anyway
-        if (!auth()->check()) {
-            return redirect()->route('login')
-                ->with('error', 'Please sign in to complete your order. Your cart is saved.');
-        }
-
         $cartItems = $this->cartService->getCartWithProducts();
         if (empty($cartItems)) {
             return redirect()->route('cart.index')->with('error', 'Your cart is empty.');
@@ -78,7 +77,26 @@ class CheckoutController extends Controller
             'payment_method'       => 'required|in:cod,card,upi',
             'coupon_code'          => 'nullable|string|max:50',
             'notes'                => 'nullable|string|max:500',
+            'guest_email'          => 'nullable|email|max:255',
         ]);
+
+        // Guest checkout: auto-create or find guest account
+        if (!auth()->check()) {
+            $guestEmail = $request->guest_email
+                ?? ($request->shipping_phone . '@guest.jeanzo.in');
+
+            $guestUser = User::firstOrCreate(
+                ['email' => $guestEmail],
+                [
+                    'name'     => $request->shipping_full_name,
+                    'password' => Hash::make(Str::random(24)),
+                    'role'     => 'customer',
+                    'is_guest' => true,
+                ]
+            );
+
+            Auth::login($guestUser);
+        }
 
         // Only COD hits this route directly.
         if ($request->payment_method !== 'cod') {
@@ -93,8 +111,17 @@ class CheckoutController extends Controller
         $order->load('products', 'user');
         $this->sendOrderEmails($order);
 
+        // If guest, log them out after order so they don't stay "logged in"
+        $wasGuest = auth()->user()->is_guest ?? false;
+        if ($wasGuest) {
+            Auth::logout();
+            $request->session()->regenerateToken();
+        }
+
         return redirect()->route('checkout.confirmation', $order->id)
-            ->with('success', "Order #{$order->id} placed successfully!");
+            ->with('success', "Order #{$order->id} placed successfully!")
+            ->with('guest_order', $wasGuest)
+            ->with('guest_email', $order->user->email ?? null);
     }
 
     /**
@@ -232,10 +259,13 @@ class CheckoutController extends Controller
         // Admin notification email
         try {
             $adminEmails = User::where('role', 'admin')->pluck('email')->toArray();
-            if ($adminEmails) {
-                Mail::to($adminEmails)->send(new NewOrderAdminMail($order));
-                Log::info('Admin order email sent', ['order_id' => $order->id, 'to' => $adminEmails]);
+            // Fallback to env if no admin user found or DB has placeholder email
+            $adminEmails = array_filter($adminEmails, fn($e) => !str_contains($e, 'example.com'));
+            if (empty($adminEmails)) {
+                $adminEmails = [env('ADMIN_EMAIL', 'support@jeanzo.in')];
             }
+            Mail::to($adminEmails)->send(new NewOrderAdminMail($order));
+            Log::info('Admin order email sent', ['order_id' => $order->id, 'to' => $adminEmails]);
         } catch (\Throwable $e) {
             Log::error('Admin order email FAILED', [
                 'order_id' => $order->id,

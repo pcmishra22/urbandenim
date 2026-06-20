@@ -592,7 +592,7 @@ function handleOfferSignup(){
         <div class="promise-item">
             <div class="promise-icon"><i class="fas fa-shipping-fast"></i></div>
             <h5>Fast Delivery</h5>
-            <p>Free shipping above ₹999. Delivered fast, right to your door.</p>
+            <p>FREE shipping on every order. Delivered fast, right to your door.</p>
         </div>
         <div class="promise-item">
             <div class="promise-icon"><i class="fas fa-undo-alt"></i></div>

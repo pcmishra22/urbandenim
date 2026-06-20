@@ -21,7 +21,7 @@
                 <h5 class="font-weight-bold">Shipping & Delivery</h5>
                 <p class="text-muted mb-3">Track your order, check delivery timelines and shipping costs.</p>
                 <ul class="list-unstyled text-left small">
-                    <li class="mb-1"><i class="fa fa-check text-success mr-2"></i>Free shipping on orders above ₹500</li>
+                    <li class="mb-1"><i class="fa fa-check text-success mr-2"></i>FREE shipping on all orders — no minimum required</li>
                     <li class="mb-1"><i class="fa fa-check text-success mr-2"></i>Standard delivery: 3–7 business days</li>
                     <li class="mb-1"><i class="fa fa-check text-success mr-2"></i>Express delivery available at checkout</li>
                     <li><i class="fa fa-check text-success mr-2"></i>Track via order details page</li>

@@ -251,6 +251,25 @@
                 </div>
                 @endif
 
+                <!-- ── Model & Fabric Info ── -->
+                @if($product->model_info || $product->fabric_info || $product->gender)
+                <div class="mb-3" style="background:#f8f9fa;border-radius:10px;padding:12px 16px;font-size:.85rem;line-height:1.8;">
+                    @if($product->model_info)
+                    <div><i class="fa fa-female mr-2" style="color:var(--j-primary);width:16px;text-align:center;"></i>
+                        <strong>Fit tip:</strong> {{ $product->model_info }}
+                    </div>
+                    @endif
+                    @if($product->fabric_info)
+                    <div><i class="fa fa-tshirt mr-2" style="color:var(--j-primary);width:16px;text-align:center;"></i>
+                        <strong>Fabric:</strong> {{ $product->fabric_info }}
+                    </div>
+                    @endif
+                    <div><i class="fa fa-undo mr-2" style="color:#27ae60;width:16px;text-align:center;"></i>
+                        <strong>Not your size?</strong> <span style="color:#27ae60;">Free 7-day returns — no questions asked.</span>
+                    </div>
+                </div>
+                @endif
+
                 <!-- Add to cart -->
                 <div class="mb-4">
                     @if($product->variants->isNotEmpty())
@@ -281,6 +300,24 @@
                         </div>
                     </form>
 
+                    {{-- ── Risk-Free Guarantee Banner ── --}}
+                    <div class="mt-3" style="background:linear-gradient(135deg,#f0faf4 0%,#e8f5e9 100%);border:1.5px solid #a5d6a7;border-radius:12px;padding:12px 16px;">
+                        <div class="d-flex align-items-center" style="gap:12px;">
+                            <div style="flex-shrink:0;width:40px;height:40px;background:#27ae60;border-radius:50%;display:flex;align-items:center;justify-content:center;">
+                                <i class="fa fa-shield-alt" style="color:#fff;font-size:1.1rem;"></i>
+                            </div>
+                            <div>
+                                <div style="font-size:.92rem;font-weight:700;color:#1b5e20;line-height:1.3;">
+                                    Risk-Free 7-Day Fit Guarantee
+                                </div>
+                                <div style="font-size:.78rem;color:#388e3c;margin-top:2px;line-height:1.4;">
+                                    Wrong size? Doesn't fit right? Return it free within 7 days — no questions asked.
+                                    <a href="{{ route('legal.refund') }}" style="color:#1b5e20;font-weight:600;text-decoration:underline;">See return policy →</a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
                     {{-- Go to Cart + Wishlist on separate row --}}
 
                     <div class="d-flex align-items-center mt-3" style="gap:10px;flex-wrap:wrap;">
@@ -310,17 +347,17 @@
                             </div>
                         </div>
                         <div class="col-4">
-                            <div style="background:#f8f9fa;border-radius:10px;padding:10px 6px;">
-                                <i class="fa fa-undo fa-lg mb-1" style="color:#e67e22;"></i>
-                                <div style="font-size:.72rem;font-weight:700;color:#333;">Easy Returns</div>
-                                <div style="font-size:.65rem;color:#777;">Within 7 Days</div>
+                            <div style="background:#e8f5e9;border:1.5px solid #a5d6a7;border-radius:10px;padding:10px 6px;">
+                                <i class="fa fa-undo fa-lg mb-1" style="color:#27ae60;"></i>
+                                <div style="font-size:.72rem;font-weight:700;color:#1b5e20;">Easy Returns</div>
+                                <div style="font-size:.65rem;color:#388e3c;font-weight:600;">7 Days Free</div>
                             </div>
                         </div>
                         <div class="col-4">
                             <div style="background:#f8f9fa;border-radius:10px;padding:10px 6px;">
                                 <i class="fa fa-truck fa-lg mb-1" style="color:#2980b9;"></i>
-                                <div style="font-size:.72rem;font-weight:700;color:#333;">Free Shipping</div>
-                                <div style="font-size:.65rem;color:#777;">Above ₹999</div>
+                                <div style="font-size:.72rem;font-weight:700;color:#333;">FREE Shipping</div>
+                                <div style="font-size:.65rem;color:#777;">On Every Order</div>
                             </div>
                         </div>
                         <div class="col-4">

@@ -73,20 +73,9 @@ class ProductController extends Controller
             'price'             => 'required|numeric|min:0',
             'sale_price'        => 'nullable|numeric|min:0',
             'short_description' => 'nullable|string|max:500',
+            'model_info'        => 'nullable|string|max:100',
+            'fabric_info'       => 'nullable|string|max:150',
             'description'       => 'nullable|string',
-            'gender'            => 'nullable|string',
-            'age_group'         => 'nullable|string',
-            'color_family'      => 'nullable|string',
-            'is_featured'       => 'nullable|boolean',
-            'is_active'         => 'nullable|boolean',
-            'images.*'          => 'nullable|image|mimes:jpg,jpeg,png,webp|max:2048',
-        ]);
-
-        $validated['slug']       = $validated['slug'] ?? Str::slug($validated['name']);
-        $validated['is_featured'] = $request->boolean('is_featured');
-        $validated['is_active']   = $request->boolean('is_active');
-
-        $product = Product::create($validated);
 
         // Save Product Variants
         if ($request->has('variants')) {
@@ -150,6 +139,8 @@ class ProductController extends Controller
             'price'             => 'required|numeric|min:0',
             'sale_price'        => 'nullable|numeric|min:0',
             'short_description' => 'nullable|string|max:500',
+            'model_info'        => 'nullable|string|max:100',
+            'fabric_info'       => 'nullable|string|max:150',
             'description'       => 'nullable|string',
             'gender'            => 'nullable|string',
             'age_group'         => 'nullable|string',

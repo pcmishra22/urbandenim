@@ -14,7 +14,7 @@ use Illuminate\Notifications\Notifiable;
 use App\Notifications\UserAlert;
 use Illuminate\Support\Facades\Notification;
 
-#[Fillable(['name', 'email', 'password', 'role'])]
+#[Fillable(['name', 'email', 'password', 'role', 'is_guest'])]
 #[Hidden(['password', 'remember_token'])]
 class User extends Authenticatable implements MustVerifyEmail
 {

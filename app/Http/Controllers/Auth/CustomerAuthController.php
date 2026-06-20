@@ -50,7 +50,8 @@ class CustomerAuthController extends Controller
 
             // Notify admin of login
             try {
-                Mail::to('admin@jeanzo.in')->send(new UserLoginAdminMail(
+                $adminEmail = env('ADMIN_EMAIL', 'support@jeanzo.in');
+                Mail::to($adminEmail)->send(new UserLoginAdminMail(
                     user:    Auth::user(),
                     loginAt: now()->format('d M Y, h:i A'),
                     ip:      $request->ip(),
@@ -115,7 +116,8 @@ class CustomerAuthController extends Controller
 
         // Notify admin
         try {
-            Mail::to('admin@jeanzo.in')
+            $adminEmail = env('ADMIN_EMAIL', 'support@jeanzo.in');
+            Mail::to($adminEmail)
                 ->send(new NewUserAdminMail($user));
         } catch (\Throwable $e) { Log::warning('New user admin email failed', ['error' => $e->getMessage()]); }
 
