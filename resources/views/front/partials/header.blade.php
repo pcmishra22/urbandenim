@@ -346,7 +346,7 @@
 
 <!-- PROMO BAR -->
 <div id="promo-bar">
-    🚚 FREE Shipping on Every Order &nbsp;|&nbsp; Code <strong>FIRST10</strong> for 10% off &nbsp;|&nbsp; <a href="{{ route('products.index') }}">Shop Now →</a>
+    🚚 FREE Shipping on Every Order &nbsp;|&nbsp; <strong>Special Launch Offer: Flat Discount for a Limited Time</strong>  &nbsp;|&nbsp; <a href="{{ route('products.index') }}">Shop Now →</a>
 </div>
 
 <!-- STICKY HEADER -->
