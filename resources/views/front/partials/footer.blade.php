@@ -140,5 +140,6 @@
       gtag('config', 'G-FKT9P78GTQ');
     </script>
     @stack('scripts')
+    @include('front.partials.exit-popup')
 </body>
 </html>

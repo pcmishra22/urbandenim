@@ -76,21 +76,41 @@ class VendorAuthController extends Controller
     public function register(Request $request)
     {
         $validated = $request->validate([
-            'name' => 'required|string|max:255',
-            'email' => 'required|email|unique:users,email',
-            'password' => 'required|min:6|confirmed',
+            'name'      => 'required|string|max:255',
+            'email'     => 'required|email|unique:users,email',
+            'password'  => 'required|min:8|confirmed',
             'shop_name' => 'required|string|max:255',
+            'phone'     => 'nullable|string|max:20',
         ]);
 
         $user = User::create([
-            'name' => $validated['name'],
-            'email' => $validated['email'],
+            'name'     => $validated['name'],
+            'email'    => $validated['email'],
             'password' => Hash::make($validated['password']),
-            'role' => 'vendor',
+            'role'     => 'vendor',
         ]);
 
+        // Create vendor profile
+        \App\Models\Vendor::create([
+            'user_id'   => $user->id,
+            'shop_name' => $validated['shop_name'],
+            'phone'     => $validated['phone'] ?? null,
+            'status'    => 'active',
+        ]);
+
+        // Notify admin of new supplier
+        try {
+            $adminEmail = env('ADMIN_EMAIL', 'support@jeanzo.in');
+            \Illuminate\Support\Facades\Mail::raw(
+                "New supplier registered!\n\nName: {$validated['name']}\nShop: {$validated['shop_name']}\nEmail: {$validated['email']}\nPhone: " . ($validated['phone'] ?? '—'),
+                fn($m) => $m->to($adminEmail)->subject('New Supplier Registration — ' . $validated['shop_name'])
+            );
+        } catch (\Throwable $e) {
+            \Illuminate\Support\Facades\Log::warning('Supplier welcome email failed', ['error' => $e->getMessage()]);
+        }
+
         Auth::login($user);
-        return redirect()->route('vendor.dashboard')->with('success', 'Vendor account created successfully!');
+        return redirect()->route('vendor.dashboard')->with('success', 'Welcome to Jeanzo! Your supplier account is ready. Start by adding your first product.');
     }
 
     /**

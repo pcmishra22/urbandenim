@@ -43,7 +43,7 @@
             </div>
 
             @foreach($cartItems as $key => $item)
-            @php $product = $item['product']; $price = $product->sale_price ?? $product->price; @endphp
+            @php $product = $item['product']; $price = $product->jeanzo_price ?: ($product->sale_price ?? $product->price); @endphp
             <div class="j-cart-item d-flex align-items-center gap-3 flex-wrap flex-md-nowrap mb-2">
                 {{-- Image --}}
                 <div style="flex-shrink:0;">

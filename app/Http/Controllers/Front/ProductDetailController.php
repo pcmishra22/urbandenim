@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Front;
 use App\Http\Controllers\Controller;
 use App\Models\Product;
 use App\Models\Review;
+use App\Models\VendorReview;
 use Illuminate\Http\Request;
 
 class ProductDetailController extends Controller
@@ -20,12 +21,21 @@ class ProductDetailController extends Controller
         // Fetch the product by slug with all necessary relationships
         $product = Product::where('slug', $slug)
             ->where('is_active', true)
-            ->with(['category', 'brand', 'images', 'reviews', 'variants' => function($q) {
-                // Load ALL active variants (including OOS) so user can see greyed-out sizes
-                // Stock check happens per-variant in the view
+            ->with(['category', 'brand', 'images', 'reviews', 'vendor', 'variants' => function($q) {
                 $q->where('is_active', true)->orderBy('waist_size')->orderBy('length');
             }])
             ->firstOrFail();
+
+        // Vendor reviews for this vendor (shown on product page)
+        $vendorReviews     = collect();
+        $vendorAvgRating   = 0;
+        $vendorReviewCount = 0;
+        if ($product->vendor) {
+            $vendorReviews     = VendorReview::where('vendor_id', $product->vendor_id)
+                ->visible()->with('user')->latest()->take(6)->get();
+            $vendorAvgRating   = $product->vendor->avg_rating;
+            $vendorReviewCount = $product->vendor->review_count;
+        }
 
         // Fetch related products (same category, excluding the current product)
         $relatedProducts = Product::where('category_id', $product->category_id)
@@ -35,7 +45,7 @@ class ProductDetailController extends Controller
             ->take(20)
             ->get();
 
-        return view('front.product-detail', compact('product', 'relatedProducts'));
+        return view('front.product-detail', compact('product', 'relatedProducts', 'vendorReviews', 'vendorAvgRating', 'vendorReviewCount'));
     }
 
     /**

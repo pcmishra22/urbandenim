@@ -54,5 +54,20 @@ class Vendor extends Model
     {
         return $this->hasMany(VendorSettlementReport::class);
     }
+
+    public function reviews(): HasMany
+    {
+        return $this->hasMany(VendorReview::class);
+    }
+
+    public function getAvgRatingAttribute(): float
+    {
+        return round($this->reviews()->visible()->avg('rating') ?? 0, 1);
+    }
+
+    public function getReviewCountAttribute(): int
+    {
+        return $this->reviews()->visible()->count();
+    }
 }
 

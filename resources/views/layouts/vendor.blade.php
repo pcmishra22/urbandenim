@@ -176,6 +176,11 @@
             <i class="fas fa-user-cog"></i> My Profile
         </a>
 
+        <div class="sidebar-section-title">Reviews</div>
+        <a href="{{ route('vendor.reviews') }}" class="{{ request()->routeIs('vendor.reviews') ? 'active' : '' }}">
+            <i class="fas fa-star"></i> My Reviews & Ratings
+        </a>
+
     </nav>
 
     <!-- Main Content -->

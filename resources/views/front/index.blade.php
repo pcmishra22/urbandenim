@@ -651,7 +651,7 @@ function handleOfferSignup(){
     @php
         $imgUrl  = jzProdImg($product);
         $stars   = round($product->rev_avg ?? 0);
-        $hasSale = $product->sale_price && $product->sale_price < $product->price;
+        $displayP = $product->jeanzo_price ?: ($product->sale_price ?? $product->price); $hasSale = $displayP && $displayP < $product->price;
         $catName = optional($product->category)->name;
     @endphp
     <div class="jz-product-card">
@@ -681,7 +681,7 @@ function handleOfferSignup(){
             </div>
             <a href="{{ route('products.detail', $product->slug) }}" class="prod-name">{{ $product->name }}</a>
             <div class="prod-price">
-                ₹{{ number_format($hasSale ? $product->sale_price : $product->price, 0) }}
+                ₹{{ number_format($hasSale ? $displayP : $product->price, 0) }}
                 @if($hasSale)<span class="original">₹{{ number_format($product->price, 0) }}</span>@endif
             </div>
         </div>

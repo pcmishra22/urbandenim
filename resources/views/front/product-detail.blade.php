@@ -125,15 +125,21 @@
                     @if($product->is_featured)<span class="j-badge ml-2" style="background:#fff3cd;color:#856404;"><i class="fa fa-star mr-1" style="font-size:.7rem;"></i>Featured</span>@endif
                 </div>
 
-                <!-- Price -->
+                <!-- Price — always shows Jeanzo price (vendor_sale_price + courier + profit) -->
+                @php
+                    $displayPrice  = $product->jeanzo_price ?: ($product->sale_price ?? $product->price);
+                    $originalPrice = $product->price;
+                    $discount      = ($originalPrice > 0 && $displayPrice < $originalPrice)
+                        ? round((1 - $displayPrice / $originalPrice) * 100) : 0;
+                @endphp
                 <div class="d-flex align-items-center mb-3">
                     <h3 class="font-weight-bold mb-0 mr-3" style="color:var(--j-primary);font-size:1.8rem;">
-                        ₹{{ number_format($product->sale_price ?? $product->price, 2) }}
+                        ₹{{ number_format($displayPrice, 2) }}
                     </h3>
-                    @if($product->sale_price && $product->sale_price < $product->price)
-                    <h5 class="text-muted mb-0 mr-2"><del>₹{{ number_format($product->price,2) }}</del></h5>
+                    @if($discount > 0)
+                    <h5 class="text-muted mb-0 mr-2"><del>₹{{ number_format($originalPrice, 2) }}</del></h5>
                     <span class="j-badge" style="background:#d4edda;color:#155724;font-size:.85rem;">
-                        {{ round((1-$product->sale_price/$product->price)*100) }}% OFF
+                        {{ $discount }}% OFF
                     </span>
                     @endif
                 </div>
@@ -162,10 +168,28 @@
                     @endif
                 </div>
 
-                <!-- Sold by -->
-                @if($product->sold_by)
-                <div class="mb-3 small text-muted"><i class="fa fa-store mr-1"></i>Sold by: <strong>{{ $product->sold_by }}</strong></div>
-                @endif
+                <!-- Sold by / Vendor -->
+                <div class="mb-3">
+                    @if($product->vendor)
+                        <span style="font-size:.82rem;color:#555;">
+                            <i class="fa fa-store mr-1" style="color:var(--j-primary);"></i>
+                            Sold by: <strong style="color:#222;">{{ $product->vendor->shop_name }}</strong>
+                        </span>
+                        @if($vendorAvgRating > 0)
+                        <span class="ml-2" style="font-size:.8rem;">
+                            @for($s=1;$s<=5;$s++)
+                                <i class="fa fa-star" style="color:{{ $s <= round($vendorAvgRating) ? '#f39c12' : '#ddd' }};font-size:.75rem;"></i>
+                            @endfor
+                            <span style="color:#888;margin-left:3px;">{{ $vendorAvgRating }} ({{ $vendorReviewCount }} {{ Str::plural('review', $vendorReviewCount) }})</span>
+                        </span>
+                        @endif
+                    @else
+                        <span style="font-size:.82rem;color:#555;">
+                            <i class="fa fa-store mr-1" style="color:var(--j-primary);"></i>
+                            Sold by: <strong style="color:#222;">Jeanzo</strong>
+                        </span>
+                    @endif
+                </div>
 
                 <!-- Variants -->
                 @if($product->variants->isNotEmpty())
@@ -504,6 +528,115 @@
         </div>
     </div>
 
+    <!-- Vendor Reviews Section -->
+    @if($product->vendor)
+    <div class="container mt-5">
+        <div class="row">
+            <div class="col-12">
+                <h4 class="font-weight-bold mb-4" style="border-left:4px solid var(--j-primary);padding-left:12px;">
+                    Seller Reviews — {{ $product->vendor->shop_name }}
+                </h4>
+            </div>
+        </div>
+
+        @if($vendorReviewCount > 0)
+        {{-- Rating summary --}}
+        <div class="row mb-4">
+            <div class="col-md-3 text-center mb-3">
+                <div style="font-size:3.5rem;font-weight:800;color:#f39c12;line-height:1;">{{ $vendorAvgRating }}</div>
+                <div style="margin:6px 0;">
+                    @for($s=1;$s<=5;$s++)
+                        <i class="fa fa-star" style="color:{{ $s <= round($vendorAvgRating) ? '#f39c12' : '#ddd' }};font-size:1rem;"></i>
+                    @endfor
+                </div>
+                <div style="font-size:.82rem;color:#888;">{{ $vendorReviewCount }} {{ Str::plural('review', $vendorReviewCount) }}</div>
+            </div>
+            <div class="col-md-9">
+                @foreach($vendorReviews as $vr)
+                <div class="mb-3 pb-3 border-bottom">
+                    <div class="d-flex align-items-center mb-1" style="gap:8px;">
+                        <div style="width:32px;height:32px;border-radius:50%;background:var(--j-primary);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:.85rem;flex-shrink:0;">
+                            {{ strtoupper(substr($vr->user->name ?? 'U', 0, 1)) }}
+                        </div>
+                        <div>
+                            <div style="font-size:.88rem;font-weight:600;color:#333;">{{ $vr->user->name ?? 'Customer' }}</div>
+                            <div>
+                                @for($s=1;$s<=5;$s++)
+                                    <i class="fa fa-star" style="color:{{ $s <= $vr->rating ? '#f39c12' : '#ddd' }};font-size:.7rem;"></i>
+                                @endfor
+                                <span style="font-size:.72rem;color:#aaa;margin-left:4px;">{{ $vr->created_at->diffForHumans() }}</span>
+                            </div>
+                        </div>
+                    </div>
+                    @if($vr->review)
+                    <p style="font-size:.88rem;color:#444;margin:6px 0 0 40px;line-height:1.6;">{{ $vr->review }}</p>
+                    @endif
+                    @if($vr->vendor_reply)
+                    <div style="margin-left:40px;margin-top:8px;background:#f0faf4;border-left:3px solid #27ae60;padding:8px 12px;border-radius:0 8px 8px 0;font-size:.82rem;">
+                        <strong style="color:#1b5e20;"><i class="fa fa-store mr-1"></i>{{ $product->vendor->shop_name }} replied:</strong>
+                        <p style="margin:4px 0 0;color:#333;">{{ $vr->vendor_reply }}</p>
+                    </div>
+                    @endif
+                </div>
+                @endforeach
+            </div>
+        </div>
+        @else
+        <p class="text-muted mb-4">No seller reviews yet. Be the first to review after your order arrives!</p>
+        @endif
+
+        {{-- Submit a vendor review (only for customers who ordered from this vendor) --}}
+        @auth
+        @php
+            $userOrderIds = \App\Models\Order::where('user_id', auth()->id())->pluck('id');
+            $canReview = $userOrderIds->isNotEmpty() &&
+                !\App\Models\VendorReview::where('vendor_id', $product->vendor_id)
+                    ->where('user_id', auth()->id())
+                    ->whereIn('order_id', $userOrderIds)
+                    ->exists();
+            $userOrderForReview = \App\Models\Order::where('user_id', auth()->id())->latest()->first();
+        @endphp
+        @if($canReview && $userOrderForReview)
+        <div class="card border-0 shadow-sm mt-2 mb-4">
+            <div class="card-body p-4">
+                <h6 class="font-weight-bold mb-3"><i class="fa fa-pen mr-2" style="color:var(--j-primary);"></i>Rate this Seller</h6>
+                <form method="POST" action="{{ route('vendor.review.store', $product->vendor_id) }}">
+                    @csrf
+                    <input type="hidden" name="order_id" value="{{ $userOrderForReview->id }}">
+                    <input type="hidden" name="product_id" value="{{ $product->id }}">
+
+                    <div class="mb-3">
+                        <label class="form-label fw-600">Your Rating</label>
+                        <div class="star-picker d-flex" style="gap:6px;font-size:1.6rem;cursor:pointer;">
+                            @for($s=1;$s<=5;$s++)
+                            <label style="cursor:pointer;margin:0;">
+                                <input type="radio" name="rating" value="{{ $s }}" required style="display:none;">
+                                <i class="fa fa-star star-icon" data-val="{{ $s }}" style="color:#ddd;transition:color .15s;"></i>
+                            </label>
+                            @endfor
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-600">Your Review <span class="text-muted fw-normal small">(optional)</span></label>
+                        <textarea class="form-control" name="review" rows="3" placeholder="How was your experience with this seller? Fast shipping? Good packaging?"></textarea>
+                    </div>
+                    <button type="submit" class="btn btn-primary px-4">Submit Review</button>
+                </form>
+            </div>
+        </div>
+        @elseif(!$canReview && $userOrderIds->isNotEmpty())
+        <div class="alert alert-success py-2" style="font-size:.88rem;">
+            <i class="fa fa-check-circle mr-1"></i> You've already reviewed this seller. Thank you!
+        </div>
+        @endif
+        @else
+        <div class="mb-4" style="font-size:.88rem;color:#888;">
+            <a href="{{ route('customer.login') }}" style="color:var(--j-primary);font-weight:600;">Sign in</a> after receiving your order to leave a seller review.
+        </div>
+        @endauth
+    </div>
+    @endif
+
     <!-- Related Products -->
     @if($relatedProducts->isNotEmpty())
     <div class="mt-4">
@@ -519,6 +652,34 @@
 
 @push('scripts')
 <script>
+/* ── Star picker for vendor review ── */
+document.querySelectorAll('.star-picker').forEach(function(picker) {
+    const icons = picker.querySelectorAll('.star-icon');
+    icons.forEach(function(icon) {
+        icon.addEventListener('mouseover', function() {
+            const val = parseInt(this.dataset.val);
+            icons.forEach(function(i) {
+                i.style.color = parseInt(i.dataset.val) <= val ? '#f39c12' : '#ddd';
+            });
+        });
+        icon.addEventListener('click', function() {
+            const val = parseInt(this.dataset.val);
+            const radio = picker.querySelectorAll('input[type=radio]');
+            radio[val-1].checked = true;
+            icons.forEach(function(i) {
+                i.style.color = parseInt(i.dataset.val) <= val ? '#f39c12' : '#ddd';
+            });
+        });
+    });
+    picker.addEventListener('mouseleave', function() {
+        const checked = picker.querySelector('input[type=radio]:checked');
+        const val = checked ? parseInt(checked.value) : 0;
+        icons.forEach(function(i) {
+            i.style.color = parseInt(i.dataset.val) <= val ? '#f39c12' : '#ddd';
+        });
+    });
+});
+
 /* ── Qty stepper ── */
 $(document).on('click', '.btn-plus', function () {
     var $i = $(this).closest('.quantity').find('input');

@@ -74,12 +74,12 @@
                     </a>
                     <div class="d-flex align-items-center mb-3">
                         <span style="font-weight:800;color:#D19C97;font-size:1rem;">
-                            ₹{{ number_format($product->sale_price ?? $product->price ?? 0, 2) }}
+                            ₹{{ number_format($product->jeanzo_price ?: ($product->sale_price ?? $product->price ?? 0), 2) }}
                         </span>
-                        @if($product && $product->sale_price && $product->sale_price < $product->price)
+                        @if($product && ($product->jeanzo_price ?: $product->sale_price) && ($product->jeanzo_price ?: $product->sale_price) < $product->price)
                             <small class="text-muted ml-2"><del>₹{{ number_format($product->price, 2) }}</del></small>
                             <span class="ml-2" style="background:#d4edda;color:#155724;padding:2px 8px;border-radius:10px;font-size:.72rem;font-weight:600;">
-                                {{ round((1 - $product->sale_price / $product->price) * 100) }}% OFF
+                                {{ round((1 - ($product->jeanzo_price ?: $product->sale_price) / $product->price) * 100) }}% OFF
                             </span>
                         @endif
                     </div>

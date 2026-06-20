@@ -87,4 +87,24 @@ class VendorDashboardController extends Controller
 
         return back()->with('success', 'Profile updated successfully!');
     }
+
+    /**
+     * Show vendor's reviews and ratings.
+     */
+    public function reviews()
+    {
+        $vendor = auth()->user()->vendor;
+        if (!$vendor) abort(403);
+
+        $reviews = \App\Models\VendorReview::where('vendor_id', $vendor->id)
+            ->visible()
+            ->with(['user', 'product'])
+            ->latest()
+            ->paginate(15);
+
+        $avgRating    = round(\App\Models\VendorReview::where('vendor_id', $vendor->id)->visible()->avg('rating') ?? 0, 1);
+        $totalReviews = \App\Models\VendorReview::where('vendor_id', $vendor->id)->visible()->count();
+
+        return view('vendor.reviews', compact('reviews', 'avgRating', 'totalReviews'));
+    }
 }

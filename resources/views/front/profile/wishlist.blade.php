@@ -79,11 +79,11 @@
                         {{ Str::limit($product->name ?? 'Product', 50) }}
                     </a>
                     <div class="d-flex align-items-center mb-3" style="gap:8px;">
-                        <span class="price-tag">₹{{ number_format($product->sale_price ?? $product->price ?? 0, 2) }}</span>
-                        @if($product && $product->sale_price && $product->sale_price < $product->price)
+                        <span class="price-tag">₹{{ number_format($product->jeanzo_price ?: ($product->sale_price ?? $product->price ?? 0), 2) }}</span>
+                        @if($product && ($product->jeanzo_price ?: $product->sale_price) && ($product->jeanzo_price ?: $product->sale_price) < $product->price)
                             <small class="text-muted"><del>₹{{ number_format($product->price, 2) }}</del></small>
                             <span style="background:#d4edda;color:#155724;padding:2px 8px;border-radius:10px;font-size:.72rem;font-weight:600;">
-                                {{ round((1 - $product->sale_price / $product->price) * 100) }}% OFF
+                                {{ round((1 - ($product->jeanzo_price ?: $product->sale_price) / $product->price) * 100) }}% OFF
                             </span>
                         @endif
                     </div>

@@ -97,7 +97,14 @@ class VendorProductController extends Controller
         $validated['slug']       = $validated['slug'] ?? Str::slug($validated['name']);
         $validated['is_featured'] = $request->boolean('is_featured');
         $validated['is_active']   = $request->boolean('is_active');
-        $validated['vendor_id']   = $vendor->id; // Force assign to this vendor
+        $validated['vendor_id']   = $vendor->id;
+
+        // Store vendor's price separately so admin can apply courier + profit on top
+        if (isset($validated['sale_price'])) {
+            $validated['vendor_sale_price'] = $validated['sale_price'];
+            // sale_price stays as-is; admin sets courier_charge + profit_margin
+            // which triggers jeanzo_price accessor on the frontend
+        }
 
         $product = Product::create($validated);
 
@@ -192,8 +199,12 @@ class VendorProductController extends Controller
         $validated['slug']        = $validated['slug'] ?? Str::slug($validated['name']);
         $validated['is_featured'] = $request->boolean('is_featured');
         $validated['is_active']   = $request->boolean('is_active');
-        // Prevent vendor_id from being changed
         unset($validated['vendor_id']);
+
+        // Keep vendor_sale_price in sync when vendor updates their price
+        if (isset($validated['sale_price'])) {
+            $validated['vendor_sale_price'] = $validated['sale_price'];
+        }
 
         $product->update($validated);
 

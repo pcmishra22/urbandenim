@@ -65,18 +65,19 @@ class ProductController extends Controller
     public function store(Request $request)
     {
         $validated = $request->validate([
-            'name'              => 'required|string|max:255',
-            'slug'              => 'nullable|string|unique:products,slug',
-            'category_id'       => 'required|exists:categories,id',
-            'brand_id'          => 'nullable|exists:brands,id',
-            'sku'               => 'nullable|string|unique:products,sku',
-            'price'             => 'required|numeric|min:0',
-            'sale_price'        => 'nullable|numeric|min:0',
-            'short_description' => 'nullable|string|max:500',
-            'model_info'        => 'nullable|string|max:100',
-            'fabric_info'       => 'nullable|string|max:150',
-            'description'       => 'nullable|string',
-
+                'name'              => 'required|string|max:255',
+                'slug'              => 'nullable|string|unique:products,slug',
+                'category_id'       => 'required|exists:categories,id',
+                'brand_id'          => 'nullable|exists:brands,id',
+                'sku'               => 'nullable|string|unique:products,sku',
+                'price'             => 'required|numeric|min:0',
+                'sale_price'        => 'nullable|numeric|min:0',
+                'short_description' => 'nullable|string|max:500',
+                'model_info'        => 'nullable|string|max:100',
+                'fabric_info'       => 'nullable|string|max:150',
+                'cost_price'        => 'nullable|numeric|min:0',
+                'courier_charge'    => 'nullable|numeric|min:0',
+        ]);
         // Save Product Variants
         if ($request->has('variants')) {
             foreach ($request->variants as $variant) {
@@ -141,6 +142,9 @@ class ProductController extends Controller
             'short_description' => 'nullable|string|max:500',
             'model_info'        => 'nullable|string|max:100',
             'fabric_info'       => 'nullable|string|max:150',
+            'cost_price'        => 'nullable|numeric|min:0',
+            'courier_charge'    => 'nullable|numeric|min:0',
+            'profit_margin'     => 'nullable|numeric|min:0|max:1000',
             'description'       => 'nullable|string',
             'gender'            => 'nullable|string',
             'age_group'         => 'nullable|string',

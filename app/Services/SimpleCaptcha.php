@@ -45,12 +45,10 @@ class SimpleCaptcha
             return false;
         }
 
-        $ok = hash_equals((string) $stored, (string) ($userAnswer ?? ''));
+        $ok = hash_equals((string) $stored, trim((string) ($userAnswer ?? '')));
 
-        // Invalidate after a single attempt.
-        if ($ok) {
-            session()->forget(self::SESSION_KEY);
-        }
+        // Always invalidate after any attempt — prevents brute-force replay.
+        session()->forget(self::SESSION_KEY);
 
         return $ok;
     }

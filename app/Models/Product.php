@@ -17,25 +17,44 @@ class Product extends Model
     use HasFactory, SoftDeletes;
 
     protected $fillable = [
-        'name',
-        'description',
-        'price',
-        'quantity',
-        'category_id',
-        'brand_id',
-        'vendor_id',
-        'slug',
-        'sku',
-        'short_description',
-        'sale_price',
-        'gender',
-        'age_group',
-        'color_family',
-        'is_featured',
-        'is_active',
-        'model_info',
-        'fabric_info',
+        'name', 'description', 'price', 'quantity',
+        'category_id', 'brand_id', 'vendor_id',
+        'slug', 'sku', 'short_description',
+        'sale_price', 'vendor_sale_price',
+        'cost_price', 'courier_charge', 'profit_margin',
+        'gender', 'age_group', 'color_family',
+        'is_featured', 'is_active',
+        'model_info', 'fabric_info',
     ];
+
+    /**
+     * The price Jeanzo displays to customers.
+     * If vendor has set vendor_sale_price → apply courier + profit on top.
+     * Otherwise fall back to manually set sale_price or price.
+     *
+     * Formula: jeanzo_price = (vendor_sale_price + courier_charge) × (1 + profit_margin/100)
+     */
+    public function getJeanzoPriceAttribute(): float
+    {
+        if ($this->vendor_sale_price) {
+            $base   = (float) $this->vendor_sale_price + (float) ($this->courier_charge ?? 0);
+            $margin = (float) ($this->profit_margin ?? 0);
+            return round($base * (1 + $margin / 100), 2);
+        }
+        return (float) ($this->sale_price ?? $this->price ?? 0);
+    }
+
+    /**
+     * Auto-calculate sale_price from cost_price + courier_charge + profit_margin%.
+     * Used when admin manually enters cost/courier/margin (no vendor).
+     */
+    public function recalculateSalePrice(): void
+    {
+        if (!$this->cost_price) return;
+        $base  = (float) $this->cost_price + (float) ($this->courier_charge ?? 0);
+        $margin = (float) ($this->profit_margin ?? 0);
+        $this->sale_price = round($base * (1 + $margin / 100), 2);
+    }
 
     /**
      * Accessor: expose 'title' as an alias for 'name' for backwards-compat.

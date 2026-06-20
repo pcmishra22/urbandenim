@@ -43,8 +43,8 @@
                 <h6 class="text-truncate mb-3">{{ $product->name }}</h6>
             </a>
             <div class="d-flex justify-content-center">
-                <h6>₹{{ number_format($product->sale_price ?? $product->price, 2) }}</h6>
-                @if($product->sale_price && $product->sale_price < $product->price)
+                <h6>₹{{ number_format($product->jeanzo_price ?: ($product->sale_price ?? $product->price), 2) }}</h6>
+                @if(($product->jeanzo_price ?: $product->sale_price) && ($product->jeanzo_price ?: $product->sale_price) < $product->price)
                     <h6 class="text-muted ml-2"><del>₹{{ number_format($product->price, 2) }}</del></h6>
                 @endif
             </div>

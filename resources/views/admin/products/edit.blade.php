@@ -156,7 +156,15 @@
                 </div>
                 <div class="col-md-6">
                     <div class="mb-3">
-                        <label for="sale_price" class="form-label">Sale Price</label>
+                        <label for="sale_price" class="form-label">Sale Price (Jeanzo Display Price) <small class="text-muted">(auto-calculated or manual)</small></label>
+                        @if($product->vendor && $product->vendor_sale_price)
+                        <div class="alert alert-info py-2 mb-2" style="font-size:.82rem;">
+                            <i class="fas fa-info-circle mr-1"></i>
+                            <strong>Vendor set their price at ₹{{ number_format($product->vendor_sale_price, 2) }}</strong>
+                            — Set courier charge + profit margin below to auto-calculate Jeanzo's display price.
+                            Current Jeanzo price: <strong>₹{{ number_format($product->jeanzo_price, 2) }}</strong>
+                        </div>
+                        @endif
                         <div class="input-group">
                             <span class="input-group-text">₹</span>
                             <input type="number" step="0.01" class="form-control @error('sale_price') is-invalid @enderror"
@@ -166,11 +174,73 @@
                         @error('sale_price')
                             <div class="invalid-feedback">{{ $message }}</div>
                         @enderror
+                        <small class="text-muted">Fill cost + courier + margin below to auto-calculate ↓</small>
                     </div>
                 </div>
             </div>
 
-            <!-- Attributes -->
+            <!-- Pricing Calculator -->
+            <div class="card border-0 bg-light mb-3">
+                <div class="card-body py-3">
+                    <h6 class="mb-3" style="font-size:.88rem;font-weight:600;color:#555;">
+                        <i class="fas fa-calculator mr-1"></i> Price Calculator (optional — fills Sale Price automatically)
+                    </h6>
+                    <div class="row">
+                        <div class="col-md-4 mb-2">
+                            <label class="form-label" style="font-size:.82rem;">Cost Price (₹)</label>
+                            <input type="number" step="0.01" class="form-control form-control-sm price-calc"
+                                   id="cost_price" name="cost_price"
+                                   value="{{ old('cost_price', $product->cost_price) }}"
+                                   placeholder="Vendor cost">
+                            <small class="text-muted" style="font-size:.72rem;">What you pay the vendor</small>
+                        </div>
+                        <div class="col-md-4 mb-2">
+                            <label class="form-label" style="font-size:.82rem;">Courier Charge (₹)</label>
+                            <input type="number" step="0.01" class="form-control form-control-sm price-calc"
+                                   id="courier_charge" name="courier_charge"
+                                   value="{{ old('courier_charge', $product->courier_charge ?? 0) }}"
+                                   placeholder="e.g. 60">
+                            <small class="text-muted" style="font-size:.72rem;">Shipping cost per order</small>
+                        </div>
+                        <div class="col-md-4 mb-2">
+                            <label class="form-label" style="font-size:.82rem;">Profit Margin (%)</label>
+                            <input type="number" step="0.1" class="form-control form-control-sm price-calc"
+                                   id="profit_margin" name="profit_margin"
+                                   value="{{ old('profit_margin', $product->profit_margin ?? 0) }}"
+                                   placeholder="e.g. 30">
+                            <small class="text-muted" style="font-size:.72rem;">Jeanzo markup %</small>
+                        </div>
+                    </div>
+                    <div class="mt-2" style="font-size:.82rem;color:#27ae60;font-weight:600;" id="calc-preview"></div>
+                </div>
+            </div>
+
+            <script>
+            (function(){
+                var vendorBasePrice = {{ $product->vendor_sale_price ?? 'null' }};
+                function recalc(){
+                    var cost    = parseFloat(document.getElementById('cost_price').value) || 0;
+                    var courier = parseFloat(document.getElementById('courier_charge').value) || 0;
+                    var margin  = parseFloat(document.getElementById('profit_margin').value) || 0;
+                    // Use vendor_sale_price as base if set, otherwise use cost_price
+                    var base = vendorBasePrice ? (vendorBasePrice + courier) : (cost + courier);
+                    if(base <= 0) { document.getElementById('calc-preview').textContent=''; return; }
+                    var final = (base * (1 + margin/100)).toFixed(2);
+                    document.getElementById('sale_price').value = final;
+                    var baseLabel = vendorBasePrice
+                        ? '₹'+vendorBasePrice+' vendor + ₹'+courier+' courier'
+                        : '₹'+cost+' cost + ₹'+courier+' courier';
+                    document.getElementById('calc-preview').textContent =
+                        '✓ Jeanzo display price = ('+baseLabel+') × '+(1+margin/100).toFixed(2)+' = ₹'+final;
+                }
+                document.querySelectorAll('.price-calc').forEach(function(el){
+                    el.addEventListener('input', recalc);
+                });
+                recalc();
+            })();
+            </script>
+
+            <div class="row">
             <h5 class="mb-3 border-bottom pb-2"><i class="fas fa-sliders-h"></i> Attributes</h5>
 
             <div class="row">

@@ -63,9 +63,7 @@ Route::prefix('')->name('customer.')->group(function () {
         Route::get('/login', [CustomerAuthController::class, 'showLogin'])->name('login');
         Route::post('/login', [CustomerAuthController::class, 'login'])->name('login.submit');
         Route::get('/register', [CustomerAuthController::class, 'showRegister'])->name('register');
-        Route::post('/register', [CustomerAuthController::class, 'register'])
-            ->middleware('throttle:5,1')
-            ->name('register.submit');
+        Route::post('/register', [CustomerAuthController::class, 'register'])->name('register.submit');
 
         // Password Reset Routes
         Route::get('/forgot-password', [CustomerAuthController::class, 'showLinkRequestForm'])->name('password.request');
@@ -307,9 +305,7 @@ Route::prefix('vendor')->name('vendor.')->group(function () {
         Route::get('/login', [VendorAuthController::class, 'showLogin'])->name('login');
         Route::post('/login', [VendorAuthController::class, 'login'])->name('login.submit');
         Route::get('/register', [VendorAuthController::class, 'showRegister'])->name('register');
-        Route::post('/register', [VendorAuthController::class, 'register'])
-            ->middleware('throttle:5,1')
-            ->name('register.submit');
+        Route::post('/register', [VendorAuthController::class, 'register'])->name('register.submit');
 
         // Password Reset Routes
         Route::get('/forgot-password', [VendorAuthController::class, 'showLinkRequestForm'])->name('password.request');
@@ -324,6 +320,10 @@ Route::prefix('vendor')->name('vendor.')->group(function () {
 
         // Dashboard
         Route::get('/dashboard', [\App\Http\Controllers\Vendor\VendorDashboardController::class, 'dashboard'])->name('dashboard');
+
+        // Reviews & Ratings
+        Route::get('/reviews', [\App\Http\Controllers\Vendor\VendorDashboardController::class, 'reviews'])->name('reviews');
+        Route::post('/reviews/{review}/reply', [\App\Http\Controllers\Vendor\VendorReviewReplyController::class, 'reply'])->name('review.reply');
 
         // Profile
         Route::get('/profile', [\App\Http\Controllers\Vendor\VendorDashboardController::class, 'profile'])->name('profile');
@@ -414,6 +414,7 @@ Route::get('/about', function () {
 })->name('about');
 
 Route::post('/products/{id}/review', [\App\Http\Controllers\Front\ProductDetailController::class, 'storeReview'])->middleware('auth')->name('products.review');
+Route::post('/vendor/{vendor}/review', [\App\Http\Controllers\Front\VendorReviewController::class, 'store'])->middleware('auth')->name('vendor.review.store');
 Route::match(['get','post'], '/contact', function (\Illuminate\Http\Request $request) {
     if ($request->isMethod('post')) {
         $request->validate([
@@ -440,6 +441,34 @@ Route::match(['get','post'], '/contact', function (\Illuminate\Http\Request $req
 Route::get('/faq', [\App\Http\Controllers\Front\FaqController::class, 'index'])->name('faq');
 Route::get('/help', [\App\Http\Controllers\Front\FaqController::class, 'help'])->name('help');
 Route::post('/newsletter/subscribe', [\App\Http\Controllers\Front\FaqController::class, 'newsletter'])->name('newsletter.subscribe');
+
+// Exit intent popup — capture WhatsApp or email
+Route::post('/exit-capture', function (\Illuminate\Http\Request $request) {
+    $contact = trim($request->input('contact', ''));
+    if (empty($contact)) {
+        return response()->json(['ok' => false], 422);
+    }
+
+    $isPhone = preg_match('/^[\d\s\+\-]{7,15}$/', $contact);
+    $isEmail = filter_var($contact, FILTER_VALIDATE_EMAIL);
+
+    if (!$isPhone && !$isEmail) {
+        return response()->json(['ok' => false], 422);
+    }
+
+    \App\Models\NewsletterSubscriber::firstOrCreate(
+        $isEmail ? ['email' => $contact] : ['whatsapp' => $contact],
+        [
+            'name'      => 'Exit Popup Lead',
+            'email'     => $isEmail ? $contact : null,
+            'whatsapp'  => $isPhone ? $contact : null,
+            'is_active' => true,
+            'source'    => 'exit_popup',
+        ]
+    );
+
+    return response()->json(['ok' => true]);
+})->name('exit.capture');
 
 // ── Front: Payment gateway (PayU) ──────────
 Route::post('/payment/create-order', [\App\Http\Controllers\PaymentController::class, 'createOrder'])->name('payment.create-order')->middleware('auth');

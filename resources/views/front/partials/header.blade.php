@@ -487,6 +487,11 @@
 
         <a href="{{ route('blog.index') }}" class="{{ request()->routeIs('blog.*') ? 'active' : '' }}">Blog</a>
         <a href="{{ route('contact') }}" class="{{ request()->routeIs('contact') ? 'active' : '' }}">Contact</a>
+        <a href="{{ route('vendor.register') }}"
+           style="background:var(--j-primary);color:#fff!important;padding:6px 16px;border-radius:20px;font-weight:600;font-size:.82rem;margin-left:8px;white-space:nowrap;"
+           class="{{ request()->routeIs('vendor.register') ? 'active' : '' }}">
+            <i class="fas fa-store mr-1"></i>Become a Supplier
+        </a>
     </div>
     </div>
     </div>
@@ -552,6 +557,11 @@
 
             <a href="{{ route('blog.index') }}" class="{{ request()->routeIs('blog.*') ? 'active' : '' }}">Blog</a>
             <a href="{{ route('contact') }}" class="{{ request()->routeIs('contact') ? 'active' : '' }}">Contact</a>
+            <a href="{{ route('vendor.register') }}"
+               style="color:var(--j-primary)!important;font-weight:700;"
+               class="{{ request()->routeIs('vendor.register') ? 'active' : '' }}">
+                <i class="fas fa-store mr-1"></i> Become a Supplier
+            </a>
         </nav>
 
         <!-- Footer links -->
