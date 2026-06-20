@@ -63,7 +63,9 @@ Route::prefix('')->name('customer.')->group(function () {
         Route::get('/login', [CustomerAuthController::class, 'showLogin'])->name('login');
         Route::post('/login', [CustomerAuthController::class, 'login'])->name('login.submit');
         Route::get('/register', [CustomerAuthController::class, 'showRegister'])->name('register');
-        Route::post('/register', [CustomerAuthController::class, 'register'])->name('register.submit');
+        Route::post('/register', [CustomerAuthController::class, 'register'])
+            ->middleware('throttle:5,1')
+            ->name('register.submit');
 
         // Password Reset Routes
         Route::get('/forgot-password', [CustomerAuthController::class, 'showLinkRequestForm'])->name('password.request');
@@ -305,7 +307,9 @@ Route::prefix('vendor')->name('vendor.')->group(function () {
         Route::get('/login', [VendorAuthController::class, 'showLogin'])->name('login');
         Route::post('/login', [VendorAuthController::class, 'login'])->name('login.submit');
         Route::get('/register', [VendorAuthController::class, 'showRegister'])->name('register');
-        Route::post('/register', [VendorAuthController::class, 'register'])->name('register.submit');
+        Route::post('/register', [VendorAuthController::class, 'register'])
+            ->middleware('throttle:5,1')
+            ->name('register.submit');
 
         // Password Reset Routes
         Route::get('/forgot-password', [VendorAuthController::class, 'showLinkRequestForm'])->name('password.request');
