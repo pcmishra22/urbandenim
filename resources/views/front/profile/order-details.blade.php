@@ -21,6 +21,11 @@
                 $statusClass = ['pending'=>'j-badge-pending','processing'=>'j-badge-processing','shipped'=>'j-badge-shipped','delivered'=>'j-badge-delivered','cancelled'=>'j-badge-cancelled'][$order->status] ?? 'j-badge-pending';
                 $payClass = $order->payment_status === 'paid' ? 'j-badge-paid' : 'j-badge-awaiting';
                 $cancellable = in_array($order->status, ['pending','processing']);
+                $returnable  = $order->status === 'delivered' && $order->updated_at->diffInDays(now()) <= 7;
+                $existingReturn = \App\Models\ReturnRequest::where('order_id',$order->id)
+                    ->where('user_id',auth()->id())
+                    ->whereNotIn('status',['rejected'])
+                    ->first();
             @endphp
 
             {{-- Header --}}
@@ -175,6 +180,58 @@
                         </div>
                     </form>
                 </div></div>
+            </div>
+            @endif
+
+            {{-- Return Order --}}
+            @if($returnable && !$existingReturn)
+            <div class="j-section mt-3" style="border-color:#cce5ff;background:#f0f7ff;">
+                <div class="j-section-title" style="color:#004085;border-bottom-color:#cce5ff;">
+                    <i class="fa fa-undo mr-2"></i>Return or Exchange This Order
+                </div>
+                <p class="text-muted small mb-3">
+                    Not happy with your order? You can return or exchange within
+                    <strong>7 days</strong> of delivery.
+                    Window closes <strong>{{ $order->updated_at->addDays(7)->format('d M Y') }}</strong>.
+                </p>
+                <a href="{{ route('profile.return.create', $order->id) }}"
+                   class="btn btn-primary btn-sm px-4">
+                    <i class="fa fa-undo mr-1"></i>Request Return / Exchange
+                </a>
+            </div>
+            @elseif($existingReturn)
+            <div class="j-section mt-3" style="border-color:#d4edda;background:#f0faf4;">
+                <div class="j-section-title" style="color:#155724;border-bottom-color:#d4edda;">
+                    <i class="fa fa-check-circle mr-2"></i>Return Request Submitted
+                </div>
+                <div class="row">
+                    <div class="col-sm-4 mb-2">
+                        <div class="text-muted small">Request #</div>
+                        <strong>#{{ $existingReturn->id }}</strong>
+                    </div>
+                    <div class="col-sm-4 mb-2">
+                        <div class="text-muted small">Type</div>
+                        <strong>{{ ucfirst($existingReturn->type ?? 'Return') }}</strong>
+                    </div>
+                    <div class="col-sm-4 mb-2">
+                        <div class="text-muted small">Status</div>
+                        <span class="badge badge-{{ $existingReturn->status_color }}">{{ $existingReturn->status_label }}</span>
+                    </div>
+                    <div class="col-12 mb-2">
+                        <div class="text-muted small">Reason</div>
+                        <strong>{{ $existingReturn->reason }}</strong>
+                        @if($existingReturn->description)
+                        <p class="text-muted small mt-1 mb-0">{{ $existingReturn->description }}</p>
+                        @endif
+                    </div>
+                    @if($existingReturn->vendor_note)
+                    <div class="col-12">
+                        <div style="background:#e8f5e9;border-left:3px solid #27ae60;padding:8px 12px;border-radius:0 8px 8px 0;font-size:.83rem;">
+                            <strong>Seller note:</strong> {{ $existingReturn->vendor_note }}
+                        </div>
+                    </div>
+                    @endif
+                </div>
             </div>
             @endif
 

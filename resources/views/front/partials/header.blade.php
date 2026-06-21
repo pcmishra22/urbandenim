@@ -92,6 +92,13 @@
         font-size: .58rem; border-radius: 10px;
         padding: 1px 5px; line-height: 1.4; font-weight: 700;
     }
+    /* Icon labels — hidden on desktop, visible on mobile */
+    .icon-label {
+        display: none;
+        font-size: .6rem; font-weight: 600;
+        letter-spacing: .3px; line-height: 1;
+        margin-top: 2px; text-align: center;
+    }
 
     /* Mobile hamburger — hidden on desktop */
     .mobile-menu-btn {
@@ -263,7 +270,16 @@
     @media (max-width: 480px) {
         #promo-bar { font-size: .68rem; padding: 7px 12px; }
         .header-logo h1 { font-size: 1.15rem; }
-        .header-icon-btn { font-size: 1rem; }
+        .header-icons { gap: 14px; }
+        .header-icon-btn {
+            font-size: 1.1rem;
+            display: flex; flex-direction: column;
+            align-items: center; gap: 2px;
+        }
+        /* Show icon labels on mobile */
+        .icon-label { display: block; }
+        /* Cart badge repositioned for vertical layout */
+        .header-icon-btn .badge { top: -6px; right: -10px; }
     }
     /* ============================================================
        WHATSAPP FLOATING BUTTON — visible on every page
@@ -385,6 +401,7 @@
             @auth
             <a href="{{ route('wishlist.index') }}" class="header-icon-btn" title="Wishlist">
                 <i class="fas fa-heart"></i>
+                <span class="icon-label">Wishlist</span>
             </a>
             @endauth
             <a href="{{ route('cart.index') }}" class="header-icon-btn" title="Cart">
@@ -392,15 +409,18 @@
                 @if(($headerCartCount ?? 0) > 0)
                 <span class="badge">{{ $headerCartCount }}</span>
                 @endif
+                <span class="icon-label">Cart</span>
             </a>
             @guest
                 <a href="{{ route('customer.login') }}" class="header-icon-btn" title="Login">
                     <i class="fas fa-user"></i>
+                    <span class="icon-label">Login</span>
                 </a>
             @else
                 <div class="dropdown">
                     <a href="#" class="header-icon-btn dropdown-toggle" data-toggle="dropdown" title="{{ auth()->user()->name }}">
                         <i class="fas fa-user-circle"></i>
+                        <span class="icon-label">Account</span>
                     </a>
                     <div class="dropdown-menu dropdown-menu-right rounded-0 m-0" style="min-width:180px;border:1px solid #eee;">
                         <div class="px-3 py-2 border-bottom">
@@ -488,8 +508,7 @@
         <a href="{{ route('blog.index') }}" class="{{ request()->routeIs('blog.*') ? 'active' : '' }}">Blog</a>
         <a href="{{ route('contact') }}" class="{{ request()->routeIs('contact') ? 'active' : '' }}">Contact</a>
         <a href="{{ route('vendor.register') }}"
-           style="background:var(--j-primary);color:#fff!important;padding:6px 16px;border-radius:20px;font-weight:600;font-size:.82rem;margin-left:8px;white-space:nowrap;"
-           class="{{ request()->routeIs('vendor.register') ? 'active' : '' }}">
+           style="background:var(--j-primary);color:#fff!important;padding:6px 16px;border-radius:20px;font-weight:700;font-size:.82rem;margin-left:6px;white-space:nowrap;text-decoration:none;">
             <i class="fas fa-store mr-1"></i>Become a Supplier
         </a>
     </div>
@@ -558,9 +577,8 @@
             <a href="{{ route('blog.index') }}" class="{{ request()->routeIs('blog.*') ? 'active' : '' }}">Blog</a>
             <a href="{{ route('contact') }}" class="{{ request()->routeIs('contact') ? 'active' : '' }}">Contact</a>
             <a href="{{ route('vendor.register') }}"
-               style="color:var(--j-primary)!important;font-weight:700;"
-               class="{{ request()->routeIs('vendor.register') ? 'active' : '' }}">
-                <i class="fas fa-store mr-1"></i> Become a Supplier
+               style="color:var(--j-primary)!important;font-weight:700;border-top:1px solid #f0f0f0;margin-top:4px;padding-top:12px;">
+                <i class="fas fa-store mr-1"></i>Become a Supplier
             </a>
         </nav>
 

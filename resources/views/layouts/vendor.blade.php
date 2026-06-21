@@ -181,6 +181,15 @@
             <i class="fas fa-star"></i> My Reviews & Ratings
         </a>
 
+        <div class="sidebar-section-title">Returns</div>
+        <a href="{{ route('vendor.returns.index') }}" class="{{ request()->routeIs('vendor.returns.*') ? 'active' : '' }}">
+            <i class="fas fa-undo"></i> Return Requests
+            @php $pendingReturns = \App\Models\ReturnRequest::where('vendor_id', auth()->user()->vendor?->id)->whereIn('status',['requested'])->count(); @endphp
+            @if($pendingReturns > 0)
+            <span class="badge badge-danger ml-1" style="font-size:.7rem;">{{ $pendingReturns }}</span>
+            @endif
+        </a>
+
     </nav>
 
     <!-- Main Content -->

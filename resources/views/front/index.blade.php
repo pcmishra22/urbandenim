@@ -86,6 +86,12 @@ section, .jz-section, .gender-grid, .collection-grid, .fit-grid, .products-grid,
     color: #fff; font-size: .9rem; transition: background .2s; border: none;
 }
 .hero-wrap .carousel-arrow:hover { background: rgba(0,0,0,.7); }
+/* Bigger tap targets on mobile */
+@media (max-width: 575px) {
+    .hero-wrap .carousel-control-prev,
+    .hero-wrap .carousel-control-next { width: 52px; }
+    .hero-wrap .carousel-arrow { width: 44px; height: 44px; font-size: 1rem; }
+}
 
 /* ── Offer Strip ── */
 .offer-strip { background: #D19C97; margin-top: 20px; }
@@ -651,7 +657,7 @@ function handleOfferSignup(){
     @php
         $imgUrl  = jzProdImg($product);
         $stars   = round($product->rev_avg ?? 0);
-        $displayP = $product->jeanzo_price ?: ($product->sale_price ?? $product->price); $hasSale = $displayP && $displayP < $product->price;
+        $hasSale = $product->sale_price && $product->sale_price < $product->price;
         $catName = optional($product->category)->name;
     @endphp
     <div class="jz-product-card">
@@ -681,7 +687,7 @@ function handleOfferSignup(){
             </div>
             <a href="{{ route('products.detail', $product->slug) }}" class="prod-name">{{ $product->name }}</a>
             <div class="prod-price">
-                ₹{{ number_format($hasSale ? $displayP : $product->price, 0) }}
+                ₹{{ number_format($hasSale ? $product->sale_price : $product->price, 0) }}
                 @if($hasSale)<span class="original">₹{{ number_format($product->price, 0) }}</span>@endif
             </div>
         </div>
@@ -724,5 +730,38 @@ function nlSubmit(f){
     return false;
 }
 </script>
+
+@push('scripts')
+<script>
+/* ── Hero Carousel: force init + touch swipe ── */
+$(function(){
+    var $car = $('#hero-carousel');
+
+    // Force Bootstrap carousel init (fixes "fixed" look on mobile)
+    $car.carousel({ interval: 5000, ride: 'carousel', touch: true, pause: 'hover' });
+
+    // Touch/swipe support for mobile
+    var touchStartX = 0;
+    var touchEndX   = 0;
+    var threshold   = 50; // px
+
+    $car[0].addEventListener('touchstart', function(e){
+        touchStartX = e.changedTouches[0].screenX;
+    }, { passive: true });
+
+    $car[0].addEventListener('touchend', function(e){
+        touchEndX = e.changedTouches[0].screenX;
+        var diff = touchStartX - touchEndX;
+        if (Math.abs(diff) > threshold) {
+            if (diff > 0) {
+                $car.carousel('next');
+            } else {
+                $car.carousel('prev');
+            }
+        }
+    }, { passive: true });
+});
+</script>
+@endpush
 
 @endsection

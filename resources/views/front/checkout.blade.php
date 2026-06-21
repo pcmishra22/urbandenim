@@ -77,54 +77,61 @@
             {{-- Address Form --}}
             <div class="j-section mb-3">
                 <div class="j-section-title"><i class="fa fa-home mr-2" style="color:var(--j-primary);"></i>Shipping Details</div>
+
+                @if(isset($prefillAddress) && $prefillAddress)
+                <div class="alert py-2 mb-3" style="background:#f0faf4;border:1px solid #a5d6a7;border-radius:8px;font-size:.83rem;color:#1b5e20;">
+                    <i class="fa fa-check-circle mr-1"></i>
+                    <strong>Address pre-filled</strong> from your last order. You can edit any field below.
+                </div>
+                @endif
                 <div class="row">
                     <div class="col-md-6 form-group">
                         <label class="font-weight-600">Full Name <span class="text-danger">*</span></label>
                         <input class="form-control @error('shipping_full_name') is-invalid @enderror"
                                type="text" name="shipping_full_name"
-                               value="{{ old('shipping_full_name', auth()->user()->name ?? '') }}" placeholder="Full Name">
+                               value="{{ old('shipping_full_name', $prefillAddress->full_name ?? auth()->user()->name ?? '') }}" placeholder="Full Name">
                         @error('shipping_full_name')<div class="invalid-feedback">{{ $message }}</div>@enderror
                     </div>
                     <div class="col-md-6 form-group">
                         <label class="font-weight-600">Mobile No <span class="text-danger">*</span></label>
                         <input class="form-control @error('shipping_phone') is-invalid @enderror"
                                type="text" name="shipping_phone"
-                               value="{{ old('shipping_phone') }}" placeholder="+91 99999 99999">
+                               value="{{ old('shipping_phone', $prefillAddress->phone ?? '') }}" placeholder="+91 99999 99999">
                         @error('shipping_phone')<div class="invalid-feedback">{{ $message }}</div>@enderror
                     </div>
                     <div class="col-12 form-group">
                         <label class="font-weight-600">Street Address <span class="text-danger">*</span></label>
                         <input class="form-control @error('shipping_street') is-invalid @enderror"
                                type="text" name="shipping_street"
-                               value="{{ old('shipping_street') }}" placeholder="House no. and Street name">
+                               value="{{ old('shipping_street', $prefillAddress->street ?? '') }}" placeholder="House no. and Street name">
                         @error('shipping_street')<div class="invalid-feedback">{{ $message }}</div>@enderror
                     </div>
                     <div class="col-md-6 form-group">
                         <label class="font-weight-600">City <span class="text-danger">*</span></label>
                         <input class="form-control @error('shipping_city') is-invalid @enderror"
                                type="text" name="shipping_city"
-                               value="{{ old('shipping_city') }}" placeholder="City">
+                               value="{{ old('shipping_city', $prefillAddress->city ?? '') }}" placeholder="City">
                         @error('shipping_city')<div class="invalid-feedback">{{ $message }}</div>@enderror
                     </div>
                     <div class="col-md-6 form-group">
                         <label class="font-weight-600">State <span class="text-danger">*</span></label>
                         <input class="form-control @error('shipping_state') is-invalid @enderror"
                                type="text" name="shipping_state"
-                               value="{{ old('shipping_state') }}" placeholder="State">
+                               value="{{ old('shipping_state', $prefillAddress->state ?? '') }}" placeholder="State">
                         @error('shipping_state')<div class="invalid-feedback">{{ $message }}</div>@enderror
                     </div>
                     <div class="col-md-6 form-group">
                         <label class="font-weight-600">PIN Code <span class="text-danger">*</span></label>
                         <input class="form-control @error('shipping_postal_code') is-invalid @enderror"
                                type="text" name="shipping_postal_code"
-                               value="{{ old('shipping_postal_code') }}" placeholder="PIN Code">
+                               value="{{ old('shipping_postal_code', $prefillAddress->postal_code ?? '') }}" placeholder="PIN Code">
                         @error('shipping_postal_code')<div class="invalid-feedback">{{ $message }}</div>@enderror
                     </div>
                     <div class="col-md-6 form-group">
                         <label class="font-weight-600">Country <span class="text-danger">*</span></label>
                         <input class="form-control @error('shipping_country') is-invalid @enderror"
                                type="text" name="shipping_country"
-                               value="{{ old('shipping_country', 'India') }}" placeholder="Country">
+                               value="{{ old('shipping_country', $prefillAddress->country ?? 'India') }}" placeholder="Country">
                         @error('shipping_country')<div class="invalid-feedback">{{ $message }}</div>@enderror
                     </div>
                     <div class="col-12 form-group mb-0">

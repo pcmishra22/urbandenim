@@ -33,21 +33,47 @@ class CheckoutController extends Controller
             return redirect()->route('cart.index')->with('error', 'Your cart is empty.');
         }
 
-        $subtotal  = $this->cartService->getSubtotal();
-        $shipping  = $this->calculateShipping($subtotal);
-        $discount  = session('coupon_discount', 0);
+        $subtotal   = $this->cartService->getSubtotal();
+        $shipping   = $this->calculateShipping($subtotal);
+        $discount   = session('coupon_discount', 0);
         $couponCode = session('coupon_code');
         $grandTotal = max(0, $subtotal + $shipping - $discount);
 
-        $addresses = collect();
-        if (auth()->check() && !auth()->user()->is_guest && Schema::hasTable('customer_addresses')) {
-            $addresses = auth()->user()->addresses()->get();
+        $addresses       = collect();
+        $prefillAddress  = null;
+        $isGuest         = !auth()->check() || auth()->user()->is_guest;
+
+        if (auth()->check() && !$isGuest) {
+            // Load saved addresses
+            if (Schema::hasTable('customer_addresses')) {
+                $addresses = auth()->user()->addresses()->orderByDesc('is_default')->get();
+                // Use default address to pre-fill form
+                $prefillAddress = $addresses->firstWhere('is_default', true) ?? $addresses->first();
+            }
+
+            // Fallback: pre-fill from user's most recent order if no saved address
+            if (!$prefillAddress) {
+                $lastOrder = Order::where('user_id', auth()->id())
+                    ->whereNotNull('shipping_street')
+                    ->latest()
+                    ->first();
+                if ($lastOrder) {
+                    $prefillAddress = (object)[
+                        'full_name'   => $lastOrder->shipping_full_name,
+                        'phone'       => $lastOrder->shipping_phone,
+                        'street'      => $lastOrder->shipping_street,
+                        'city'        => $lastOrder->shipping_city,
+                        'state'       => $lastOrder->shipping_state,
+                        'postal_code' => $lastOrder->shipping_postal_code,
+                        'country'     => $lastOrder->shipping_country ?? 'India',
+                    ];
+                }
+            }
         }
 
-        $isGuest = !auth()->check() || auth()->user()->is_guest;
-
         return view('front.checkout', compact(
-            'cartItems', 'subtotal', 'shipping', 'discount', 'couponCode', 'grandTotal', 'addresses', 'isGuest'
+            'cartItems', 'subtotal', 'shipping', 'discount', 'couponCode',
+            'grandTotal', 'addresses', 'isGuest', 'prefillAddress'
         ));
     }
 
@@ -105,6 +131,9 @@ class CheckoutController extends Controller
 
         $order = $this->createOrder($request, 'pending');
 
+        // Save address for future checkouts (logged-in non-guest users)
+        $this->saveShippingAddress($request, auth()->user());
+
         $this->cartService->clear();
         session()->forget(['coupon_code', 'coupon_discount']);
 
@@ -155,6 +184,7 @@ class CheckoutController extends Controller
 
         try {
             $order = $this->createOrder($request, 'awaiting_payment');
+            $this->saveShippingAddress($request, auth()->user());
         } catch (\Throwable $e) {
             Log::error('storePending failed', [
                 'error' => $e->getMessage(),
@@ -218,7 +248,7 @@ class CheckoutController extends Controller
             ]);
 
             foreach ($cartItems as $item) {
-                $product = $item['product'];
+                $product   = $item['product'];
                 $variantId = $item['variant_id'] ?? ($item['options']['variant_id'] ?? null);
 
                 $order->products()->attach($product->id, [
@@ -227,8 +257,12 @@ class CheckoutController extends Controller
                     'price'              => $product->sale_price ?? $product->price,
                 ]);
 
-                if ($variantId) {
-                    ProductVariant::where('id', $variantId)->decrement('quantity', $item['quantity']);
+                // Only decrement stock for confirmed COD orders.
+                // For UPI/card (awaiting_payment), stock is decremented when
+                // payment is confirmed via PaymentController::verify() / webhook().
+                if ($variantId && $paymentStatus === 'pending') {
+                    ProductVariant::where('id', $variantId)
+                        ->decrement('quantity', $item['quantity']);
                 }
             }
 
@@ -278,6 +312,38 @@ class CheckoutController extends Controller
     protected function calculateShipping(float $subtotal): float
     {
         return $subtotal >= 500 ? 0.0 : 50.0;
+    }
+
+    /**
+     * Save the shipping address to customer_addresses for future pre-fill.
+     * Creates or updates the default address for this user.
+     */
+    protected function saveShippingAddress(Request $request, ?object $user): void
+    {
+        if (!$user || ($user->is_guest ?? false)) return;
+        if (!Schema::hasTable('customer_addresses')) return;
+
+        try {
+            \App\Models\CustomerAddress::updateOrCreate(
+                [
+                    'user_id'      => $user->id,
+                    'is_default'   => true,
+                ],
+                [
+                    'address_type' => 'home',
+                    'full_name'    => $request->shipping_full_name,
+                    'phone'        => $request->shipping_phone,
+                    'street'       => $request->shipping_street,
+                    'city'         => $request->shipping_city,
+                    'state'        => $request->shipping_state,
+                    'postal_code'  => $request->shipping_postal_code,
+                    'country'      => $request->shipping_country ?? 'India',
+                    'is_default'   => true,
+                ]
+            );
+        } catch (\Throwable $e) {
+            \Illuminate\Support\Facades\Log::warning('Could not save shipping address', ['error' => $e->getMessage()]);
+        }
     }
 
 }

@@ -42,7 +42,27 @@ class CustomerAuthController extends Controller
 
 
         if (Auth::attempt($credentials) && Auth::user()->role === 'customer') {
+            // ── Save cart before session regeneration ──
+            // session()->regenerate() creates a new session ID which would
+            // lose all existing session data including the shopping cart.
+            $savedCart = $request->session()->get('shopping_cart', []);
+
             $request->session()->regenerate();
+
+            // ── Restore cart into the new session ──
+            if (!empty($savedCart)) {
+                $existingCart = $request->session()->get('shopping_cart', []);
+                // Merge: keep existing items, add pre-login items without overwriting
+                foreach ($savedCart as $key => $item) {
+                    if (isset($existingCart[$key])) {
+                        // Already in cart — add quantities
+                        $existingCart[$key]['quantity'] += $item['quantity'];
+                    } else {
+                        $existingCart[$key] = $item;
+                    }
+                }
+                $request->session()->put('shopping_cart', $existingCart);
+            }
 
             // Notify user of login
             try {
@@ -94,7 +114,23 @@ class CustomerAuthController extends Controller
             'role'     => 'customer',
         ]);
 
+        // Save cart before Auth::login regenerates the session
+        $savedCart = request()->session()->get('shopping_cart', []);
+
         Auth::login($user);
+
+        // Restore pre-registration cart into new session
+        if (!empty($savedCart)) {
+            $existingCart = request()->session()->get('shopping_cart', []);
+            foreach ($savedCart as $key => $item) {
+                if (isset($existingCart[$key])) {
+                    $existingCart[$key]['quantity'] += $item['quantity'];
+                } else {
+                    $existingCart[$key] = $item;
+                }
+            }
+            request()->session()->put('shopping_cart', $existingCart);
+        }
 
         // Welcome email to user
         try { 

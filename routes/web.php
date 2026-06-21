@@ -325,6 +325,11 @@ Route::prefix('vendor')->name('vendor.')->group(function () {
         Route::get('/reviews', [\App\Http\Controllers\Vendor\VendorDashboardController::class, 'reviews'])->name('reviews');
         Route::post('/reviews/{review}/reply', [\App\Http\Controllers\Vendor\VendorReviewReplyController::class, 'reply'])->name('review.reply');
 
+        // Return Requests
+        Route::get('/returns', [\App\Http\Controllers\Vendor\VendorReturnController::class, 'index'])->name('returns.index');
+        Route::get('/returns/{return}', [\App\Http\Controllers\Vendor\VendorReturnController::class, 'show'])->name('returns.show');
+        Route::post('/returns/{return}/update', [\App\Http\Controllers\Vendor\VendorReturnController::class, 'updateStatus'])->name('returns.update');
+
         // Profile
         Route::get('/profile', [\App\Http\Controllers\Vendor\VendorDashboardController::class, 'profile'])->name('profile');
         Route::post('/profile', [\App\Http\Controllers\Vendor\VendorDashboardController::class, 'updateProfile'])->name('profile.update');
@@ -484,6 +489,10 @@ Route::post('/payment/webhook', [\App\Http\Controllers\PaymentController::class,
 Route::middleware('auth')->group(function () {
     Route::patch('/profile/orders/{id}/cancel', [\App\Http\Controllers\Front\ProfileController::class, 'cancelOrder'])->name('profile.cancel-order');
     Route::post('/profile/orders/{id}/reorder', [\App\Http\Controllers\Front\ProfileController::class, 'reorder'])->name('profile.reorder');
+
+    // Return Requests
+    Route::get('/profile/orders/{id}/return', [\App\Http\Controllers\Front\ReturnRequestController::class, 'create'])->name('profile.return.create');
+    Route::post('/profile/orders/{id}/return', [\App\Http\Controllers\Front\ReturnRequestController::class, 'store'])->name('profile.return.store');
     Route::get('/profile/reviews', [\App\Http\Controllers\Front\ProfileController::class, 'reviews'])->name('profile.reviews');
     Route::post('/coupon/apply', [\App\Http\Controllers\Front\CouponController::class, 'apply'])->name('coupon.apply');
     Route::post('/coupon/remove', [\App\Http\Controllers\Front\CouponController::class, 'remove'])->name('coupon.remove');

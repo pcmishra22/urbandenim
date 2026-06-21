@@ -125,7 +125,7 @@
                     @if($product->is_featured)<span class="j-badge ml-2" style="background:#fff3cd;color:#856404;"><i class="fa fa-star mr-1" style="font-size:.7rem;"></i>Featured</span>@endif
                 </div>
 
-                <!-- Price — always shows Jeanzo price (vendor_sale_price + courier + profit) -->
+                <!-- Price -->
                 @php
                     $displayPrice  = $product->jeanzo_price ?: ($product->sale_price ?? $product->price);
                     $originalPrice = $product->price;
@@ -175,14 +175,6 @@
                             <i class="fa fa-store mr-1" style="color:var(--j-primary);"></i>
                             Sold by: <strong style="color:#222;">{{ $product->vendor->shop_name }}</strong>
                         </span>
-                        @if($vendorAvgRating > 0)
-                        <span class="ml-2" style="font-size:.8rem;">
-                            @for($s=1;$s<=5;$s++)
-                                <i class="fa fa-star" style="color:{{ $s <= round($vendorAvgRating) ? '#f39c12' : '#ddd' }};font-size:.75rem;"></i>
-                            @endfor
-                            <span style="color:#888;margin-left:3px;">{{ $vendorAvgRating }} ({{ $vendorReviewCount }} {{ Str::plural('review', $vendorReviewCount) }})</span>
-                        </span>
-                        @endif
                     @else
                         <span style="font-size:.82rem;color:#555;">
                             <i class="fa fa-store mr-1" style="color:var(--j-primary);"></i>
@@ -193,170 +185,145 @@
 
                 <!-- Variants -->
                 @if($product->variants->isNotEmpty())
-                <div class="mb-4">
-                    <p class="font-weight-bold mb-2" style="font-size:1rem;color:#2d2d2d;letter-spacing:.3px;">
-                        <i class="fa fa-ruler-horizontal mr-1" style="color:var(--j-primary);font-size:.85rem;"></i>
-                        Select Size: <span id="selected-size-label" style="color:var(--j-primary);font-weight:800;"></span>
-                    </p>
-                    <style>
-                    .size-btn {
-                        display: inline-flex;
-                        flex-direction: column;
-                        align-items: center;
-                        justify-content: center;
-                        min-width: 64px;
-                        height: 52px;
-                        padding: 0 14px;
-                        border: 2px solid #d0d0d0;
-                        border-radius: 8px;
-                        cursor: pointer;
-                        font-size: .9rem;
-                        font-weight: 700;
-                        transition: all .18s ease;
-                        user-select: none;
-                        background: #fff;
-                        color: #333;
-                        box-shadow: 0 1px 3px rgba(0,0,0,.06);
-                        position: relative;
-                    }
-                    .size-btn:hover:not(.size-btn-oos) {
-                        border-color: var(--j-primary);
-                        background: var(--j-primary-lt);
-                        color: var(--j-primary);
-                        box-shadow: 0 2px 8px rgba(209,156,151,.25);
-                    }
-                    .size-btn.size-btn-selected {
-                        border-color: var(--j-primary) !important;
-                        background: var(--j-primary) !important;
-                        color: #fff !important;
-                        box-shadow: 0 3px 12px rgba(209,156,151,.45) !important;
-                        transform: translateY(-1px);
-                    }
-                    .size-btn.size-btn-oos {
-                        border-color: #e8e8e8;
-                        background: #f8f8f8;
-                        color: #bbb;
-                        cursor: not-allowed;
-                        text-decoration: line-through;
-                    }
-                    .size-btn .oos-tag {
-                        font-size: .58rem;
-                        font-weight: 600;
-                        color: #e74c3c;
-                        text-decoration: none;
-                        line-height: 1;
-                        margin-top: 2px;
-                        letter-spacing: .3px;
-                    }
-                    .size-btn.size-btn-oos .oos-tag { color: #ccc; }
-                    </style>
-                    <div class="d-flex flex-wrap" style="gap:10px;">
+                {{-- ══ STEP 1: Pick Your Size ══ --}}
+                <style>
+                .jz-size-btn {
+                    display:inline-flex;flex-direction:column;align-items:center;justify-content:center;
+                    min-width:62px;min-height:52px;padding:6px 12px;
+                    border:2.5px solid #ccc;border-radius:10px;
+                    background:#fff;cursor:pointer;
+                    font-size:.9rem;font-weight:700;color:#333;
+                    transition:all .15s;line-height:1.2;
+                }
+                .jz-size-btn:hover:not(.jz-oos) {
+                    border-color:#D19C97;background:#fff4f2;color:#D19C97;
+                    transform:translateY(-2px);box-shadow:0 4px 12px rgba(209,156,151,.3);
+                }
+                .jz-size-btn.jz-selected {
+                    border-color:#D19C97!important;background:#D19C97!important;
+                    color:#fff!important;transform:translateY(-2px);
+                    box-shadow:0 4px 16px rgba(209,156,151,.5)!important;
+                }
+                .jz-size-btn.jz-oos { border-color:#eee;background:#f8f8f8;color:#ccc;cursor:not-allowed; }
+                .sz-main { font-size:.92rem;font-weight:800; }
+                .sz-sub  { font-size:.6rem;font-weight:500;opacity:.8;line-height:1; }
+                .sz-oos  { font-size:.55rem;color:#e74c3c;font-weight:600;line-height:1; }
+                .jz-oos .sz-oos { color:#bbb; }
+                #add-to-cart-button:disabled { opacity:.4;cursor:not-allowed; }
+                @keyframes atcReady {
+                    0%,100% { box-shadow:0 0 0 0 rgba(209,156,151,.7); }
+                    50%     { box-shadow:0 0 0 10px rgba(209,156,151,0); }
+                }
+                @keyframes slideDown {
+                    from { opacity:0;transform:translateY(-8px); }
+                    to   { opacity:1;transform:translateY(0); }
+                }
+                .shake { animation:shake .3s ease; }
+                @keyframes shake {
+                    0%,100% { transform:translateX(0); }
+                    25% { transform:translateX(-6px); }
+                    75% { transform:translateX(6px); }
+                }
+                </style>
+
+                <div id="step-size-wrap" style="
+                    background:linear-gradient(135deg,#fff4f2 0%,#fff9f8 100%);
+                    border:2.5px solid #D19C97;border-radius:14px;padding:16px 18px;margin-bottom:18px;">
+                    <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;">
+                        <span style="background:#D19C97;color:#fff;font-size:.7rem;font-weight:800;padding:3px 10px;border-radius:20px;flex-shrink:0;">STEP 1 OF 2</span>
+                        <strong style="font-size:.95rem;color:#1a1a1a;">👇 Select Your Size First</strong>
+                    </div>
+                    <div style="display:flex;flex-wrap:wrap;gap:10px;margin-bottom:10px;">
                         @foreach($product->variants as $variant)
                         @php $isOos = $variant->quantity <= 0; @endphp
                         <button type="button"
-                                class="size-btn {{ $isOos ? 'size-btn-oos' : '' }}"
-                                data-variant-id="{{ $variant->id }}"
-                                data-variant-label="{{ $variant->waist_size }}{{ $variant->length ? '×'.$variant->length : '' }}{{ $variant->color ? ' · '.$variant->color : '' }}"
-                                data-variant-qty="{{ $variant->quantity }}"
-                                data-variant-price="{{ $variant->price ?? $product->price }}"
+                                class="jz-size-btn {{ $isOos ? 'jz-oos' : '' }}"
+                                data-vid="{{ $variant->id }}"
+                                data-label="{{ $variant->waist_size }}{{ $variant->length ? '×'.$variant->length : '' }}{{ $variant->color ? ' · '.$variant->color : '' }}"
                                 {{ $isOos ? 'disabled' : '' }}>
-                            <span>{{ $variant->waist_size }}</span>
-                            @if($variant->length)<small style="font-size:.65rem;font-weight:500;line-height:1;">L{{ $variant->length }}</small>@endif
-                            @if($isOos)<span class="oos-tag">Out of Stock</span>@endif
+                            <span class="sz-main">{{ $variant->waist_size }}</span>
+                            @if($variant->length)<span class="sz-sub">L{{ $variant->length }}</span>@endif
+                            @if($isOos)<span class="sz-oos">Out</span>@endif
                         </button>
                         @endforeach
                     </div>
-                    {{-- Hidden radio group for form submission --}}
-                    @foreach($product->variants as $variant)
-                    <input type="radio" name="variant_id" id="variant-{{ $variant->id }}"
-                           value="{{ $variant->id }}" form="add-to-cart-form"
-                           style="display:none;" {{ $variant->quantity <= 0 ? 'disabled' : '' }}>
-                    @endforeach
+                    <div id="size-hint" style="font-size:.82rem;color:#c0392b;font-weight:600;">⚠️ Pick a size to enable Add to Cart</div>
+                    <div id="size-chosen" style="font-size:.85rem;color:#27ae60;font-weight:700;display:none;">✅ Size: <span id="chosen-label"></span></div>
                 </div>
                 @endif
 
-                <!-- ── Model & Fabric Info ── -->
-                @if($product->model_info || $product->fabric_info || $product->gender)
-                <div class="mb-3" style="background:#f8f9fa;border-radius:10px;padding:12px 16px;font-size:.85rem;line-height:1.8;">
-                    @if($product->model_info)
-                    <div><i class="fa fa-female mr-2" style="color:var(--j-primary);width:16px;text-align:center;"></i>
-                        <strong>Fit tip:</strong> {{ $product->model_info }}
+                {{-- ══ STEP 2: Add to Cart + Cart Panel ══ --}}
+                <meta name="atc-product-id" content="{{ $product->id }}">
+                <div style="margin-bottom:20px;">
+                    <div id="atc-size-warn" style="display:none;margin-bottom:10px;
+                        background:#fff3cd;border:1.5px solid #ffc107;border-radius:8px;
+                        padding:10px 14px;font-size:.88rem;font-weight:600;color:#856404;">
+                        ⬆️ Please select a size above first
                     </div>
-                    @endif
-                    @if($product->fabric_info)
-                    <div><i class="fa fa-tshirt mr-2" style="color:var(--j-primary);width:16px;text-align:center;"></i>
-                        <strong>Fabric:</strong> {{ $product->fabric_info }}
-                    </div>
-                    @endif
-                    <div><i class="fa fa-undo mr-2" style="color:#27ae60;width:16px;text-align:center;"></i>
-                        <strong>Not your size?</strong> <span style="color:#27ae60;">Free 7-day returns — no questions asked.</span>
-                    </div>
-                </div>
-                @endif
-
-                <!-- Add to cart -->
-                <div class="mb-4">
-                    @if($product->variants->isNotEmpty())
-                        <div id="select-size-message" class="mb-3 align-items-center"
-                             style="background:#fff3cd;border:1.5px solid #ffc107;border-radius:8px;padding:8px 14px;font-size:.88rem;font-weight:600;color:#856404;display:none;">
-                            <i class="fa fa-exclamation-triangle mr-2" style="color:#e67e22;"></i> Please select a size before adding to cart
-                        </div>
-                    @endif
-                    <form method="POST" action="{{ route('cart.add') }}" id="add-to-cart-form">
-                        @csrf
-                        <input type="hidden" name="product_id" value="{{ $product->id }}">
-                        <div class="d-flex align-items-center flex-wrap" style="gap:10px;">
-                            {{-- Qty stepper --}}
-                            <div class="input-group quantity" style="width:120px;flex-shrink:0;">
-                                <div class="input-group-btn">
-                                    <button type="button" class="btn btn-primary btn-sm btn-minus"><i class="fa fa-minus"></i></button>
-                                </div>
-                                <input type="text" name="quantity" class="form-control form-control-sm text-center bg-light" value="1" min="1">
-                                <div class="input-group-btn">
-                                    <button type="button" class="btn btn-primary btn-sm btn-plus"><i class="fa fa-plus"></i></button>
-                                </div>
+                    <div style="display:flex;align-items:center;flex-wrap:wrap;gap:10px;">
+                        {{-- Qty stepper --}}
+                        <div class="input-group quantity" style="width:120px;flex-shrink:0;">
+                            <div class="input-group-btn">
+                                <button type="button" class="btn btn-primary btn-sm btn-minus"><i class="fa fa-minus"></i></button>
                             </div>
-                            {{-- Add to cart --}}
-                            <button type="submit" class="btn btn-primary" style="min-width:140px;" id="add-to-cart-button" {{ $product->variants->isNotEmpty() ? 'disabled' : '' }}>
-                                <i class="fa fa-cart-plus mr-1"></i> Add to Cart
-                            </button>
-
-                        </div>
-                    </form>
-
-                    {{-- ── Risk-Free Guarantee Banner ── --}}
-                    <div class="mt-3" style="background:linear-gradient(135deg,#f0faf4 0%,#e8f5e9 100%);border:1.5px solid #a5d6a7;border-radius:12px;padding:12px 16px;">
-                        <div class="d-flex align-items-center" style="gap:12px;">
-                            <div style="flex-shrink:0;width:40px;height:40px;background:#27ae60;border-radius:50%;display:flex;align-items:center;justify-content:center;">
-                                <i class="fa fa-shield-alt" style="color:#fff;font-size:1.1rem;"></i>
-                            </div>
-                            <div>
-                                <div style="font-size:.92rem;font-weight:700;color:#1b5e20;line-height:1.3;">
-                                    Risk-Free 7-Day Fit Guarantee
-                                </div>
-                                <div style="font-size:.78rem;color:#388e3c;margin-top:2px;line-height:1.4;">
-                                    Wrong size? Doesn't fit right? Return it free within 7 days — no questions asked.
-                                    <a href="{{ route('legal.refund') }}" style="color:#1b5e20;font-weight:600;text-decoration:underline;">See return policy →</a>
-                                </div>
+                            <input type="text" id="atc-qty" class="form-control form-control-sm text-center" value="1" min="1" max="99">
+                            <div class="input-group-btn">
+                                <button type="button" class="btn btn-primary btn-sm btn-plus"><i class="fa fa-plus"></i></button>
                             </div>
                         </div>
-                    </div>
-
-                    {{-- Go to Cart + Wishlist on separate row --}}
-
-                    <div class="d-flex align-items-center mt-3" style="gap:10px;flex-wrap:wrap;">
-                        <a href="{{ route('cart.index') }}" class="btn btn-outline-primary" style="min-width:130px;">
-                            <i class="fa fa-shopping-bag mr-1"></i> View Cart
-                        </a>
+                        {{-- Add to Cart --}}
+                        <button type="button" id="add-to-cart-button" class="btn btn-primary"
+                                style="min-width:160px;font-weight:700;font-size:1rem;padding:10px 20px;border-radius:10px;"
+                                {{ $product->variants->isNotEmpty() ? 'disabled' : '' }}>
+                            <i class="fa fa-cart-plus mr-1"></i><span id="atc-label">Add to Cart</span>
+                        </button>
+                        {{-- Wishlist --}}
                         @auth
-                        <form method="POST" action="{{ route('wishlist.add') }}" class="d-inline">
+                        <form method="POST" action="{{ route('wishlist.add') }}" style="display:inline;">
                             @csrf
                             <input type="hidden" name="product_id" value="{{ $product->id }}">
-                            <button type="submit" class="btn btn-outline-secondary" style="min-width:50px;" title="Add to Wishlist">
-                                <i class="far fa-heart" style="color:var(--j-primary);"></i> Wishlist
+                            <button type="submit" class="btn btn-outline-secondary" title="Wishlist">
+                                <i class="far fa-heart" style="color:#D19C97;"></i>
+                                <span class="d-none d-sm-inline ml-1">Wishlist</span>
                             </button>
                         </form>
                         @endauth
+                    </div>
+
+                    {{-- Cart Success Panel --}}
+                    <div id="cart-success-panel" style="display:none;margin-top:16px;">
+                        <div style="border:2px solid #27ae60;border-radius:14px;overflow:hidden;
+                                    box-shadow:0 6px 24px rgba(39,174,96,.15);animation:slideDown .3s ease;">
+                            <div style="background:#27ae60;padding:10px 16px;display:flex;align-items:center;gap:8px;">
+                                <i class="fa fa-check-circle" style="color:#fff;"></i>
+                                <span style="color:#fff;font-weight:700;font-size:.92rem;flex:1;">Added to Cart!</span>
+                                <button onclick="document.getElementById('cart-success-panel').style.display='none';"
+                                        style="background:none;border:none;color:rgba(255,255,255,.8);font-size:1.3rem;cursor:pointer;padding:0;line-height:1;">×</button>
+                            </div>
+                            <div style="padding:12px 16px;display:flex;align-items:center;gap:12px;border-bottom:1px solid #f0f0f0;background:#fff;">
+                                @if($product->images && $product->images->isNotEmpty())
+                                <img src="{{ $product->images->first()->url ?? '' }}"
+                                     style="width:50px;height:50px;object-fit:cover;border-radius:8px;flex-shrink:0;">
+                                @endif
+                                <div style="flex:1;min-width:0;">
+                                    <div style="font-size:.84rem;font-weight:600;color:#222;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{{ $product->name }}</div>
+                                    <div style="font-size:.8rem;color:#D19C97;font-weight:700;">₹{{ number_format($product->jeanzo_price ?: ($product->sale_price ?? $product->price), 2) }}</div>
+                                    <div id="panel-size-label" style="font-size:.75rem;color:#888;"></div>
+                                </div>
+                                <div style="text-align:right;flex-shrink:0;">
+                                    <div style="font-size:.7rem;color:#aaa;">In cart</div>
+                                    <div id="panel-cart-count" style="font-size:.95rem;font-weight:800;color:#333;"></div>
+                                </div>
+                            </div>
+                            <div style="padding:12px 16px;display:flex;gap:10px;background:#fff;">
+                                <a href="{{ route('cart.index') }}" style="flex:1;display:flex;align-items:center;justify-content:center;gap:6px;padding:10px;border:2px solid #D19C97;border-radius:10px;font-weight:700;font-size:.88rem;color:#D19C97;text-decoration:none;">
+                                    <i class="fa fa-shopping-bag"></i> View Cart
+                                </a>
+                                <a href="{{ route('checkout.index') }}" style="flex:1;display:flex;align-items:center;justify-content:center;gap:6px;padding:10px;background:#D19C97;border:2px solid #D19C97;border-radius:10px;font-weight:700;font-size:.88rem;color:#fff;text-decoration:none;">
+                                    <i class="fa fa-bolt"></i> Place Order
+                                </a>
+                            </div>
+                        </div>
                     </div>
                 </div>
 
@@ -528,115 +495,6 @@
         </div>
     </div>
 
-    <!-- Vendor Reviews Section -->
-    @if($product->vendor)
-    <div class="container mt-5">
-        <div class="row">
-            <div class="col-12">
-                <h4 class="font-weight-bold mb-4" style="border-left:4px solid var(--j-primary);padding-left:12px;">
-                    Seller Reviews — {{ $product->vendor->shop_name }}
-                </h4>
-            </div>
-        </div>
-
-        @if($vendorReviewCount > 0)
-        {{-- Rating summary --}}
-        <div class="row mb-4">
-            <div class="col-md-3 text-center mb-3">
-                <div style="font-size:3.5rem;font-weight:800;color:#f39c12;line-height:1;">{{ $vendorAvgRating }}</div>
-                <div style="margin:6px 0;">
-                    @for($s=1;$s<=5;$s++)
-                        <i class="fa fa-star" style="color:{{ $s <= round($vendorAvgRating) ? '#f39c12' : '#ddd' }};font-size:1rem;"></i>
-                    @endfor
-                </div>
-                <div style="font-size:.82rem;color:#888;">{{ $vendorReviewCount }} {{ Str::plural('review', $vendorReviewCount) }}</div>
-            </div>
-            <div class="col-md-9">
-                @foreach($vendorReviews as $vr)
-                <div class="mb-3 pb-3 border-bottom">
-                    <div class="d-flex align-items-center mb-1" style="gap:8px;">
-                        <div style="width:32px;height:32px;border-radius:50%;background:var(--j-primary);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:.85rem;flex-shrink:0;">
-                            {{ strtoupper(substr($vr->user->name ?? 'U', 0, 1)) }}
-                        </div>
-                        <div>
-                            <div style="font-size:.88rem;font-weight:600;color:#333;">{{ $vr->user->name ?? 'Customer' }}</div>
-                            <div>
-                                @for($s=1;$s<=5;$s++)
-                                    <i class="fa fa-star" style="color:{{ $s <= $vr->rating ? '#f39c12' : '#ddd' }};font-size:.7rem;"></i>
-                                @endfor
-                                <span style="font-size:.72rem;color:#aaa;margin-left:4px;">{{ $vr->created_at->diffForHumans() }}</span>
-                            </div>
-                        </div>
-                    </div>
-                    @if($vr->review)
-                    <p style="font-size:.88rem;color:#444;margin:6px 0 0 40px;line-height:1.6;">{{ $vr->review }}</p>
-                    @endif
-                    @if($vr->vendor_reply)
-                    <div style="margin-left:40px;margin-top:8px;background:#f0faf4;border-left:3px solid #27ae60;padding:8px 12px;border-radius:0 8px 8px 0;font-size:.82rem;">
-                        <strong style="color:#1b5e20;"><i class="fa fa-store mr-1"></i>{{ $product->vendor->shop_name }} replied:</strong>
-                        <p style="margin:4px 0 0;color:#333;">{{ $vr->vendor_reply }}</p>
-                    </div>
-                    @endif
-                </div>
-                @endforeach
-            </div>
-        </div>
-        @else
-        <p class="text-muted mb-4">No seller reviews yet. Be the first to review after your order arrives!</p>
-        @endif
-
-        {{-- Submit a vendor review (only for customers who ordered from this vendor) --}}
-        @auth
-        @php
-            $userOrderIds = \App\Models\Order::where('user_id', auth()->id())->pluck('id');
-            $canReview = $userOrderIds->isNotEmpty() &&
-                !\App\Models\VendorReview::where('vendor_id', $product->vendor_id)
-                    ->where('user_id', auth()->id())
-                    ->whereIn('order_id', $userOrderIds)
-                    ->exists();
-            $userOrderForReview = \App\Models\Order::where('user_id', auth()->id())->latest()->first();
-        @endphp
-        @if($canReview && $userOrderForReview)
-        <div class="card border-0 shadow-sm mt-2 mb-4">
-            <div class="card-body p-4">
-                <h6 class="font-weight-bold mb-3"><i class="fa fa-pen mr-2" style="color:var(--j-primary);"></i>Rate this Seller</h6>
-                <form method="POST" action="{{ route('vendor.review.store', $product->vendor_id) }}">
-                    @csrf
-                    <input type="hidden" name="order_id" value="{{ $userOrderForReview->id }}">
-                    <input type="hidden" name="product_id" value="{{ $product->id }}">
-
-                    <div class="mb-3">
-                        <label class="form-label fw-600">Your Rating</label>
-                        <div class="star-picker d-flex" style="gap:6px;font-size:1.6rem;cursor:pointer;">
-                            @for($s=1;$s<=5;$s++)
-                            <label style="cursor:pointer;margin:0;">
-                                <input type="radio" name="rating" value="{{ $s }}" required style="display:none;">
-                                <i class="fa fa-star star-icon" data-val="{{ $s }}" style="color:#ddd;transition:color .15s;"></i>
-                            </label>
-                            @endfor
-                        </div>
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label fw-600">Your Review <span class="text-muted fw-normal small">(optional)</span></label>
-                        <textarea class="form-control" name="review" rows="3" placeholder="How was your experience with this seller? Fast shipping? Good packaging?"></textarea>
-                    </div>
-                    <button type="submit" class="btn btn-primary px-4">Submit Review</button>
-                </form>
-            </div>
-        </div>
-        @elseif(!$canReview && $userOrderIds->isNotEmpty())
-        <div class="alert alert-success py-2" style="font-size:.88rem;">
-            <i class="fa fa-check-circle mr-1"></i> You've already reviewed this seller. Thank you!
-        </div>
-        @endif
-        @else
-        <div class="mb-4" style="font-size:.88rem;color:#888;">
-            <a href="{{ route('customer.login') }}" style="color:var(--j-primary);font-weight:600;">Sign in</a> after receiving your order to leave a seller review.
-        </div>
-        @endauth
-    </div>
-    @endif
-
     <!-- Related Products -->
     @if($relatedProducts->isNotEmpty())
     <div class="mt-4">
@@ -652,96 +510,135 @@
 
 @push('scripts')
 <script>
-/* ── Star picker for vendor review ── */
-document.querySelectorAll('.star-picker').forEach(function(picker) {
-    const icons = picker.querySelectorAll('.star-icon');
-    icons.forEach(function(icon) {
-        icon.addEventListener('mouseover', function() {
-            const val = parseInt(this.dataset.val);
-            icons.forEach(function(i) {
-                i.style.color = parseInt(i.dataset.val) <= val ? '#f39c12' : '#ddd';
-            });
-        });
-        icon.addEventListener('click', function() {
-            const val = parseInt(this.dataset.val);
-            const radio = picker.querySelectorAll('input[type=radio]');
-            radio[val-1].checked = true;
-            icons.forEach(function(i) {
-                i.style.color = parseInt(i.dataset.val) <= val ? '#f39c12' : '#ddd';
-            });
+$(document).ready(function () {
+
+    /* ══════════════════════════════════════
+       SIZE + ADD TO CART — jQuery, reliable
+       ══════════════════════════════════════ */
+
+    var selectedVid   = null;
+    var selectedLabel = '';
+    var isAdding      = false;
+    var hasVariants   = $('.jz-size-btn').length > 0;
+    var productId     = $('meta[name="atc-product-id"]').attr('content');
+    var csrfToken     = $('meta[name="csrf-token"]').attr('content');
+
+    // ── Size button click ──
+    $(document).on('click', '.jz-size-btn:not(.jz-oos)', function () {
+        $('.jz-size-btn').removeClass('jz-selected');
+        $(this).addClass('jz-selected');
+        selectedVid   = $(this).data('vid');
+        selectedLabel = $(this).data('label');
+
+        $('#size-hint').hide();
+        $('#size-chosen').css('display','flex');
+        $('#chosen-label').text(selectedLabel);
+        $('#atc-size-warn').hide();
+        $('#cart-success-panel').hide();
+
+        // Enable Add to Cart
+        $('#add-to-cart-button').prop('disabled', false)
+            .css({'background':'','border-color':''});
+
+        if (window.innerWidth < 768) {
+            setTimeout(function () {
+                document.getElementById('add-to-cart-button')
+                    .scrollIntoView({behavior:'smooth', block:'center'});
+            }, 200);
+        }
+    });
+
+    // ── Add to Cart click ──
+    $(document).on('click', '#add-to-cart-button', function () {
+        if (isAdding) return;
+
+        if (hasVariants && !selectedVid) {
+            $('#atc-size-warn').show();
+            var wrap = document.getElementById('step-size-wrap');
+            if (wrap) {
+                wrap.classList.remove('shake');
+                void wrap.offsetWidth;
+                wrap.classList.add('shake');
+                wrap.scrollIntoView({behavior:'smooth', block:'center'});
+            }
+            return;
+        }
+
+        isAdding = true;
+        var $btn = $(this);
+        $btn.prop('disabled', true);
+        $('#atc-label').text('Adding…');
+
+        var qty = parseInt($('#atc-qty').val()) || 1;
+
+        $.ajax({
+            url: '{{ route("cart.add") }}',
+            method: 'POST',
+            data: {
+                _token:     csrfToken,
+                product_id: productId,
+                quantity:   qty,
+                variant_id: selectedVid || ''
+            },
+            success: function (res) {
+                if (res.success) {
+                    $btn.prop('disabled', false)
+                        .css({background:'#27ae60', borderColor:'#27ae60'});
+                    $('#atc-label').text('✓ Added!');
+
+                    var count = parseInt(res.cart_count) || 1;
+                    $('a[href*="/cart"] .badge').text(count).show();
+
+                    $('#panel-size-label').text(selectedLabel ? 'Size: ' + selectedLabel : '');
+                    $('#panel-cart-count').text(count + ' item' + (count !== 1 ? 's' : ''));
+                    $('#cart-success-panel').show();
+                    document.getElementById('cart-success-panel')
+                        .scrollIntoView({behavior:'smooth', block:'nearest'});
+
+                    setTimeout(function () {
+                        $btn.css({background:'', borderColor:''});
+                        $('#atc-label').text('Add to Cart');
+                        isAdding = false;
+                    }, 2500);
+                } else {
+                    $btn.prop('disabled', false);
+                    $('#atc-label').text('Add to Cart');
+                    isAdding = false;
+                    alert(res.message || 'Could not add to cart.');
+                }
+            },
+            error: function (xhr) {
+                $btn.prop('disabled', false);
+                $('#atc-label').text('Add to Cart');
+                isAdding = false;
+                var msg = (xhr.responseJSON && xhr.responseJSON.message)
+                    ? xhr.responseJSON.message : 'Error. Please try again.';
+                alert(msg);
+            }
         });
     });
-    picker.addEventListener('mouseleave', function() {
-        const checked = picker.querySelector('input[type=radio]:checked');
-        const val = checked ? parseInt(checked.value) : 0;
-        icons.forEach(function(i) {
-            i.style.color = parseInt(i.dataset.val) <= val ? '#f39c12' : '#ddd';
+
+    // ── Qty stepper ──
+    $(document).on('click', '.btn-plus', function () {
+        var $i = $(this).closest('.quantity').find('input');
+        $i.val(Math.min(99, (parseInt($i.val()) || 1) + 1));
+    });
+    $(document).on('click', '.btn-minus', function () {
+        var $i = $(this).closest('.quantity').find('input');
+        $i.val(Math.max(1, (parseInt($i.val()) || 1) - 1));
+    });
+
+    // ── Star rating ──
+    $(document).on('click', '.star-btn', function () {
+        var v = $(this).data('val');
+        $('#rating-val').val(v);
+        $('.star-btn').each(function () {
+            $(this).toggleClass('fas', $(this).data('val') <= v)
+                   .toggleClass('far', $(this).data('val') >  v);
         });
     });
+
 });
-
-/* ── Qty stepper ── */
-$(document).on('click', '.btn-plus', function () {
-    var $i = $(this).closest('.quantity').find('input');
-    $i.val((parseInt($i.val()) || 1) + 1);
-});
-$(document).on('click', '.btn-minus', function () {
-    var $i = $(this).closest('.quantity').find('input');
-    var v  = parseInt($i.val()) || 1;
-    if (v > 1) $i.val(v - 1);
-});
-
-/* ── Star rating ── */
-$('.star-btn').on('click', function () {
-    var v = $(this).data('val');
-    $('#rating-val').val(v);
-    $('.star-btn').each(function () {
-        $(this).toggleClass('fas', $(this).data('val') <= v)
-               .toggleClass('far', $(this).data('val') >  v);
-    });
-});
-
-/* ── Size / Variant selection ── */
-$(document).on('click', '.size-btn:not(.size-btn-oos)', function () {
-    var variantId    = $(this).data('variant-id');
-    var variantLabel = $(this).data('variant-label');
-    var variantQty   = parseInt($(this).data('variant-qty')) || 0;
-
-    // Visually select
-    $('.size-btn').removeClass('size-btn-selected');
-    $(this).addClass('size-btn-selected');
-
-    // Check the hidden radio
-    $('input[name="variant_id"]').prop('checked', false);
-    $('#variant-' + variantId).prop('checked', true);
-
-    // Update label
-    $('#selected-size-label').text(variantLabel);
-
-    // Enable/disable Add to Cart
-    if (variantQty > 0) {
-        $('#add-to-cart-button').prop('disabled', false);
-        $('#select-size-message').hide();
-    } else {
-        $('#add-to-cart-button').prop('disabled', true);
-        $('#select-size-message').show();
-    }
-
-    // Cap max qty stepper to available stock
-    var $qtyInput = $('input[name="quantity"]');
-    var currentQty = parseInt($qtyInput.val()) || 1;
-    if (currentQty > variantQty) $qtyInput.val(Math.max(1, variantQty));
-});
-
-/* ── Init on load ── */
-(function () {
-    var hasVariants = $('.size-btn').length > 0;
-    if (!hasVariants) return;
-
-    // Start with Add to Cart disabled until size is picked
-    $('#add-to-cart-button').prop('disabled', true);
-    $('#select-size-message').show();
-})();
 </script>
 @endpush
 @endsection
