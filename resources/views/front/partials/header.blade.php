@@ -508,7 +508,7 @@
         <a href="{{ route('blog.index') }}" class="{{ request()->routeIs('blog.*') ? 'active' : '' }}">Blog</a>
         <a href="{{ route('contact') }}" class="{{ request()->routeIs('contact') ? 'active' : '' }}">Contact</a>
         <a href="{{ route('vendor.register') }}"
-           style="background:var(--j-primary);color:#fff!important;padding:6px 16px;border-radius:20px;font-weight:700;font-size:.82rem;margin-left:6px;white-space:nowrap;text-decoration:none;">
+           style="background:#D19C97;color:#fff!important;padding:6px 16px;border-radius:20px;font-weight:700;font-size:.82rem;margin-left:6px;white-space:nowrap;text-decoration:none;">
             <i class="fas fa-store mr-1"></i>Become a Supplier
         </a>
     </div>
