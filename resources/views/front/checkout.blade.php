@@ -14,7 +14,7 @@
         {{-- ═══════════════════════════════════════════════
              LEFT: Identity Gateway + Address + Coupon
         ════════════════════════════════════════════════ --}}
-        <div class="col-lg-8 mb-4">
+        <div class="col-lg-8 mb-4 checkout-form-col">
 
             {{-- Flash alerts --}}
             @if($errors->any())
@@ -260,7 +260,7 @@
         {{-- ═══════════════════════════════════════════════
              RIGHT: Summary + Payment
         ════════════════════════════════════════════════ --}}
-        <div class="col-lg-4 mb-5">
+        <div class="col-lg-4 mb-5 checkout-summary-col">
 
             {{-- Trust Badges --}}
             <div class="mb-3 p-3" style="background:#f8f9fa;border-radius:12px;border:1px solid #eee;">

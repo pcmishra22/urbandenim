@@ -51,7 +51,13 @@
         @endif
 
         <!-- Sidebar -->
-        <div class="col-lg-3 mb-4">
+        <div class="col-lg-3 mb-4 products-page-sidebar">
+            {{-- Mobile filter toggle button --}}
+            <button id="mobile-filter-toggle" onclick="toggleMobileFilters(this)" aria-expanded="false" aria-controls="filter-sidebar-collapse">
+                <span><i class="fa fa-sliders-h mr-2"></i>Filters</span>
+                <i class="fa fa-chevron-down"></i>
+            </button>
+            <div id="filter-sidebar-collapse" class="collapsed">
             <div class="j-section" style="position:sticky;top:80px;max-height:calc(100vh - 100px);overflow-y:auto;">
 
                 <style>
@@ -313,12 +319,13 @@
                 </script>
 
             </div>
+            </div>{{-- /filter-sidebar-collapse --}}
         </div>
 
         <!-- Products -->
         <div class="col-lg-9">
             <!-- Toolbar -->
-            <div class="d-flex align-items-center mb-3 gap-2 flex-wrap">
+            <div class="d-flex align-items-center mb-3 gap-2 flex-wrap products-toolbar">
                 <form action="{{ route('products.index') }}" method="GET" class="flex-grow-1 mr-2" style="max-width:380px;">
                     @foreach(request()->except(['search','page']) as $k=>$v)<input type="hidden" name="{{ $k }}" value="{{ $v }}">@endforeach
                     <div class="input-group">
@@ -386,6 +393,38 @@
 </div>
 
 @push('scripts')
+<script>
+/* Mobile filter toggle */
+function toggleMobileFilters(btn) {
+    var panel = document.getElementById('filter-sidebar-collapse');
+    var icon  = btn.querySelector('.fa-chevron-down');
+    var expanded = btn.getAttribute('aria-expanded') === 'true';
+    if (expanded) {
+        panel.classList.add('collapsed');
+        panel.classList.remove('expanded');
+        btn.setAttribute('aria-expanded', 'false');
+        if (icon) icon.style.transform = '';
+    } else {
+        panel.classList.remove('collapsed');
+        panel.classList.add('expanded');
+        btn.setAttribute('aria-expanded', 'true');
+        if (icon) icon.style.transform = 'rotate(180deg)';
+    }
+}
+/* On desktop (>991px) always show the filter sidebar */
+(function() {
+    function syncFilterVisibility() {
+        var panel = document.getElementById('filter-sidebar-collapse');
+        if (!panel) return;
+        if (window.innerWidth > 991) {
+            panel.classList.remove('collapsed');
+            panel.classList.remove('expanded');
+        }
+    }
+    syncFilterVisibility();
+    window.addEventListener('resize', syncFilterVisibility);
+})();
+</script>
 <script>
 (function () {
     'use strict';

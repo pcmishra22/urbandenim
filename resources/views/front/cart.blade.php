@@ -4,11 +4,65 @@
 @section('meta_robots', 'noindex, nofollow')
 @section('canonical', route('cart.index'))
 
+@push('styles')
+<style>
+/* ── Cart page: item row responsive layout ── */
+.j-cart-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: nowrap;
+    background: #fff;
+    border: 1.5px solid var(--j-border, #e5e5e5);
+    border-radius: 10px;
+    padding: 14px 16px;
+    margin-bottom: 12px;
+}
+@media (max-width: 575px) {
+    .j-cart-item { flex-wrap: wrap; gap: 10px; padding: 10px 12px; }
+    /* Row 1: image + name */
+    .j-cart-item .cart-img-wrap  { flex: 0 0 64px; }
+    .j-cart-item .cart-name-wrap { flex: 1 1 0; min-width: 0; }
+    /* Row 2: price + qty + total + remove — spread full width */
+    .j-cart-item .cart-controls-wrap {
+        flex: 0 0 100%;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding-top: 4px;
+        border-top: 1px solid #f0f0f0;
+    }
+    .j-cart-item .cart-controls-wrap .cart-price  { flex: 1; font-size: .82rem; font-weight: 700; }
+    .j-cart-item .cart-controls-wrap .quantity     { width: 88px !important; }
+    .j-cart-item .cart-controls-wrap .row-total    { flex: 1; font-size: .82rem; font-weight: 700; text-align: right; }
+    .j-cart-item .cart-controls-wrap .cart-remove  { flex-shrink: 0; }
+}
+/* Sticky mobile checkout bar */
+#cart-mobile-bar {
+    display: none;
+    position: fixed;
+    bottom: 0; left: 0; right: 0;
+    background: #fff;
+    border-top: 1px solid #e5e5e5;
+    padding: 10px 16px 14px;
+    z-index: 999;
+    box-shadow: 0 -4px 16px rgba(0,0,0,.08);
+}
+@media (max-width: 767px) {
+    #cart-mobile-bar { display: block; }
+    .cart-page-wrap  { padding-bottom: 80px !important; }
+}
+@supports (padding-bottom: env(safe-area-inset-bottom)) {
+    #cart-mobile-bar { padding-bottom: calc(14px + env(safe-area-inset-bottom)); }
+}
+</style>
+@endpush
+
 @section('content')
 @include('front.partials.design-system')
 @include('front.partials.page-banner', ['title' => 'Shopping Cart', 'breadcrumb' => 'Cart', 'showCategories' => false])
 
-<div class="container-fluid pb-5" style="background:#faf8f8;padding-top:20px;">
+<div class="container-fluid pb-5 cart-page-wrap" style="background:#faf8f8;padding-top:20px;">
     <div class="row px-xl-5">
 
         @if(session('success'))
@@ -95,7 +149,7 @@
             @endforeach
 
             <div class="mt-4">
-                <a href="{{ route('products.index') }}" class="btn btn-outline-dark px-4">
+                <a href="{{ route('products.index') }}" class="btn btn-outline-dark px-4 cart-continue-btn">
                     <i class="fa fa-arrow-left mr-2"></i>Continue Shopping
                 </a>
             </div>
