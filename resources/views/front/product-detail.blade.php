@@ -90,45 +90,31 @@
     }
 
     /* ─────────────────────────────────────
-       2. IMAGE ZOOM — hover zoom on desktop, tap-to-zoom on mobile
+       2. IMAGE ZOOM — hover on desktop, pinch & double-tap on mobile
     ───────────────────────────────────── */
 
-    /* The wrapper clips to its own bounds — zoom must escape it */
-    .pd-img-wrapper {
-        /* overflow stays hidden to avoid layout shift; we use transform-origin trick */
-        overflow: hidden;
-    }
-    /* The aspect container is the zoom host */
-    .pd-img-aspect {
-        overflow: hidden;
-    }
+    .pd-img-wrapper { overflow: hidden; }
+    .pd-img-aspect  { overflow: hidden; cursor: zoom-in; }
+
     #pd-main-img {
-        transition: transform .35s ease;
-        cursor: zoom-in;
         display: block;
-        width: 100%;
-        height: 100%;
+        width: 100%; height: 100%;
         object-fit: cover;
-        transform-origin: center center; /* updated dynamically on mousemove */
+        transform-origin: center center;
+        transition: transform .3s ease;
+        cursor: zoom-in;
+        user-select: none;
+        -webkit-user-select: none;
     }
-    /* Desktop: zoom on hover */
+    /* Desktop: hover zoom follows mouse */
     @media (min-width: 768px) {
-        .pd-img-aspect:hover #pd-main-img {
-            transform: scale(2.2);
-            cursor: zoom-out;
-        }
-        .pd-img-aspect { cursor: zoom-in; }
+        .pd-img-aspect.zoomed #pd-main-img { cursor: zoom-out; }
     }
-    /* Mobile: no hover zoom — tap cycles through images instead */
+    /* Mobile: show grab cursor when zoomed in */
     @media (max-width: 767px) {
-        #pd-main-img {
-            cursor: default;
-            transform: none !important;
-            transition: none;
-        }
-        .pd-img-wrapper {
-            touch-action: pan-y;
-        }
+        .pd-img-aspect { touch-action: none; } /* we handle touch manually */
+        .pd-img-aspect.zoomed { cursor: grab; }
+        .pd-img-wrapper { touch-action: none; }
     }
 
     .pd-thumb { flex-shrink: 0; border-radius: 8px; overflow: hidden; border: 2px solid transparent; cursor: pointer; transition: border-color .2s, box-shadow .2s; aspect-ratio: 1; }
@@ -1526,8 +1512,10 @@
             });
         });
 
-        // ── Auto-advance thumbnails every 3 s when idle ──
+        // ── Auto-advance thumbnails every 5 s when idle ──
         var autoTimer;
+        var userInteracted = false; // once user taps, auto stops for good on this page
+
         function getActiveIndex() {
             var idx = 0;
             thumbs.forEach(function(t, i){ if(t.classList.contains('active')) idx = i; });
@@ -1536,62 +1524,244 @@
         function autoAdvance() {
             var cur  = getActiveIndex();
             var next = (cur + 1) % thumbs.length;
-            if (thumbs[next]) thumbs[next].click();
+            if (!thumbs[next]) return;
+            // advance silently (bypass click handler)
+            thumbs.forEach(function(t){ t.classList.remove('active'); });
+            thumbs[next].classList.add('active');
+            if (mainImg) {
+                mainImg.style.transition = 'opacity .18s ease';
+                mainImg.style.opacity = '0';
+                setTimeout(function() {
+                    mainImg.src = thumbs[next].dataset.img;
+                    mainImg.style.opacity = '1';
+                }, 140);
+            }
+            // scroll thumb into view
+            if (track) {
+                var th = thumbs[next];
+                var tL = th.offsetLeft, tR = tL + th.offsetWidth;
+                var trL = track.scrollLeft, trR = trL + track.clientWidth;
+                if (tL < trL) track.scrollBy({ left: tL - trL - 8, behavior: 'smooth' });
+                else if (tR > trR) track.scrollBy({ left: tR - trR + 8, behavior: 'smooth' });
+            }
         }
         function startAuto() {
-            if (thumbs.length > 1) autoTimer = setInterval(autoAdvance, 3000);
+            stopAuto();
+            if (thumbs.length > 1 && !userInteracted) {
+                autoTimer = setInterval(autoAdvance, 5000);
+            }
         }
-        function stopAuto()  { clearInterval(autoTimer); }
+        function stopAuto() { clearInterval(autoTimer); autoTimer = null; }
 
-        // Pause auto-scroll when user interacts
+        // Thumbnail click — user took over, stop auto permanently
         thumbs.forEach(function(t) {
-            t.addEventListener('click', function() { stopAuto(); startAuto(); });
+            t.addEventListener('click', function() {
+                userInteracted = true;
+                stopAuto();
+            });
         });
+
+        // Desktop hover: pause on strip hover, resume on leave (only if not interacted)
         if (track) {
             track.addEventListener('mouseenter', stopAuto);
-            track.addEventListener('mouseleave', startAuto);
+            track.addEventListener('mouseleave', function() {
+                if (!userInteracted) startAuto();
+            });
         }
         startAuto();
 
-        // ── Touch/swipe on main image to advance (mobile) ──
+        // ── Touch/swipe on main image to change photo (mobile) ──
         var touchStartX = 0;
+        var touchStartY = 0;
+        var isSwiping   = false;
         var imgWrap = document.querySelector('.pd-img-aspect');
         if (imgWrap) {
             imgWrap.addEventListener('touchstart', function(e) {
                 touchStartX = e.changedTouches[0].clientX;
+                touchStartY = e.changedTouches[0].clientY;
+                isSwiping   = false;
             }, { passive: true });
+
+            imgWrap.addEventListener('touchmove', function(e) {
+                var dx = Math.abs(e.changedTouches[0].clientX - touchStartX);
+                var dy = Math.abs(e.changedTouches[0].clientY - touchStartY);
+                if (dx > dy && dx > 10) isSwiping = true;
+            }, { passive: true });
+
             imgWrap.addEventListener('touchend', function(e) {
+                if (!isSwiping) return; // vertical scroll or tap — ignore
+                // Don't swipe images when zoomed in (zoom JS handles touch then)
+                if (imgWrap.classList.contains('zoomed')) { isSwiping = false; return; }
                 var dx = e.changedTouches[0].clientX - touchStartX;
-                if (Math.abs(dx) > 40) {
+                if (Math.abs(dx) > 30) {
+                    userInteracted = true;
+                    stopAuto();
                     var cur  = getActiveIndex();
                     var next = dx < 0
                         ? (cur + 1) % thumbs.length
                         : (cur - 1 + thumbs.length) % thumbs.length;
-                    stopAuto();
                     if (thumbs[next]) thumbs[next].click();
-                    startAuto();
                 }
+                isSwiping = false;
             }, { passive: true });
         }
     })();
 
-    /* ── Hover zoom: track mouse position for transform-origin ── */
+    /* ── Unified Image Zoom: desktop hover + mobile double-tap + pinch ── */
     (function() {
-        var aspect  = document.querySelector('.pd-img-aspect');
-        var img     = document.getElementById('pd-main-img');
+        var aspect = document.querySelector('.pd-img-aspect');
+        var img    = document.getElementById('pd-main-img');
         if (!aspect || !img) return;
-        // Only on desktop
-        if (window.matchMedia('(max-width: 767px)').matches) return;
 
-        aspect.addEventListener('mousemove', function(e) {
+        var isMobile = window.matchMedia('(max-width: 767px)').matches;
+        var ZOOM_SCALE_DESKTOP = 2.4;
+        var ZOOM_SCALE_MOBILE  = 2.8;
+
+        /* ── DESKTOP: hover to zoom, mouse tracks origin ── */
+        if (!isMobile) {
+            var desktopZoomed = false;
+
+            aspect.addEventListener('mousemove', function(e) {
+                var rect = aspect.getBoundingClientRect();
+                var x = ((e.clientX - rect.left) / rect.width  * 100).toFixed(2);
+                var y = ((e.clientY - rect.top)  / rect.height * 100).toFixed(2);
+                img.style.transformOrigin = x + '% ' + y + '%';
+                if (desktopZoomed) return;
+                desktopZoomed = true;
+                img.style.transform = 'scale(' + ZOOM_SCALE_DESKTOP + ')';
+                aspect.classList.add('zoomed');
+            });
+            aspect.addEventListener('mouseleave', function() {
+                desktopZoomed = false;
+                img.style.transform = 'scale(1)';
+                img.style.transformOrigin = 'center center';
+                aspect.classList.remove('zoomed');
+            });
+            return; // desktop done
+        }
+
+        /* ── MOBILE: double-tap to toggle zoom + pinch-to-zoom + drag when zoomed ── */
+        var mobileZoomed  = false;
+        var currentScale  = 1;
+        var originX       = 50; // % from left
+        var originY       = 50; // % from top
+        var lastTap       = 0;
+        var tapTimer      = null;
+
+        // Pinch state
+        var pinchStartDist = 0;
+        var pinchStartScale = 1;
+        var activeTouches  = 0;
+
+        // Drag state (when zoomed)
+        var dragStartX = 0, dragStartY = 0;
+        var imgTransX  = 0, imgTransY  = 0;
+        var dragStartTransX = 0, dragStartTransY = 0;
+        var isDragging = false;
+
+        function applyTransform(scale, ox, oy, tx, ty) {
+            img.style.transformOrigin = ox + '% ' + oy + '%';
+            img.style.transform = 'scale(' + scale + ') translate(' + tx + 'px,' + ty + 'px)';
+        }
+        function resetZoom() {
+            mobileZoomed = false;
+            currentScale = 1;
+            originX = 50; originY = 50;
+            imgTransX = 0; imgTransY = 0;
+            img.style.transition = 'transform .3s ease';
+            applyTransform(1, 50, 50, 0, 0);
+            aspect.classList.remove('zoomed');
+            // re-enable swipe after a tick
+            setTimeout(function() { aspect.style.touchAction = 'none'; }, 350);
+        }
+        function zoomInAt(px, py) {
             var rect = aspect.getBoundingClientRect();
-            var x = ((e.clientX - rect.left) / rect.width  * 100).toFixed(1);
-            var y = ((e.clientY - rect.top)  / rect.height * 100).toFixed(1);
-            img.style.transformOrigin = x + '% ' + y + '%';
-        });
-        aspect.addEventListener('mouseleave', function() {
-            img.style.transformOrigin = 'center center';
-        });
+            originX  = ((px - rect.left) / rect.width  * 100);
+            originY  = ((py - rect.top)  / rect.height * 100);
+            currentScale = ZOOM_SCALE_MOBILE;
+            imgTransX = 0; imgTransY = 0;
+            mobileZoomed = true;
+            img.style.transition = 'transform .3s ease';
+            applyTransform(currentScale, originX, originY, 0, 0);
+            aspect.classList.add('zoomed');
+        }
+
+        /* Double-tap detection */
+        aspect.addEventListener('touchend', function(e) {
+            if (activeTouches > 1) return; // ignore pinch lift
+            var now = Date.now();
+            var touch = e.changedTouches[0];
+            if (now - lastTap < 300) {
+                // double tap
+                clearTimeout(tapTimer);
+                e.preventDefault();
+                if (mobileZoomed) {
+                    resetZoom();
+                } else {
+                    zoomInAt(touch.clientX, touch.clientY);
+                }
+                lastTap = 0;
+            } else {
+                lastTap = now;
+            }
+        }, { passive: false });
+
+        /* Pinch-to-zoom */
+        function getTouchDist(touches) {
+            var dx = touches[0].clientX - touches[1].clientX;
+            var dy = touches[0].clientY - touches[1].clientY;
+            return Math.sqrt(dx * dx + dy * dy);
+        }
+        aspect.addEventListener('touchstart', function(e) {
+            activeTouches = e.touches.length;
+            if (e.touches.length === 2) {
+                pinchStartDist  = getTouchDist(e.touches);
+                pinchStartScale = currentScale;
+                img.style.transition = 'none';
+            } else if (e.touches.length === 1 && mobileZoomed) {
+                // start drag
+                isDragging    = true;
+                dragStartX    = e.touches[0].clientX;
+                dragStartY    = e.touches[0].clientY;
+                dragStartTransX = imgTransX;
+                dragStartTransY = imgTransY;
+                img.style.transition = 'none';
+            }
+        }, { passive: true });
+
+        aspect.addEventListener('touchmove', function(e) {
+            activeTouches = e.touches.length;
+            if (e.touches.length === 2) {
+                e.preventDefault();
+                var dist  = getTouchDist(e.touches);
+                var scale = Math.min(4, Math.max(1, pinchStartScale * (dist / pinchStartDist)));
+                currentScale  = scale;
+                mobileZoomed  = scale > 1.05;
+                // set origin to midpoint of two fingers
+                var rect = aspect.getBoundingClientRect();
+                var mx = ((e.touches[0].clientX + e.touches[1].clientX) / 2 - rect.left) / rect.width * 100;
+                var my = ((e.touches[0].clientY + e.touches[1].clientY) / 2 - rect.top)  / rect.height * 100;
+                originX = mx; originY = my;
+                applyTransform(scale, mx, my, imgTransX, imgTransY);
+                if (mobileZoomed) aspect.classList.add('zoomed');
+                else aspect.classList.remove('zoomed');
+            } else if (e.touches.length === 1 && isDragging && mobileZoomed) {
+                e.preventDefault();
+                var ddx = (e.touches[0].clientX - dragStartX) / currentScale;
+                var ddy = (e.touches[0].clientY - dragStartY) / currentScale;
+                imgTransX = dragStartTransX + ddx;
+                imgTransY = dragStartTransY + ddy;
+                applyTransform(currentScale, originX, originY, imgTransX, imgTransY);
+            }
+        }, { passive: false });
+
+        aspect.addEventListener('touchend', function(e) {
+            activeTouches = e.touches.length;
+            isDragging = false;
+            // Snap back if scale dropped below threshold
+            if (currentScale < 1.05) resetZoom();
+        }, { passive: true });
+
     })();
 
     /* ── Color selection (FIX #5) ── */
