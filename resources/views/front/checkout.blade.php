@@ -52,7 +52,8 @@
                         </div>
                     </div>
                 </div>
-            @else
+            @endauth
+            @guest
                 {{-- ── IDENTITY GATEWAY (inline, no separate page) ── --}}
                 <div class="j-section mb-3" id="identity-gateway"
                      style="background:#fff;border:1px solid #ececec;border-radius:12px;">
@@ -106,7 +107,7 @@
                         </small>
                     </div>
                 </div>
-            @endauth
+            @endguest
 
             {{-- ─────────────────────────────────────────────────────────
                  CHECKOUT FORM (hidden for guests until identity resolved)
@@ -621,7 +622,7 @@
     /* ═══════════════════════════════════════════════════════════════
        IDENTITY GATEWAY (guests only)
        Runs only when the user is not authenticated.
-       @auth block in Blade already hides #identity-gateway for logged-in users.
+       The auth block in Blade already hides #identity-gateway for logged-in users.
     ═══════════════════════════════════════════════════════════════ */
     @guest
     var $gateway      = $('#identity-gateway');
