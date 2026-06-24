@@ -1,9 +1,58 @@
 @extends('layouts.eshopper')
-@section('title', 'Frequently Asked Questions — Jeanzo')
-@section('meta_description', 'Got questions about Jeanzo? Find answers about shipping, returns, sizing, payment methods, exchanges and more in our FAQ page.')
+@section('title', 'Frequently Asked Questions — Jeanzo India')
+@section('meta_description', 'Got questions about Jeanzo? Find answers about shipping, returns, sizing, COD, payment methods, exchanges and 7-day return policy.')
 @section('canonical', route('faq'))
-@section('og_title', 'FAQs — Jeanzo Denim')
-@section('og_description', 'Answers to common questions about orders, shipping, returns, sizing and payment at Jeanzo.')
+@section('og_title', 'FAQs — Jeanzo Denim India')
+@section('og_description', 'Answers to common questions about orders, shipping, returns, sizing and payment at Jeanzo India.')
+
+@push('json_ld')
+<script type="application/ld+json">
+{
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    "name": "Frequently Asked Questions — Jeanzo India",
+    "url": "{{ route('faq') }}",
+    "mainEntity": [
+        {
+            "@type": "Question",
+            "name": "Does Jeanzo offer Cash on Delivery (COD)?",
+            "acceptedAnswer": { "@type": "Answer", "text": "Yes! Jeanzo offers Cash on Delivery (COD) across India. You pay when your order arrives — no advance payment needed." }
+        },
+        {
+            "@type": "Question",
+            "name": "What is Jeanzo's return policy?",
+            "acceptedAnswer": { "@type": "Answer", "text": "Jeanzo offers a 7-day easy return policy. If you are not satisfied with your order, you can request a return within 7 days of delivery." }
+        },
+        {
+            "@type": "Question",
+            "name": "How long does delivery take?",
+            "acceptedAnswer": { "@type": "Answer", "text": "Most orders are delivered within 5-7 business days across India. Express delivery options may be available for select pin codes." }
+        },
+        {
+            "@type": "Question",
+            "name": "Is shipping free at Jeanzo?",
+            "acceptedAnswer": { "@type": "Answer", "text": "Yes, Jeanzo offers free shipping on all orders above ₹500 across India." }
+        },
+        {
+            "@type": "Question",
+            "name": "What jeans fits does Jeanzo offer?",
+            "acceptedAnswer": { "@type": "Answer", "text": "Jeanzo offers Slim Fit, Straight Fit, Regular Fit, Wide Leg, Bootcut, and Skinny jeans for men. All styles are available in various washes and sizes." }
+        },
+        {
+            "@type": "Question",
+            "name": "What payment methods does Jeanzo accept?",
+            "acceptedAnswer": { "@type": "Answer", "text": "Jeanzo accepts Cash on Delivery (COD), UPI (Google Pay, PhonePe, BHIM), Net Banking, Credit Card, and Debit Card." }
+        },
+        {
+            "@type": "Question",
+            "name": "How do I find my correct jean size at Jeanzo?",
+            "acceptedAnswer": { "@type": "Answer", "text": "Each product page at Jeanzo has a size chart guide. Measure your waist and inseam and match it to our size chart. If in doubt, our customer support is happy to help." }
+        }
+    ]
+}
+</script>
+@endpush
+
 @section('content')
 
 <div class="container-fluid px-xl-5 pt-4 pb-5" style="background:#faf8f8;">

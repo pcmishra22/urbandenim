@@ -1,10 +1,36 @@
 @extends('layouts.eshopper')
 
 @section('title', 'Shop All Jeans — Men\'s & Women\'s Denim | Jeanzo')
-@section('meta_description', 'Shop all premium denim jeans for men and women at Jeanzo. Wide leg, high rise, slim fit, straight fit and relaxed fit styles. Fast delivery across India.')
+@section('meta_description', 'Shop premium denim jeans for men and women at Jeanzo. Wide leg, high rise, slim fit, straight fit and relaxed fit styles. Free shipping & COD. Easy 7-day returns across India.')
 @section('canonical', route('products.index'))
 @section('og_title', 'Shop All Jeans — Men\'s & Women\'s Denim | Jeanzo')
-@section('og_description', 'Shop all premium denim jeans for men and women at Jeanzo. Wide leg, high rise, slim fit and relaxed fit styles. Fast delivery across India.')
+@section('og_description', 'Shop premium denim jeans for men and women at Jeanzo. Wide leg, high rise, slim fit and relaxed fit styles. Free shipping & COD across India.')
+
+@push('json_ld')
+<script type="application/ld+json">
+{
+    "@context": "https://schema.org",
+    "@graph": [
+        {
+            "@type": "CollectionPage",
+            "@id": "{{ route('products.index') }}#webpage",
+            "url": "{{ route('products.index') }}",
+            "name": "Shop All Jeans — Men's & Women's Denim | Jeanzo",
+            "description": "Shop all premium denim jeans for men and women at Jeanzo.",
+            "isPartOf": { "@id": "https://jeanzo.in/#website" },
+            "inLanguage": "en-IN",
+            "breadcrumb": {
+                "@type": "BreadcrumbList",
+                "itemListElement": [
+                    { "@type": "ListItem", "position": 1, "name": "Home",    "item": "https://jeanzo.in/" },
+                    { "@type": "ListItem", "position": 2, "name": "Shop",    "item": "{{ route('products.index') }}" }
+                ]
+            }
+        }
+    ]
+}
+</script>
+@endpush
 
 @section('content')
 @include('front.partials.design-system')

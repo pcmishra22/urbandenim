@@ -1,9 +1,36 @@
 @extends('layouts.eshopper')
-@section('title', 'About Us — Jeanzo | Premium Denim Brand India')
-@section('meta_description', 'Learn about Jeanzo — India\'s premium denim brand for men and women. Quality jeans crafted for every fit and occasion. Fast delivery, easy returns.')
+@section('title', 'About Jeanzo — Premium Denim Jeans Brand India')
+@section('meta_description', 'Learn about Jeanzo — India\'s premium denim brand for men. Quality jeans in slim fit, straight fit, wide leg and more. COD available. Fast delivery. Easy 7-day returns.')
 @section('canonical', route('about'))
 @section('og_title', 'About Jeanzo — Premium Denim Brand India')
-@section('og_description', 'India\'s premium denim brand for men and women. Quality jeans crafted for every fit and occasion.')
+@section('og_description', 'India\'s premium denim brand for men. Quality jeans crafted for every fit and occasion. COD, free shipping & easy returns.')
+
+@push('json_ld')
+<script type="application/ld+json">
+{
+    "@context": "https://schema.org",
+    "@graph": [
+        {
+            "@type": "AboutPage",
+            "@id": "{{ route('about') }}#webpage",
+            "url": "{{ route('about') }}",
+            "name": "About Jeanzo — Premium Denim Jeans Brand India",
+            "description": "Jeanzo is India's premium denim brand for men and women.",
+            "isPartOf": { "@id": "https://jeanzo.in/#website" },
+            "about": { "@id": "https://jeanzo.in/#organization" },
+            "inLanguage": "en-IN",
+            "breadcrumb": {
+                "@type": "BreadcrumbList",
+                "itemListElement": [
+                    { "@type": "ListItem", "position": 1, "name": "Home",     "item": "https://jeanzo.in/" },
+                    { "@type": "ListItem", "position": 2, "name": "About Us", "item": "{{ route('about') }}" }
+                ]
+            }
+        }
+    ]
+}
+</script>
+@endpush
 
 @section('content')
     <!-- Page Header Start -->
