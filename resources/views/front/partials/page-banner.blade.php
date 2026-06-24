@@ -43,7 +43,7 @@
                  style="width:calc(100% - 30px);z-index:999;">
                 <div class="navbar-nav w-100 overflow-hidden" style="height:{{ $bannerHeight }};">
                     @forelse($navCategories as $cat)
-                        <a href="{{ route('products.index', ['category' => $cat->id]) }}"
+                        <a href="{{ ($cat->slug ? url('/'. $cat->slug) : route('products.index', ['category' => $cat->id])) }}"
                            class="nav-item nav-link {{ request('category') == $cat->id ? 'active' : '' }}">
                             {{ $cat->name }}
                         </a>

@@ -96,9 +96,24 @@
         transition: transform .4s ease;
         cursor: zoom-in;
     }
-    #pd-main-img:hover {
-        transform: scale(1.6);  /* increased from 1.3 to 1.6 */
-        cursor: zoom-out;
+    /* Desktop only — zoom on hover */
+    @media (min-width: 768px) {
+        #pd-main-img:hover {
+            transform: scale(1.6);
+            cursor: zoom-out;
+        }
+    }
+    /* Mobile — no zoom, restore normal page scroll */
+    @media (max-width: 767px) {
+        #pd-main-img {
+            cursor: default;
+            transform: none !important;
+            transition: none;
+        }
+        .pd-img-wrapper {
+            overflow: hidden !important;
+            touch-action: pan-y;
+        }
     }
 
     .pd-thumb { flex-shrink: 0; border-radius: 8px; overflow: hidden; border: 2px solid transparent; cursor: pointer; transition: border-color .2s, box-shadow .2s; aspect-ratio: 1; }

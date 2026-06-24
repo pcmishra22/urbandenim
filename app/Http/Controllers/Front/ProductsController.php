@@ -102,4 +102,29 @@ class ProductsController extends Controller
 
         return $query;
     }
+
+    // ─────────────────────────────────────────────────────────────────────────
+    // SEO-friendly category URL  →  /{category-slug}
+    // e.g. /mens-regular-fit-jeans, /womens-slim-fit-jeans
+    // Resolves category by slug, then renders the same products view with
+    // the category pre-filtered and a proper canonical URL set.
+    // Also handles legacy ?category=ID redirects: if someone lands on
+    // /products?category=5, the sidebar filter links will use slug URLs.
+    // ─────────────────────────────────────────────────────────────────────────
+    public function bySlug(string $categorySlug, Request $request)
+    {
+        $category = Category::where('slug', $categorySlug)
+            ->where('is_active', true)
+            ->firstOrFail();
+
+        // Inject the category ID into the request so buildQuery picks it up
+        $request->merge(['category' => $category->id]);
+
+        $products   = $this->buildQuery($request)->paginate(self::PER_PAGE)->withQueryString();
+        $brands     = Brand::has('products')->get();
+        $categories = Category::where('is_active', true)->withCount('products')->get();
+
+        // Pass category info so the view can set proper SEO tags & page title
+        return view('front.products', compact('products', 'brands', 'categories', 'category'));
+    }
 }

@@ -1,10 +1,191 @@
 @extends('layouts.eshopper')
 
-@section('title', 'Shop All Jeans — Men\'s & Women\'s Denim | Jeanzo')
-@section('meta_description', 'Shop all premium denim jeans for men and women at Jeanzo. Wide leg, high rise, slim fit, straight fit and relaxed fit styles. Fast delivery across India.')
-@section('canonical', route('products.index'))
-@section('og_title', 'Shop All Jeans — Men\'s & Women\'s Denim | Jeanzo')
-@section('og_description', 'Shop all premium denim jeans for men and women at Jeanzo. Wide leg, high rise, slim fit and relaxed fit styles. Fast delivery across India.')
+@php
+    $seoCategory = $category ?? null;
+    $pageTitle       = $seoCategory
+        ? ($seoCategory->meta_title ?: $seoCategory->name . ' — Premium Denim Jeans | Jeanzo')
+        : "Shop All Jeans — Men's & Women's Denim | Jeanzo";
+    $pageDescription = $seoCategory
+        ? ($seoCategory->meta_description ?: 'Shop ' . $seoCategory->name . ' at Jeanzo. Premium denim, fast delivery across India.')
+        : 'Shop all premium denim jeans for men and women at Jeanzo. Wide leg, high rise, slim fit, straight fit and relaxed fit styles. Fast delivery across India.';
+    $pageCanonical   = $seoCategory
+        ? url('/' . $seoCategory->slug)
+        : route('products.index');
+@endphp
+
+@section('title', $pageTitle)
+@section('meta_description', $pageDescription)
+@section('canonical', $pageCanonical)
+@section('og_title', $pageTitle)
+@section('og_description', $pageDescription)
+
+@push('styles')
+<style>
+/* ============================================================
+   PRODUCTS PAGE — Mobile Responsive
+   ============================================================ */
+
+/* ── Mobile filter toggle button ── */
+#mobile-filter-toggle {
+    display: none;
+    width: 100%;
+    background: #fff;
+    border: 1.5px solid var(--j-border, #e5e5e5);
+    border-radius: 10px;
+    padding: 12px 16px;
+    font-size: .9rem;
+    font-weight: 700;
+    color: var(--j-dark, #2d2d2d);
+    cursor: pointer;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 10px;
+    box-shadow: 0 1px 4px rgba(0,0,0,.06);
+}
+#mobile-filter-toggle .fa-chevron-down {
+    transition: transform .22s;
+    font-size: .75rem;
+    color: var(--j-muted, #888);
+}
+#mobile-filter-toggle[aria-expanded="true"] .fa-chevron-down {
+    transform: rotate(180deg);
+}
+
+/* ── Filter sidebar collapse (mobile) ── */
+#filter-sidebar-collapse.collapsed {
+    display: none;
+}
+#filter-sidebar-collapse.expanded,
+#filter-sidebar-collapse:not(.collapsed) {
+    display: block;
+}
+
+/* ── Toolbar: search + sort on mobile ── */
+.products-toolbar {
+    gap: 8px;
+}
+.products-toolbar form {
+    min-width: 0;
+}
+
+/* ── Product grid ── */
+#products-container .col-lg-4 {
+    padding-left: 8px;
+    padding-right: 8px;
+}
+
+/* ── Active filter badges wrap ── */
+.j-badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 4px 10px;
+    border-radius: 20px;
+    font-size: .75rem;
+    font-weight: 600;
+    white-space: nowrap;
+}
+
+/* ============================================================
+   TABLET (≤991px) — sidebar goes to top, full-width
+   ============================================================ */
+@media (max-width: 991px) {
+    #mobile-filter-toggle {
+        display: flex;
+    }
+    /* Sidebar takes full width above products */
+    .products-page-sidebar {
+        flex: 0 0 100%;
+        max-width: 100%;
+        padding-left: 15px;
+        padding-right: 15px;
+    }
+    /* Products column takes full width */
+    .col-lg-9 {
+        flex: 0 0 100%;
+        max-width: 100%;
+    }
+    /* Sticky sidebar scroll not needed on mobile */
+    .products-page-sidebar .j-section {
+        position: static !important;
+        max-height: none !important;
+        overflow-y: visible !important;
+    }
+    /* Toolbar: search takes full width, sort next to it */
+    .products-toolbar form {
+        max-width: 100% !important;
+        flex: 1 1 auto;
+    }
+    .products-toolbar .dropdown {
+        flex-shrink: 0;
+    }
+}
+
+/* ============================================================
+   MOBILE (≤575px) — 2-column product grid, tighter spacing
+   ============================================================ */
+@media (max-width: 575px) {
+    /* Page padding tighter */
+    .container-fluid.px-xl-5.py-4 {
+        padding-left: 10px !important;
+        padding-right: 10px !important;
+        padding-top: 12px !important;
+    }
+
+    /* SEO copy block — smaller font */
+    .col-12 > div[style*="border-radius:12px"] h2 {
+        font-size: 1rem !important;
+    }
+    .col-12 > div[style*="border-radius:12px"] p {
+        font-size: .83rem !important;
+    }
+
+    /* Toolbar stacks: search on top, sort below */
+    .products-toolbar {
+        flex-direction: column;
+        align-items: stretch !important;
+    }
+    .products-toolbar form {
+        max-width: 100% !important;
+        margin-right: 0 !important;
+    }
+    .products-toolbar .dropdown {
+        align-self: flex-end;
+    }
+
+    /* Product grid — 2 columns on mobile */
+    #products-container > .col-lg-4 {
+        flex: 0 0 50%;
+        max-width: 50%;
+        padding-left: 5px;
+        padding-right: 5px;
+        margin-bottom: 0;
+    }
+    #products-container {
+        margin-left: -5px;
+        margin-right: -5px;
+    }
+
+    /* Sentinel + end-of-list text */
+    #products-scroll-sentinel {
+        padding: 12px 0 !important;
+    }
+}
+
+/* ============================================================
+   TINY SCREENS (≤380px) — even tighter
+   ============================================================ */
+@media (max-width: 380px) {
+    .products-toolbar .btn {
+        font-size: .78rem;
+        padding: 6px 10px;
+    }
+    #products-container > .col-lg-4 {
+        flex: 0 0 50%;
+        max-width: 50%;
+    }
+}
+</style>
+@endpush
 
 @section('content')
 @include('front.partials.design-system')
@@ -171,7 +352,7 @@
                         @if($top->children->isNotEmpty())
                             {{-- Top-level parent with children --}}
                             @php $topTotal = $getCatTotalCount($top); @endphp
-                            <a href="{{ route('products.index', array_merge(request()->except('page'), ['category' => $top->id])) }}"
+                            <a href="{{ ($top->slug ? url('/'. $top->slug) : route('products.index', ['category' => $top->id])) }}"
                                class="cat-tree-item {{ request('category')==$top->id ? 'active' : '' }}">
                                 <span>{{ $top->name }}</span>
                                 @if($topTotal > 0)<span class="cat-count">{{ $topTotal }}</span>@endif
@@ -187,7 +368,7 @@
                                         <div class="cat-children">
                                             @foreach($visibleGrandchildren as $child)
                                             @php $childTotal = $getCatTotalCount($child); @endphp
-                                            <a href="{{ route('products.index', array_merge(request()->except('page'), ['category' => $child->id])) }}"
+                                            <a href="{{ ($child->slug ? url('/'. $child->slug) : route('products.index', ['category' => $child->id])) }}"
                                                class="cat-tree-item {{ request('category')==$child->id ? 'active' : '' }}">
                                                 <span>{{ $child->name }}</span>
                                                 @if($childTotal > 0)<span class="cat-count">{{ $childTotal }}</span>@endif
@@ -197,7 +378,7 @@
                                     @elseif(isset($catsWithProductsSet[$group->id]))
                                         @php $groupTotal = $getCatTotalCount($group); @endphp
                                         <div class="cat-children">
-                                            <a href="{{ route('products.index', array_merge(request()->except('page'), ['category' => $group->id])) }}"
+                                            <a href="{{ ($group->slug ? url('/'. $group->slug) : route('products.index', ['category' => $group->id])) }}"
                                                class="cat-tree-item {{ request('category')==$group->id ? 'active' : '' }}">
                                                 <span>{{ $group->name }}</span>
                                                 @if($groupTotal > 0)<span class="cat-count">{{ $groupTotal }}</span>@endif
@@ -207,7 +388,7 @@
                                 @elseif(isset($catsWithProductsSet[$group->id]))
                                     @php $groupTotal = $getCatTotalCount($group); @endphp
                                     <div class="cat-children">
-                                        <a href="{{ route('products.index', array_merge(request()->except('page'), ['category' => $group->id])) }}"
+                                        <a href="{{ ($group->slug ? url('/'. $group->slug) : route('products.index', ['category' => $group->id])) }}"
                                            class="cat-tree-item {{ request('category')==$group->id ? 'active' : '' }}">
                                             <span>{{ $group->name }}</span>
                                             @if($groupTotal > 0)<span class="cat-count">{{ $groupTotal }}</span>@endif
@@ -217,7 +398,7 @@
                             @endforeach
                         @elseif(isset($catsWithProductsSet[$top->id]))
                             @php $topTotal = $getCatTotalCount($top); @endphp
-                            <a href="{{ route('products.index', array_merge(request()->except('page'), ['category' => $top->id])) }}"
+                            <a href="{{ ($top->slug ? url('/'. $top->slug) : route('products.index', ['category' => $top->id])) }}"
                                class="cat-tree-item {{ request('category')==$top->id ? 'active' : '' }}">
                                 <span>{{ $top->name }}</span>
                                 @if($topTotal > 0)<span class="cat-count">{{ $topTotal }}</span>@endif

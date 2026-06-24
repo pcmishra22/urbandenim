@@ -457,7 +457,7 @@
                 : collect();
         @endphp
         <div class="mega-trigger" id="mega-men">
-            <a href="{{ $mensCat ? route('products.index', ['category' => $mensCat->id]) : route('products.index') }}"
+            <a href="{{ $mensCat ? ($mensCat && $mensCat->slug ? url('/'. $mensCat->slug) : route('products.index')) : route('products.index') }}"
                class="nav-top-link {{ request('category') == ($mensCat->id ?? null) ? 'active' : '' }}">
                 Men <i class="fas fa-chevron-down"></i>
             </a>
@@ -467,10 +467,10 @@
                     <div class="mega-column-title">Shop By Fit</div>
                     <ul>
                         @foreach($menSubcats->take(8) as $sub)
-                        <li><a href="{{ route('products.index', ['category' => $sub->id]) }}">{{ $sub->name }}</a></li>
+                        <li><a href="{{ ($sub->slug ? url('/'. $sub->slug) : route('products.index', ['category' => $sub->id])) }}">{{ $sub->name }}</a></li>
                         @endforeach
                     </ul>
-                    @if($mensCat)<a class="mega-view-all-btn" href="{{ route('products.index', ['category' => $mensCat->id]) }}">View All Men's →</a>@endif
+                    @if($mensCat)<a class="mega-view-all-btn" href="{{ ($mensCat && $mensCat->slug ? url('/'. $mensCat->slug) : route('products.index')) }}">View All Men's →</a>@endif
                 </div>
             </div>
             @endif
@@ -487,7 +487,7 @@
                 : collect();
         @endphp
         <div class="mega-trigger" id="mega-women">
-            <a href="{{ $womensCat ? route('products.index', ['category' => $womensCat->id]) : route('products.index') }}"
+            <a href="{{ $womensCat ? ($womensCat && $womensCat->slug ? url('/'. $womensCat->slug) : route('products.index')) : route('products.index') }}"
                class="nav-top-link {{ request('category') == ($womensCat->id ?? null) ? 'active' : '' }}">
                 Women <i class="fas fa-chevron-down"></i>
             </a>
@@ -497,10 +497,10 @@
                     <div class="mega-column-title">Shop By Fit</div>
                     <ul>
                         @foreach($womenSubcats->take(8) as $sub)
-                        <li><a href="{{ route('products.index', ['category' => $sub->id]) }}">{{ $sub->name }}</a></li>
+                        <li><a href="{{ ($sub->slug ? url('/'. $sub->slug) : route('products.index', ['category' => $sub->id])) }}">{{ $sub->name }}</a></li>
                         @endforeach
                     </ul>
-                    @if($womensCat)<a class="mega-view-all-btn" href="{{ route('products.index', ['category' => $womensCat->id]) }}">View All Women's →</a>@endif
+                    @if($womensCat)<a class="mega-view-all-btn" href="{{ ($womensCat && $womensCat->slug ? url('/'. $womensCat->slug) : route('products.index')) }}">View All Women's →</a>@endif
                 </div>
             </div>
             @endif
@@ -549,14 +549,14 @@
                     Men's <i class="fas fa-chevron-down toggle-icon"></i>
                 </button>
                 <div class="drawer-submenu">
-                    <a href="{{ $mensCat ? route('products.index', ['category' => $mensCat->id]) : route('products.index') }}">All Men's Jeans</a>
+                    <a href="{{ $mensCat ? ($mensCat && $mensCat->slug ? url('/'. $mensCat->slug) : route('products.index')) : route('products.index') }}">All Men's Jeans</a>
                     @foreach($menSubcats as $sub)
-                    <a href="{{ route('products.index', ['category' => $sub->id]) }}">{{ $sub->name }}</a>
+                    <a href="{{ ($sub->slug ? url('/'. $sub->slug) : route('products.index', ['category' => $sub->id])) }}">{{ $sub->name }}</a>
                     @endforeach
                 </div>
             </div>
             @else
-            <a href="{{ $mensCat ? route('products.index', ['category' => $mensCat->id]) : route('products.index') }}">Men's</a>
+            <a href="{{ $mensCat ? ($mensCat && $mensCat->slug ? url('/'. $mensCat->slug) : route('products.index')) : route('products.index') }}">Men's</a>
             @endif
 
             @if($womenSubcats->isNotEmpty())
@@ -565,14 +565,14 @@
                     Women's <i class="fas fa-chevron-down toggle-icon"></i>
                 </button>
                 <div class="drawer-submenu">
-                    <a href="{{ $womensCat ? route('products.index', ['category' => $womensCat->id]) : route('products.index') }}">All Women's Jeans</a>
+                    <a href="{{ $womensCat ? ($womensCat && $womensCat->slug ? url('/'. $womensCat->slug) : route('products.index')) : route('products.index') }}">All Women's Jeans</a>
                     @foreach($womenSubcats as $sub)
-                    <a href="{{ route('products.index', ['category' => $sub->id]) }}">{{ $sub->name }}</a>
+                    <a href="{{ ($sub->slug ? url('/'. $sub->slug) : route('products.index', ['category' => $sub->id])) }}">{{ $sub->name }}</a>
                     @endforeach
                 </div>
             </div>
             @else
-            <a href="{{ $womensCat ? route('products.index', ['category' => $womensCat->id]) : route('products.index') }}">Women's</a>
+            <a href="{{ $womensCat ? ($womensCat && $womensCat->slug ? url('/'. $womensCat->slug) : route('products.index')) : route('products.index') }}">Women's</a>
             @endif
 
             <a href="{{ route('blog.index') }}" class="{{ request()->routeIs('blog.*') ? 'active' : '' }}">Blog</a>

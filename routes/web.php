@@ -355,12 +355,19 @@ Route::prefix('vendor')->name('vendor.')->group(function () {
 
 Route::get('/products', [\App\Http\Controllers\Front\ProductsController::class, 'index'])->name('products.index');
 
-// Infinite-scroll / AJAX endpoint (HTML fragment for appended products)
+// Infinite-scroll AJAX endpoint
 Route::get('/products/ajax', [\App\Http\Controllers\Front\ProductsController::class, 'ajaxLoad'])->name('products.ajaxLoad');
 
-
+// SEO-friendly category URLs: /mens-jeans, /womens-slim-fit-jeans etc.
+// Must be defined BEFORE /products/{slug} to avoid conflict
 Route::get('/products/category/{slug}', [\App\Http\Controllers\Front\CategoryProductsController::class, 'show'])
     ->name('products.category');
+
+// Clean SEO category URL: /{category-slug}
+// Excludes all reserved top-level paths so they don't get swallowed
+Route::get('/{categorySlug}', [\App\Http\Controllers\Front\ProductsController::class, 'bySlug'])
+    ->where('categorySlug', '^(?!about|blog|cart|checkout|email|faq|help|products|robots\.txt|sitemap\.xml|privacy\-policy|shipping\-policy|return\-refund\-policy|cancellation\-policy|terms\-and\-conditions|payment|wishlist|profile|account|login|register|vendor|admin)[a-z][a-z0-9\-]+$')
+    ->name('products.bySlug');
 
 Route::get('/products/{slug}', [\App\Http\Controllers\Front\ProductDetailController::class, 'show'])
     ->name('products.detail');

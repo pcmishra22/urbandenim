@@ -339,6 +339,27 @@ section, .jz-section, .gender-grid, .collection-grid, .fit-grid, .products-grid,
     /* Hover overlay becomes always visible on mobile (no hover) */
     .prod-img .prod-hover { bottom: 0; padding: 8px; gap: 14px; }
 
+    /* ── Trending section: horizontal scroll on mobile ── */
+    .products-grid.trending-scroll {
+        display: flex;
+        flex-direction: row;
+        flex-wrap: nowrap;
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+        scroll-snap-type: x mandatory;
+        gap: 10px;
+        padding-bottom: 12px;
+        /* hide scrollbar visually but keep scroll */
+        scrollbar-width: none;
+        -ms-overflow-style: none;
+    }
+    .products-grid.trending-scroll::-webkit-scrollbar { display: none; }
+    .products-grid.trending-scroll .jz-product-card {
+        flex: 0 0 42vw;
+        min-width: 42vw;
+        scroll-snap-align: start;
+    }
+
     /* Newsletter */
     .nl-form          { flex-direction: column; max-width: 320px; }
     .nl-form input    { border-right: 1.5px solid #ccc; border-bottom: none; }
@@ -509,7 +530,7 @@ function handleOfferSignup(){
 
 <div class="collection-grid {{ $collGrid }} px-2 px-xl-4">
     @forelse($collections as $idx => $col)
-    <a href="{{ route('products.index', ['category' => $col->id]) }}"
+    <a href="{{ ($col->slug ? url('/'. $col->slug) : route('products.index')) }}"
        class="coll-card {{ $collCount <= 2 ? 'tall' : '' }}">
         <img src="{{ jzCatImg($col, ($idx % 5) + 1) }}" alt="{{ $col->name }}" loading="lazy">
         <div class="coll-card-body">
@@ -558,7 +579,7 @@ function handleOfferSignup(){
 @if($fitCats->isNotEmpty())
 <div class="fit-grid px-2 px-xl-4" style="grid-template-columns: repeat({{ $fitCols }}, 1fr);">
     @foreach($fitCats as $idx => $fit)
-    <a href="{{ route('products.index', ['category' => $fit->id]) }}" class="fit-card">
+    <a href="{{ ($fit->slug ? url('/'. $fit->slug) : route('products.index')) }}" class="fit-card">
         <img src="{{ jzCatImg($fit, ($idx % 4) + 1) }}" alt="{{ $fit->name }}" loading="lazy">
         <div class="fit-card-body">
             <h4>{{ $fit->name }}</h4>
@@ -652,7 +673,7 @@ function handleOfferSignup(){
     <p>The styles everyone's reaching for right now.</p>
 </div>
 
-<div class="products-grid px-2 px-xl-4 jz-section">
+<div class="products-grid trending-scroll px-2 px-xl-4 jz-section">
     @forelse($trending as $idx => $product)
     @php
         $imgUrl  = jzProdImg($product);
