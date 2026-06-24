@@ -191,7 +191,7 @@
 @include('front.partials.design-system')
 @include('front.partials.page-banner', ['title' => 'shop', 'breadcrumb' => 'Shop', 'showCategories' => false])
 
-<div class="container-fluid px-xl-5 py-4" style="background:#faf8f8;">
+<div class="container-fluid px-xl-5 px-md-3 px-2 py-4" style="background:#faf8f8;">
     <div class="row">
 
         @php

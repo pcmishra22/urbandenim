@@ -90,20 +90,36 @@
     }
 
     /* ─────────────────────────────────────
-       2. IMAGE ZOOM — increased percentage
+       2. IMAGE ZOOM — hover zoom on desktop, tap-to-zoom on mobile
     ───────────────────────────────────── */
-    #pd-main-img {
-        transition: transform .4s ease;
-        cursor: zoom-in;
+
+    /* The wrapper clips to its own bounds — zoom must escape it */
+    .pd-img-wrapper {
+        /* overflow stays hidden to avoid layout shift; we use transform-origin trick */
+        overflow: hidden;
     }
-    /* Desktop only — zoom on hover */
+    /* The aspect container is the zoom host */
+    .pd-img-aspect {
+        overflow: hidden;
+    }
+    #pd-main-img {
+        transition: transform .35s ease;
+        cursor: zoom-in;
+        display: block;
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        transform-origin: center center; /* updated dynamically on mousemove */
+    }
+    /* Desktop: zoom on hover */
     @media (min-width: 768px) {
-        #pd-main-img:hover {
-            transform: scale(1.6);
+        .pd-img-aspect:hover #pd-main-img {
+            transform: scale(2.2);
             cursor: zoom-out;
         }
+        .pd-img-aspect { cursor: zoom-in; }
     }
-    /* Mobile — no zoom, restore normal page scroll */
+    /* Mobile: no hover zoom — tap cycles through images instead */
     @media (max-width: 767px) {
         #pd-main-img {
             cursor: default;
@@ -111,7 +127,6 @@
             transition: none;
         }
         .pd-img-wrapper {
-            overflow: hidden !important;
             touch-action: pan-y;
         }
     }
@@ -387,13 +402,13 @@
         border-radius: 18px;
         overflow: hidden;
         margin-bottom: 12px;
-        flex: 1;
-        min-height: 500px;
+        width: 100%;
+        aspect-ratio: 3 / 4;
+        min-height: 280px;
     }
     .pd-img-aspect {
         width: 100%;
         height: 100%;
-        min-height: 500px;
         position: absolute;
         inset: 0;
     }
@@ -402,6 +417,16 @@
         height: 100%;
         object-fit: cover;
         display: block;
+    }
+    /* Fallback for browsers that don't support aspect-ratio */
+    @supports not (aspect-ratio: 3/4) {
+        .pd-img-wrapper { min-height: 400px; }
+    }
+    @media (max-width: 767px) {
+        .pd-img-wrapper { min-height: 280px; border-radius: 12px; aspect-ratio: 4/3; }
+    }
+    @media (max-width: 575px) {
+        .pd-img-wrapper { min-height: 220px; aspect-ratio: 1/1; }
     }
 
     @media (min-width: 1024px) {
@@ -504,7 +529,7 @@
         <div style="display:flex; gap:40px; flex-wrap:wrap;" class="pd-two-col">
 
             {{-- ════ LEFT: Image Gallery ════ --}}
-            <div style="flex:0 0 min(100%, 500px); max-width:500px;" class="pd-gallery-sticky">
+            <div style="flex:0 0 min(100%, 500px); max-width:min(100%, 500px); width:100%;" class="pd-gallery-sticky">
 
                 {{-- Main image --}}
                 <div class="pd-img-wrapper">
@@ -540,21 +565,58 @@
                     </div>
                 </div>
 
-                {{-- Thumbnails — always shown, grid of up to 5 --}}
+                {{-- Thumbnails — scrollable strip with arrows --}}
                 @if($product->images && $product->images->count() > 0)
-                    <div style="display:grid; grid-template-columns:repeat(5,1fr); gap:8px; margin-top:4px;">
+                <div class="pd-thumb-strip-wrap" style="position:relative; margin-top:8px;">
+                    {{-- Prev arrow --}}
+                    <button id="pd-thumb-prev" type="button" aria-label="Previous images"
+                        style="display:none; position:absolute; left:-14px; top:50%; transform:translateY(-50%);
+                               z-index:5; background:#fff; border:1.5px solid #e5e5e5; border-radius:50%;
+                               width:30px; height:30px; align-items:center; justify-content:center;
+                               cursor:pointer; box-shadow:0 2px 8px rgba(0,0,0,.12); padding:0; line-height:1;">
+                        <i class="fas fa-chevron-left" style="font-size:.65rem; color:#555;"></i>
+                    </button>
+
+                    {{-- Scrollable track --}}
+                    <div id="pd-thumb-track"
+                         style="display:flex; gap:8px; overflow-x:auto; scroll-behavior:smooth;
+                                -webkit-overflow-scrolling:touch; scroll-snap-type:x mandatory;
+                                scrollbar-width:none; -ms-overflow-style:none; padding:2px 0 4px;">
                         @foreach($product->images as $i => $image)
                             @php
                                 $rel = 'products/'.$product->id.'/images/'.($image->image ?? '');
                                 $url = file_exists(public_path('storage/'.$rel)) ? asset('storage/'.$rel) : asset('storage/default.jpeg');
                             @endphp
                             <button type="button" class="pd-thumb {{ $i === 0 ? 'active' : '' }}" data-img="{{ $url }}"
-                                    style="border:none; padding:0; background:none; aspect-ratio:1; width:100%;">
+                                    style="flex:0 0 calc(20% - 7px); min-width:52px; max-width:80px;
+                                           border:none; padding:0; background:none;
+                                           aspect-ratio:1; scroll-snap-align:start; border-radius:8px; overflow:hidden;">
                                 <img src="{{ $url }}" alt="{{ $product->name }} - image {{ $i+1 }}"
-                                     style="width:100%; height:100%; object-fit:cover; border-radius:8px;">
+                                     style="width:100%; height:100%; object-fit:cover; border-radius:8px; display:block;">
                             </button>
                         @endforeach
                     </div>
+
+                    {{-- Next arrow --}}
+                    <button id="pd-thumb-next" type="button" aria-label="Next images"
+                        style="display:none; position:absolute; right:-14px; top:50%; transform:translateY(-50%);
+                               z-index:5; background:#fff; border:1.5px solid #e5e5e5; border-radius:50%;
+                               width:30px; height:30px; align-items:center; justify-content:center;
+                               cursor:pointer; box-shadow:0 2px 8px rgba(0,0,0,.12); padding:0; line-height:1;">
+                        <i class="fas fa-chevron-right" style="font-size:.65rem; color:#555;"></i>
+                    </button>
+                </div>
+                <style>
+                    #pd-thumb-track::-webkit-scrollbar { display:none; }
+                    .pd-thumb { border-radius:8px; overflow:hidden; border:2px solid transparent;
+                                cursor:pointer; transition:border-color .2s, box-shadow .2s; flex-shrink:0; }
+                    .pd-thumb.active, .pd-thumb:hover { border-color:var(--site-primary); box-shadow:0 0 0 1px var(--site-primary); }
+                    .pd-thumb img { display:block; pointer-events:none; }
+                    /* Show arrows when enough images */
+                    .pd-thumb-strip-wrap.has-arrows { padding:0 20px; }
+                    .pd-thumb-strip-wrap.has-arrows #pd-thumb-prev,
+                    .pd-thumb-strip-wrap.has-arrows #pd-thumb-next { display:flex !important; }
+                </style>
                 @endif
             </div>
 
@@ -1406,15 +1468,131 @@
     function openModal(id)  { var el = document.getElementById(id); if(el){ el.style.display='flex'; el.classList.add('open'); } }
     function closeModal(id) { var el = document.getElementById(id); if(el){ el.style.display='none'; el.classList.remove('open'); } }
 
-    /* ── Thumbnail gallery ── */
-    document.querySelectorAll('.pd-thumb').forEach(function (thumb) {
-        thumb.addEventListener('click', function () {
-            document.querySelectorAll('.pd-thumb').forEach(function(t){ t.classList.remove('active'); });
-            thumb.classList.add('active');
-            var mainImg = document.getElementById('pd-main-img');
-            if (mainImg) mainImg.src = thumb.dataset.img;
+    /* ── Thumbnail gallery + scrollable strip ── */
+    (function() {
+        var thumbs   = document.querySelectorAll('.pd-thumb');
+        var mainImg  = document.getElementById('pd-main-img');
+        var track    = document.getElementById('pd-thumb-track');
+        var prevBtn  = document.getElementById('pd-thumb-prev');
+        var nextBtn  = document.getElementById('pd-thumb-next');
+        var wrap     = document.querySelector('.pd-thumb-strip-wrap');
+
+        // Show arrows only if thumbnails overflow
+        function checkArrows() {
+            if (!track || !wrap) return;
+            if (track.scrollWidth > track.clientWidth + 4) {
+                wrap.classList.add('has-arrows');
+            } else {
+                wrap.classList.remove('has-arrows');
+            }
+        }
+        window.addEventListener('resize', checkArrows);
+        checkArrows();
+
+        // Arrow scroll: one thumbnail width at a time
+        var SCROLL_AMT = 88; // ~80px thumb + 8px gap
+        if (prevBtn) prevBtn.addEventListener('click', function() {
+            track.scrollBy({ left: -SCROLL_AMT * 3, behavior: 'smooth' });
         });
-    });
+        if (nextBtn) nextBtn.addEventListener('click', function() {
+            track.scrollBy({ left: SCROLL_AMT * 3, behavior: 'smooth' });
+        });
+
+        // Thumbnail click → update main image + scroll active into view
+        thumbs.forEach(function(thumb) {
+            thumb.addEventListener('click', function() {
+                thumbs.forEach(function(t){ t.classList.remove('active'); });
+                thumb.classList.add('active');
+                if (mainImg) {
+                    mainImg.style.transition = 'opacity .18s ease';
+                    mainImg.style.opacity = '0';
+                    setTimeout(function() {
+                        mainImg.src = thumb.dataset.img;
+                        mainImg.style.opacity = '1';
+                    }, 140);
+                }
+                // Scroll this thumb into view inside the track
+                if (track) {
+                    var thumbLeft   = thumb.offsetLeft;
+                    var thumbRight  = thumbLeft + thumb.offsetWidth;
+                    var trackLeft   = track.scrollLeft;
+                    var trackRight  = trackLeft + track.clientWidth;
+                    if (thumbLeft < trackLeft) {
+                        track.scrollBy({ left: thumbLeft - trackLeft - 8, behavior: 'smooth' });
+                    } else if (thumbRight > trackRight) {
+                        track.scrollBy({ left: thumbRight - trackRight + 8, behavior: 'smooth' });
+                    }
+                }
+            });
+        });
+
+        // ── Auto-advance thumbnails every 3 s when idle ──
+        var autoTimer;
+        function getActiveIndex() {
+            var idx = 0;
+            thumbs.forEach(function(t, i){ if(t.classList.contains('active')) idx = i; });
+            return idx;
+        }
+        function autoAdvance() {
+            var cur  = getActiveIndex();
+            var next = (cur + 1) % thumbs.length;
+            if (thumbs[next]) thumbs[next].click();
+        }
+        function startAuto() {
+            if (thumbs.length > 1) autoTimer = setInterval(autoAdvance, 3000);
+        }
+        function stopAuto()  { clearInterval(autoTimer); }
+
+        // Pause auto-scroll when user interacts
+        thumbs.forEach(function(t) {
+            t.addEventListener('click', function() { stopAuto(); startAuto(); });
+        });
+        if (track) {
+            track.addEventListener('mouseenter', stopAuto);
+            track.addEventListener('mouseleave', startAuto);
+        }
+        startAuto();
+
+        // ── Touch/swipe on main image to advance (mobile) ──
+        var touchStartX = 0;
+        var imgWrap = document.querySelector('.pd-img-aspect');
+        if (imgWrap) {
+            imgWrap.addEventListener('touchstart', function(e) {
+                touchStartX = e.changedTouches[0].clientX;
+            }, { passive: true });
+            imgWrap.addEventListener('touchend', function(e) {
+                var dx = e.changedTouches[0].clientX - touchStartX;
+                if (Math.abs(dx) > 40) {
+                    var cur  = getActiveIndex();
+                    var next = dx < 0
+                        ? (cur + 1) % thumbs.length
+                        : (cur - 1 + thumbs.length) % thumbs.length;
+                    stopAuto();
+                    if (thumbs[next]) thumbs[next].click();
+                    startAuto();
+                }
+            }, { passive: true });
+        }
+    })();
+
+    /* ── Hover zoom: track mouse position for transform-origin ── */
+    (function() {
+        var aspect  = document.querySelector('.pd-img-aspect');
+        var img     = document.getElementById('pd-main-img');
+        if (!aspect || !img) return;
+        // Only on desktop
+        if (window.matchMedia('(max-width: 767px)').matches) return;
+
+        aspect.addEventListener('mousemove', function(e) {
+            var rect = aspect.getBoundingClientRect();
+            var x = ((e.clientX - rect.left) / rect.width  * 100).toFixed(1);
+            var y = ((e.clientY - rect.top)  / rect.height * 100).toFixed(1);
+            img.style.transformOrigin = x + '% ' + y + '%';
+        });
+        aspect.addEventListener('mouseleave', function() {
+            img.style.transformOrigin = 'center center';
+        });
+    })();
 
     /* ── Color selection (FIX #5) ── */
     window.selectColor = function(btn, colorName) {

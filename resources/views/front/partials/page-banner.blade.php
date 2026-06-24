@@ -23,7 +23,7 @@
 
     // Banner height: taller when showing alongside category sidebar (3+9),
     // shorter when full-width (no sidebar).
-    $bannerHeight = $showCategories ? '410px' : '200px';
+    $bannerHeight = $showCategories ? '300px' : '160px';
 @endphp
 
 <div class="container-fluid mb-0">

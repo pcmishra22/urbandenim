@@ -725,3 +725,290 @@ img { max-width: 100%; height: auto; }
     #pd-sticky { padding-bottom: calc(12px + env(safe-area-inset-bottom)) !important; }
 }
 </style>
+
+<style>
+/* ============================================================
+   JEANZO — GLOBAL RESPONSIVE PATCH (appended last, highest priority)
+   Fixes: header overflow, hero, collections, product detail,
+          cart, checkout, footer on all breakpoints.
+   ============================================================ */
+
+/* ── 0. Global overflow guard ── */
+html, body { overflow-x: hidden !important; }
+*, *::before, *::after { box-sizing: border-box; }
+img, video, iframe { max-width: 100%; height: auto; }
+.container-fluid { max-width: 100%; }
+
+/* ── 1. Header: fix logo column collapsing on tablet ── */
+@media (max-width: 991px) {
+    .header-top {
+        grid-template-columns: auto 1fr auto !important;
+        gap: 12px !important;
+    }
+    .header-logo { justify-self: start !important; }
+    .header-icons { justify-self: end !important; gap: 16px !important; }
+}
+@media (max-width: 480px) {
+    .header-top { padding: 8px 0 !important; }
+    .header-logo h1 { font-size: 1.1rem !important; }
+    .header-icons { gap: 12px !important; }
+}
+
+/* ── 2. Hero: prevent overflow + text clipping ── */
+.hero-wrap { overflow: hidden !important; }
+@media (max-width: 575px) {
+    .hero-caption {
+        padding: 0 12px 32px !important;
+        justify-content: flex-end !important;
+    }
+    .hero-caption h1,
+    .hero-caption .jz-hero-title {
+        font-size: clamp(1rem, 5vw, 1.4rem) !important;
+        max-width: 100% !important;
+        word-break: break-word;
+    }
+    .hero-sub { display: none !important; }
+    .hero-btns { gap: 6px !important; }
+    .btn-hero-solid,
+    .btn-hero-ghost {
+        padding: 8px 14px !important;
+        font-size: .65rem !important;
+        letter-spacing: 1px !important;
+        flex: 1 1 auto !important;
+        text-align: center !important;
+    }
+}
+
+/* ── 3. Collections grid: prevent card overflow ── */
+.coll-card, .fit-card { overflow: hidden !important; }
+.coll-card img, .fit-card img { width: 100% !important; }
+
+@media (max-width: 575px) {
+    .collection-grid {
+        grid-template-columns: 1fr !important;
+        padding-left: 12px !important;
+        padding-right: 12px !important;
+    }
+    .collection-grid .coll-card:first-child { grid-column: span 1 !important; }
+    .coll-card, .coll-card.tall { height: 220px !important; }
+    .fit-grid {
+        grid-template-columns: repeat(2, 1fr) !important;
+        padding-left: 12px !important;
+        padding-right: 12px !important;
+    }
+    .fit-card { height: 200px !important; }
+}
+
+/* ── 4. Promise strip: center text on mobile ── */
+@media (max-width: 575px) {
+    .promise-grid { grid-template-columns: repeat(2, 1fr) !important; }
+    .promise-item { border-right: none !important; border-bottom: 1px solid rgba(255,255,255,.06); }
+    .promise-item:nth-child(odd) { border-right: 1px solid rgba(255,255,255,.06) !important; }
+}
+
+/* ── 5. Products grid: 2 cols on mobile ── */
+@media (max-width: 575px) {
+    .products-grid {
+        grid-template-columns: repeat(2, 1fr) !important;
+        gap: 10px !important;
+        padding-left: 12px !important;
+        padding-right: 12px !important;
+    }
+    .products-grid.trending-scroll {
+        display: flex !important;
+        flex-wrap: nowrap !important;
+        overflow-x: auto !important;
+        -webkit-overflow-scrolling: touch !important;
+        scroll-snap-type: x mandatory !important;
+        padding-left: 12px !important;
+        padding-right: 12px !important;
+    }
+    .products-grid.trending-scroll .jz-product-card {
+        flex: 0 0 44vw !important;
+        min-width: 44vw !important;
+        scroll-snap-align: start !important;
+    }
+    /* Product card hover → always show on mobile */
+    .prod-img .prod-hover { bottom: 0 !important; padding: 8px !important; gap: 12px !important; }
+}
+
+/* ── 6. Product detail: stack gallery above info on tablet ── */
+@media (max-width: 767px) {
+    #pd-page .pd-two-col {
+        flex-direction: column !important;
+        gap: 0 !important;
+    }
+    #pd-page .pd-two-col > div:first-child {
+        flex: 0 0 100% !important;
+        max-width: 100% !important;
+    }
+    #pd-page .pd-two-col > div:last-child {
+        flex: 1 1 100% !important;
+        padding: 16px 0 0 !important;
+    }
+    #pd-page h1 { font-size: 1.35rem !important; }
+    .pd-img-aspect { min-height: 260px !important; }
+    /* Sticky CTA bar */
+    #pd-sticky { padding: 10px 12px 14px !important; }
+}
+@media (max-width: 575px) {
+    .pd-img-aspect { min-height: 220px !important; }
+    .pd-btn-row { flex-direction: column !important; gap: 8px !important; }
+    .pd-btn-row a, .pd-btn-row button { width: 100% !important; justify-content: center !important; }
+    #pd-page { padding-bottom: 80px !important; }
+    /* Thumbnails: 5 per row */
+    #pd-page [style*="grid-template-columns:repeat(5,1fr)"] {
+        grid-template-columns: repeat(5, 1fr) !important;
+        gap: 5px !important;
+    }
+    /* Related products: 2 cols */
+    .pd-related-grid { grid-template-columns: repeat(2, 1fr) !important; gap: 10px !important; }
+}
+
+/* ── 7. Cart page: controls layout ── */
+/* (HTML now has proper wrapper classes, these are safety overrides) */
+@media (max-width: 575px) {
+    .j-cart-item {
+        flex-wrap: wrap !important;
+        padding: 10px 12px !important;
+        gap: 8px !important;
+    }
+    .j-cart-item .cart-img-wrap { flex: 0 0 64px !important; }
+    .j-cart-item .cart-name-wrap { flex: 1 1 0 !important; min-width: 0 !important; font-size: .82rem !important; }
+    .j-cart-item .cart-controls-wrap {
+        flex: 0 0 100% !important;
+        padding-top: 6px !important;
+        border-top: 1px solid #f0f0f0 !important;
+    }
+    /* Cart table header hidden on mobile */
+    .d-none.d-md-flex { display: none !important; }
+    /* Continue shopping: full width */
+    .cart-continue-btn { display: block !important; width: 100% !important; text-align: center !important; margin-bottom: 8px !important; }
+    /* Summary card */
+    .j-order-summary { margin-top: 0 !important; }
+    /* Coupon row stays inline */
+    .coupon-row, #checkout-form .d-flex.gap-2 { flex-wrap: nowrap !important; }
+    .coupon-row input, #checkout-form #coupon_input { flex: 1 !important; min-width: 0 !important; }
+    .coupon-row button, #apply-coupon-btn { flex-shrink: 0 !important; white-space: nowrap !important; }
+}
+
+/* ── 8. Checkout page ── */
+@media (max-width: 991px) {
+    .checkout-summary-col { order: 2 !important; }
+    .checkout-form-col    { order: 1 !important; }
+}
+@media (max-width: 767px) {
+    /* Address form: stack two halves */
+    .checkout-addr-row .col-md-6 {
+        flex: 0 0 100% !important;
+        max-width: 100% !important;
+    }
+    /* Identity gateway: stack buttons */
+    #identity-gateway .d-flex.justify-content-between {
+        flex-direction: column !important;
+        gap: 8px !important;
+    }
+    #identity-gateway .btn { width: 100% !important; }
+    /* Order summary: no sticky on mobile */
+    .j-order-summary { position: static !important; top: auto !important; }
+}
+@media (max-width: 575px) {
+    .checkout-submit-btn { font-size: .95rem !important; padding: 14px !important; }
+    .checkout-trust-badges { font-size: .72rem !important; }
+    .checkout-pay-option { padding: 10px 12px !important; }
+}
+
+/* ── 9. Footer ── */
+@media (max-width: 767px) {
+    /* Trust badges strip: 2-col grid on small screens */
+    .container-fluid.bg-secondary .d-flex.flex-wrap.justify-content-center {
+        gap: 12px 16px !important;
+    }
+    .footer-col { margin-bottom: 24px !important; }
+}
+@media (max-width: 575px) {
+    .container-fluid.bg-secondary { padding-top: 28px !important; padding-left: 16px !important; padding-right: 16px !important; }
+    .container-fluid.bg-secondary .row.border-top {
+        flex-direction: column !important;
+        text-align: center !important;
+        gap: 6px !important;
+    }
+    .container-fluid.bg-secondary .col-md-6 { text-align: center !important; }
+    /* Footer trust strip: single column */
+    footer .d-flex.flex-wrap.justify-content-center > div {
+        flex: 0 0 calc(50% - 8px) !important;
+        justify-content: flex-start !important;
+    }
+}
+
+/* ── 10. Page banner ── */
+@media (max-width: 575px) {
+    .j-page-banner { min-height: 100px !important; }
+    .j-page-banner-content { min-height: 100px !important; padding: 16px 12px !important; }
+    .j-page-banner-title { font-size: 1.05rem !important; letter-spacing: .3px !important; }
+}
+
+/* ── 11. Products page sidebar / toolbar ── */
+@media (max-width: 991px) {
+    .products-page-sidebar {
+        flex: 0 0 100% !important;
+        max-width: 100% !important;
+    }
+    .col-lg-9 { flex: 0 0 100% !important; max-width: 100% !important; }
+    #mobile-filter-toggle { display: flex !important; }
+    #filter-sidebar-collapse.collapsed { display: none !important; }
+    #filter-sidebar-collapse.expanded  { display: block !important; }
+    .products-toolbar { flex-direction: column !important; align-items: stretch !important; gap: 8px !important; }
+    .products-toolbar form { max-width: 100% !important; }
+    .products-toolbar .dropdown { align-self: flex-end !important; }
+}
+@media (max-width: 575px) {
+    /* 2-column product grid on mobile listing page */
+    #products-container > .col-lg-4 {
+        flex: 0 0 50% !important;
+        max-width: 50% !important;
+        padding-left: 5px !important;
+        padding-right: 5px !important;
+    }
+    #products-container {
+        margin-left: -5px !important;
+        margin-right: -5px !important;
+    }
+}
+
+/* ── 12. Forms: prevent iOS font-size zoom ── */
+@media (max-width: 767px) {
+    input[type="text"],
+    input[type="email"],
+    input[type="tel"],
+    input[type="number"],
+    input[type="password"],
+    input[type="search"],
+    select,
+    textarea {
+        font-size: 16px !important;
+    }
+    .form-control-sm { font-size: 15px !important; }
+    /* Touch targets minimum 44px */
+    .btn, button[type="submit"], a.btn { min-height: 40px; }
+}
+
+/* ── 13. Offer strip newsletter fix ── */
+@media (max-width: 575px) {
+    .offer-strip-inner { flex-direction: column !important; align-items: stretch !important; gap: 12px !important; padding: 16px 12px !important; }
+    .offer-input-wrap { display: flex !important; width: 100% !important; }
+    .offer-input-wrap input { flex: 1 !important; min-width: 0 !important; }
+}
+@media (max-width: 575px) {
+    .nl-form { flex-direction: column !important; max-width: 100% !important; }
+    .nl-form input { border-right: 1.5px solid #ccc !important; border-bottom: none !important; }
+    .nl-form button { padding: 12px !important; }
+}
+
+/* ── 14. Overflow guard on all section containers ── */
+.hero-wrap, .offer-strip, .collection-grid, .fit-grid,
+.products-grid, .promise-strip, .newsletter-band {
+    max-width: 100% !important;
+    overflow-x: hidden !important;
+}
+</style>

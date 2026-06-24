@@ -18,24 +18,35 @@
     padding: 14px 16px;
     margin-bottom: 12px;
 }
+/* Desktop: give controls group its space */
+.j-cart-item .cart-controls-wrap { flex: 3; gap: 12px; }
+.j-cart-item .cart-controls-wrap .cart-price  { flex: 1; text-align: center; }
+.j-cart-item .cart-controls-wrap .row-total   { flex: 1; text-align: center; }
+.j-cart-item .cart-controls-wrap .cart-remove { flex-shrink: 0; }
+
 @media (max-width: 575px) {
-    .j-cart-item { flex-wrap: wrap; gap: 10px; padding: 10px 12px; }
-    /* Row 1: image + name */
+    .j-cart-item { flex-wrap: wrap; gap: 8px; padding: 10px 12px; }
+    /* Row 1: image + name side by side */
     .j-cart-item .cart-img-wrap  { flex: 0 0 64px; }
-    .j-cart-item .cart-name-wrap { flex: 1 1 0; min-width: 0; }
-    /* Row 2: price + qty + total + remove — spread full width */
+    .j-cart-item .cart-name-wrap { flex: 1 1 0; min-width: 0; font-size: .82rem; }
+    /* Row 2: controls spread full width below */
     .j-cart-item .cart-controls-wrap {
         flex: 0 0 100%;
         display: flex;
         align-items: center;
-        gap: 8px;
-        padding-top: 4px;
+        gap: 6px;
+        padding-top: 6px;
         border-top: 1px solid #f0f0f0;
+        flex-wrap: nowrap;
     }
-    .j-cart-item .cart-controls-wrap .cart-price  { flex: 1; font-size: .82rem; font-weight: 700; }
+    .j-cart-item .cart-controls-wrap .cart-price  { flex: 1; font-size: .78rem; }
     .j-cart-item .cart-controls-wrap .quantity     { width: 88px !important; }
-    .j-cart-item .cart-controls-wrap .row-total    { flex: 1; font-size: .82rem; font-weight: 700; text-align: right; }
+    .j-cart-item .cart-controls-wrap .row-total    { flex: 1; font-size: .78rem; text-align: right; }
     .j-cart-item .cart-controls-wrap .cart-remove  { flex-shrink: 0; }
+    /* Smaller qty buttons on mobile */
+    .j-cart-item .btn-minus,
+    .j-cart-item .btn-plus { padding: 4px 8px !important; font-size: .75rem !important; }
+    .j-cart-item .qty-input { font-size: .82rem !important; }
 }
 /* Sticky mobile checkout bar */
 #cart-mobile-bar {
@@ -98,52 +109,55 @@
 
             @foreach($cartItems as $key => $item)
             @php $product = $item['product']; $price = $product->jeanzo_price ?: ($product->sale_price ?? $product->price); @endphp
-            <div class="j-cart-item d-flex align-items-center gap-3 flex-wrap flex-md-nowrap mb-2">
+            <div class="j-cart-item d-flex align-items-center mb-2">
                 {{-- Image --}}
-                <div style="flex-shrink:0;">
+                <div class="cart-img-wrap" style="flex-shrink:0;">
                     <img src="{{ $product->images && $product->images->isNotEmpty() ? $product->images->first()->url : asset('eshopper/img/product-1.jpg') }}"
                          alt="{{ $product->name }}"
                          style="width:72px;height:72px;object-fit:cover;border-radius:8px;border:1px solid var(--j-border);">
                 </div>
                 {{-- Name --}}
-                <div style="flex:2;min-width:140px;">
+                <div class="cart-name-wrap" style="flex:2;min-width:0;">
                     <div class="font-weight-700" style="font-size:.92rem;line-height:1.3;">{{ $product->name }}</div>
                     @if(isset($item['variant']))
                         <small class="text-muted">{{ $item['variant'] }}</small>
                     @endif
                 </div>
-                {{-- Price --}}
-                <div style="flex:1;text-align:center;" class="font-weight-700" style="color:var(--j-primary);">
-                    ₹{{ number_format($price, 2) }}
-                </div>
-                {{-- Qty --}}
-                <div style="flex:1;" class="d-flex justify-content-center">
-                    <div class="input-group quantity" style="width:110px;">
-                        <div class="input-group-btn">
-                            <button class="btn btn-sm btn-primary btn-minus" type="button"><i class="fa fa-minus"></i></button>
-                        </div>
-                        <input type="text" class="form-control form-control-sm bg-white text-center qty-input"
-                               value="{{ $item['quantity'] }}" data-product="{{ $product->id }}" min="1"
-                               style="border-color:var(--j-border);">
-                        <div class="input-group-btn">
-                            <button class="btn btn-sm btn-primary btn-plus" type="button"><i class="fa fa-plus"></i></button>
+                {{-- Price + Qty + Total + Remove grouped for mobile --}}
+                <div class="cart-controls-wrap d-flex align-items-center" style="gap:8px;">
+                    {{-- Price --}}
+                    <div class="cart-price font-weight-700" style="color:var(--j-primary);">
+                        ₹{{ number_format($price, 2) }}
+                    </div>
+                    {{-- Qty --}}
+                    <div class="d-flex justify-content-center">
+                        <div class="input-group quantity" style="width:110px;">
+                            <div class="input-group-btn">
+                                <button class="btn btn-sm btn-primary btn-minus" type="button"><i class="fa fa-minus"></i></button>
+                            </div>
+                            <input type="text" class="form-control form-control-sm bg-white text-center qty-input"
+                                   value="{{ $item['quantity'] }}" data-product="{{ $product->id }}" min="1"
+                                   style="border-color:var(--j-border);">
+                            <div class="input-group-btn">
+                                <button class="btn btn-sm btn-primary btn-plus" type="button"><i class="fa fa-plus"></i></button>
+                            </div>
                         </div>
                     </div>
-                </div>
-                {{-- Row total --}}
-                <div style="flex:1;text-align:center;" class="font-weight-700 row-total" data-price="{{ $price }}">
-                    ₹{{ number_format($price * $item['quantity'], 2) }}
-                </div>
-                {{-- Remove --}}
-                <div style="flex:.5;" class="d-flex justify-content-center">
-                    <form method="POST" action="{{ route('cart.remove') }}">
-                        @csrf
-                        <input type="hidden" name="product_id" value="{{ $product->id }}">
-                        <input type="hidden" name="variant_id" value="{{ $item['variant_id'] ?? '' }}">
-                        <button type="submit" class="btn btn-sm btn-outline-danger" style="border-radius:6px;" title="Remove">
-                            <i class="fa fa-trash"></i>
-                        </button>
-                    </form>
+                    {{-- Row total --}}
+                    <div class="row-total font-weight-700" data-price="{{ $price }}">
+                        ₹{{ number_format($price * $item['quantity'], 2) }}
+                    </div>
+                    {{-- Remove --}}
+                    <div class="cart-remove d-flex justify-content-center">
+                        <form method="POST" action="{{ route('cart.remove') }}">
+                            @csrf
+                            <input type="hidden" name="product_id" value="{{ $product->id }}">
+                            <input type="hidden" name="variant_id" value="{{ $item['variant_id'] ?? '' }}">
+                            <button type="submit" class="btn btn-sm btn-outline-danger" style="border-radius:6px;" title="Remove">
+                                <i class="fa fa-trash"></i>
+                            </button>
+                        </form>
+                    </div>
                 </div>
             </div>
             @endforeach

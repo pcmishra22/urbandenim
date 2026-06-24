@@ -162,9 +162,7 @@
                 </div>
                 @endif
 
-                <div class="row">
-                    <div class="col-md-6 form-group">
-                        <label class="font-weight-600">Full Name <span class="text-danger">*</span></label>
+                <div class="row checkout-addr-row">
                         <input class="form-control @error('shipping_full_name') is-invalid @enderror"
                                type="text" name="shipping_full_name"
                                value="{{ old('shipping_full_name', $prefillAddress->full_name ?? auth()->user()->name ?? '') }}"
