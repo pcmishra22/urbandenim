@@ -368,6 +368,8 @@ Route::get('/products/{slug}', [\App\Http\Controllers\Front\ProductDetailControl
 // Checkout — open to guests (GuestIdentity handled in controller)
 Route::get('/checkout', [\App\Http\Controllers\Front\CheckoutController::class, 'index'])->name('checkout.index');
 Route::post('/checkout/identify', [\App\Http\Controllers\Front\CheckoutController::class, 'identify'])->name('checkout.identify');
+Route::post('/checkout/lookup-email', [\App\Http\Controllers\Front\CheckoutController::class, 'lookupEmail'])->name('checkout.lookup-email');
+Route::post('/checkout/guest-skip', [\App\Http\Controllers\Front\CheckoutController::class, 'guestSkip'])->name('checkout.guest-skip');
 Route::post('/checkout', [\App\Http\Controllers\Front\CheckoutController::class, 'store'])->name('checkout.store');
 Route::post('/checkout/pending', [\App\Http\Controllers\Front\CheckoutController::class, 'storePending'])->name('checkout.store-pending');
 // Confirmation has no auth — session may be gone after external payment redirect
