@@ -27,7 +27,7 @@ class User extends Authenticatable implements MustVerifyEmail
     protected static function booted(): void
     {
         static::created(function ($user) {
-            if ($user->role === 'customer') {
+            if ($user->role === 'customer' && ! ($user->is_guest ?? false)) {
                 $admins = self::where('role', 'admin')->get();
                 Notification::send($admins, new UserAlert($user, 'signup'));
             }

@@ -17,7 +17,10 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\Redirect;
 use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Facades\Session;
+use Illuminate\Support\Facades\View;
 
 class CheckoutController extends Controller
 {
@@ -30,30 +33,37 @@ class CheckoutController extends Controller
     {
         $cartItems = $this->cartService->getCartWithProducts();
         if (empty($cartItems)) {
-            return redirect()->route('cart.index')->with('error', 'Your cart is empty.');
+            return Redirect::route('cart.index')->with('error', 'Your cart is empty.');
         }
 
         $subtotal   = $this->cartService->getSubtotal();
         $shipping   = $this->calculateShipping($subtotal);
-        $discount   = session('coupon_discount', 0);
-        $couponCode = session('coupon_code');
+        $discount   = Session::get('coupon_discount', 0);
+        $couponCode = Session::get('coupon_code');
         $grandTotal = max(0, $subtotal + $shipping - $discount);
 
-        $addresses       = collect();
-        $prefillAddress  = null;
-        $isGuest         = !auth()->check() || auth()->user()->is_guest;
+        if (!Auth::check()) {
+            return View::make('front.checkout-identity', compact(
+                'cartItems', 'subtotal', 'shipping', 'discount', 'couponCode', 'grandTotal'
+            ));
+        }
 
-        if (auth()->check() && !$isGuest) {
+        $addresses      = collect();
+        $prefillAddress = null;
+        /** @var \App\Models\User|null $currentUser */
+        $currentUser    = Auth::user();
+        $isGuest        = $currentUser?->is_guest ?? true;
+
+        if (!$isGuest) {
             // Load saved addresses
-            if (Schema::hasTable('customer_addresses')) {
-                $addresses = auth()->user()->addresses()->orderByDesc('is_default')->get();
-                // Use default address to pre-fill form
+            if (Schema::hasTable('customer_addresses') && $currentUser) {
+                $addresses = $currentUser->addresses()->orderByDesc('is_default')->get();
                 $prefillAddress = $addresses->firstWhere('is_default', true) ?? $addresses->first();
             }
 
             // Fallback: pre-fill from user's most recent order if no saved address
             if (!$prefillAddress) {
-                $lastOrder = Order::where('user_id', auth()->id())
+                $lastOrder = Order::where('user_id', Auth::id())
                     ->whereNotNull('shipping_street')
                     ->latest()
                     ->first();
@@ -71,10 +81,79 @@ class CheckoutController extends Controller
             }
         }
 
-        return view('front.checkout', compact(
+        return View::make('front.checkout', compact(
             'cartItems', 'subtotal', 'shipping', 'discount', 'couponCode',
             'grandTotal', 'addresses', 'isGuest', 'prefillAddress'
         ));
+    }
+
+    public function identify(Request $request)
+    {
+        // Already authenticated — no need to go through the identity gateway again.
+        // Redirect directly to the checkout form.
+        if (Auth::check()) {
+            return Redirect::route('checkout.index');
+        }
+
+        if ($request->has('continue_without_email')) {
+            $guestEmail = \sprintf('guest_%s_%s@jeanzo.in', \time(), Str::lower(Str::random(8)));
+            $guestUser = User::create([
+                'name' => 'Guest Customer',
+                'email' => $guestEmail,
+                'password' => Str::random(24),
+                'role' => 'customer',
+                'is_guest' => true,
+                'email_verified_at' => \now(),
+            ]);
+
+            Auth::login($guestUser);
+
+            return Redirect::route('checkout.index')
+                ->with('guest_message', 'Guest checkout account created. Continue with your shipping details.');
+        }
+
+        $request->validate([
+            'email' => 'required|email|max:255',
+        ]);
+
+        $email = \strtolower($request->input('email'));
+        $user = User::where('email', $email)
+            ->where('role', 'customer')
+            ->first();
+
+        if ($user) {
+            Auth::login($user);
+
+            return Redirect::route('checkout.index')
+                ->with('guest_message', 'Welcome back! Your saved shipping details will be pre-filled.');
+        }
+
+        // Guard: if this email already belongs to a non-customer account (admin/vendor),
+        // do NOT create a duplicate row or log them in — that would escalate their
+        // privileges or expose their identity to a storefront session.
+        $existingNonCustomer = User::where('email', $email)
+            ->whereIn('role', ['admin', 'vendor'])
+            ->exists();
+
+        if ($existingNonCustomer) {
+            return Redirect::route('checkout.identify')
+                ->withErrors(['email' => 'This email address is already associated with an account. Please use a different email or contact support.'])
+                ->withInput();
+        }
+
+        $guestUser = User::create([
+            'name' => Str::before($email, '@') ?: 'Guest Customer',
+            'email' => $email,
+            'password' => Str::random(24),
+            'role' => 'customer',
+            'is_guest' => true,
+            'email_verified_at' => \now(),
+        ]);
+
+        Auth::login($guestUser);
+
+        return Redirect::route('checkout.index')
+            ->with('guest_message', 'Account created for this email. Complete checkout with your shipping details.');
     }
 
     public function confirmation($orderId)
@@ -89,7 +168,7 @@ class CheckoutController extends Controller
     {
         $cartItems = $this->cartService->getCartWithProducts();
         if (empty($cartItems)) {
-            return redirect()->route('cart.index')->with('error', 'Your cart is empty.');
+            return Redirect::route('cart.index')->with('error', 'Your cart is empty.');
         }
 
         $request->validate([
@@ -107,7 +186,7 @@ class CheckoutController extends Controller
         ]);
 
         // Guest checkout: auto-create or find guest account
-        if (!auth()->check()) {
+        if (!Auth::check()) {
             $guestEmail = $request->guest_email
                 ?? ($request->shipping_phone . '@guest.jeanzo.in');
 
@@ -121,33 +200,39 @@ class CheckoutController extends Controller
                 ]
             );
 
+            // Bug 4 guard: firstOrCreate may return an existing admin/vendor row if the
+            // derived email collides. Never log in a non-customer via this path.
+            if ($guestUser->role !== 'customer') {
+                return Redirect::back()->with('error', 'Unable to create guest session. Please contact support.');
+            }
+
             Auth::login($guestUser);
         }
 
         // Only COD hits this route directly.
         if ($request->payment_method !== 'cod') {
-            return redirect()->back()->with('error', 'Please use the online payment option properly.');
+            return Redirect::back()->with('error', 'Please use the online payment option properly.');
         }
 
         $order = $this->createOrder($request, 'pending');
 
         // Save address for future checkouts (logged-in non-guest users)
-        $this->saveShippingAddress($request, auth()->user());
+        $this->saveShippingAddress($request, Auth::user());
 
         $this->cartService->clear();
-        session()->forget(['coupon_code', 'coupon_discount']);
+        Session::forget(['coupon_code', 'coupon_discount']);
 
         $order->load('products', 'user');
         $this->sendOrderEmails($order);
 
         // If guest, log them out after order so they don't stay "logged in"
-        $wasGuest = auth()->user()->is_guest ?? false;
+        $wasGuest = Auth::user()->is_guest ?? false;
         if ($wasGuest) {
             Auth::logout();
             $request->session()->regenerateToken();
         }
 
-        return redirect()->route('checkout.confirmation', $order->id)
+        return Redirect::route('checkout.confirmation', $order->id)
             ->with('success', "Order #{$order->id} placed successfully!")
             ->with('guest_order', $wasGuest)
             ->with('guest_email', $order->user->email ?? null);
@@ -161,12 +246,12 @@ class CheckoutController extends Controller
     {
         Log::info('storePending called', [
             'payment_method' => $request->input('payment_method'),
-            'user_id' => auth()->check() ? auth()->id() : null,
+            'user_id' => Auth::check() ? Auth::id() : null,
         ]);
 
         $cartItems = $this->cartService->getCartWithProducts();
         if (empty($cartItems)) {
-            return response()->json(['error' => 'Your cart is empty.'], 400);
+            return \response()->json(['error' => 'Your cart is empty.'], 400);
         }
 
         $request->validate([
@@ -182,20 +267,50 @@ class CheckoutController extends Controller
             'notes'                => 'nullable|string|max:500',
         ]);
 
+        // Re-establish identity if session was lost between identity gateway and payment.
+        // This mirrors the same guest-recovery logic in store() for COD.
+        if (!Auth::check()) {
+            $guestEmail = $request->input('guest_email')
+                ?? ($request->input('shipping_phone') . '@guest.jeanzo.in');
+
+            $guestUser = User::firstOrCreate(
+                ['email' => $guestEmail],
+                [
+                    'name'               => $request->input('shipping_full_name', 'Guest Customer'),
+                    'password'           => \Illuminate\Support\Facades\Hash::make(\Illuminate\Support\Str::random(24)),
+                    'role'               => 'customer',
+                    'is_guest'           => true,
+                    'email_verified_at'  => now(),
+                ]
+            );
+
+            // Only allow actual customer rows (guards against an edge-case where
+            // firstOrCreate returned an existing admin/vendor row for that email).
+            if ($guestUser->role !== 'customer') {
+                Log::warning('storePending: guest email matched a non-customer account', [
+                    'email' => $guestEmail,
+                    'role'  => $guestUser->role,
+                ]);
+                return \response()->json(['error' => 'Unable to create guest session. Please contact support.'], 422);
+            }
+
+            Auth::login($guestUser);
+        }
+
         try {
             $order = $this->createOrder($request, 'awaiting_payment');
-            $this->saveShippingAddress($request, auth()->user());
+            $this->saveShippingAddress($request, Auth::user());
         } catch (\Throwable $e) {
             Log::error('storePending failed', [
                 'error' => $e->getMessage(),
                 'payment_method' => $request->input('payment_method'),
-                'user_id' => auth()->check() ? auth()->id() : null,
+                'user_id' => Auth::check() ? Auth::id() : null,
                 'trace' => $e->getTraceAsString(),
             ]);
-            return response()->json(['error' => 'Could not create order: ' . $e->getMessage()], 500);
+            return \response()->json(['error' => 'Could not create order: ' . $e->getMessage()], 500);
         }
 
-        return response()->json([
+        return \response()->json([
             'success' => true,
             'order_id' => $order->id,
             'total' => $order->total_price,
@@ -207,8 +322,8 @@ class CheckoutController extends Controller
         $cartItems = $this->cartService->getCartWithProducts();
         $subtotal  = $this->cartService->getSubtotal();
         $shipping  = $this->calculateShipping($subtotal);
-        $discount  = session('coupon_discount', 0);
-        $couponCode = session('coupon_code');
+        $discount  = Session::get('coupon_discount', 0);
+        $couponCode = Session::get('coupon_code');
 
         if (
             (!$discount)
@@ -216,7 +331,7 @@ class CheckoutController extends Controller
             && Schema::hasTable('coupons')
         ) {
             $coupon = \App\Models\Coupon::where('code', strtoupper($request->coupon_code))->first();
-            if ($coupon && $coupon->isValidForUser(auth()->user())) {
+            if ($coupon && $coupon->isValidForUser(Auth::user())) {
                 $discount   = $this->couponService->calculateDiscount($coupon, $subtotal);
                 $couponCode = strtoupper($request->coupon_code);
                 $this->couponService->applyCoupon($coupon);
@@ -228,7 +343,7 @@ class CheckoutController extends Controller
         DB::beginTransaction();
         try {
             $order = Order::create([
-                'user_id'              => auth()->id(),
+                'user_id'              => Auth::id(),
                 'subtotal'             => $subtotal,
                 'shipping_cost'        => $shipping,
                 'discount_amount'      => $discount,

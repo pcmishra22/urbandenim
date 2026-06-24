@@ -164,14 +164,7 @@
                 </a>
 
                 @guest
-                {{-- Guest checkout option --}}
-                <div class="mt-2 text-center">
-                    <small class="text-muted">or</small>
-                </div>
-                <a href="{{ route('checkout.index') }}" class="btn btn-outline-success btn-block py-2 font-weight-bold mt-2" style="border-radius:10px;">
-                    <i class="fa fa-bolt mr-2"></i>Guest Checkout — No account needed
-                </a>
-                <div class="text-center mt-2">
+                <div class="text-center mt-3">
                     <small class="text-muted">
                         Already have an account?
                         <a href="{{ route('customer.login') }}?redirect=checkout" style="color:var(--j-primary);font-weight:600;">Sign in</a>

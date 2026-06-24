@@ -64,7 +64,7 @@
                     <div style="position:absolute;inset:0;background:url('{{ $bgImageUrl }}') center/cover no-repeat;z-index:0;"></div>
                     <div style="position:absolute;inset:0;background:rgba(0,0,0,.45);z-index:1;"></div>
                 @else
-                    <div style="position:absolute;inset:0;background:linear-gradient(135deg,#2d1b1a 0%,#6b3530 60%,#D19C97 100%);z-index:0;"></div>
+                    <div style="position:absolute;inset:0;background:var(--j-primary, #D19C97);opacity:0.95;z-index:0;"></div>
                 @endif
 
                 <div class="d-flex flex-column align-items-center justify-content-center text-center"

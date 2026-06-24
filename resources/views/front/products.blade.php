@@ -371,57 +371,102 @@
             @endif
 
             <!-- Infinite scroll sentinel -->
-            <div id="products-scroll-sentinel" class="text-center py-3">
+            <div id="products-scroll-sentinel" class="text-center py-4" style="min-height:60px;">
                 @if($products->hasMorePages())
-                    <div class="spinner-border spinner-border-sm" style="color:var(--j-primary);" role="status"></div>
-                    <span class="text-muted ml-2 small">Loading more…</span>
+                    <div class="spinner-border spinner-border-sm" style="color:var(--j-primary);" role="status" aria-label="Loading"></div>
+                    <span class="text-muted ml-2 small">Loading more products…</span>
+                @elseif($products->isNotEmpty())
+                    <p class="text-muted small mb-0" style="opacity:.6;">— You've seen all products —</p>
                 @endif
             </div>
-            <input type="hidden" id="products-next-page" value="{{ $products->hasMorePages() ? $products->currentPage()+1 : '' }}">
-            <input type="hidden" id="products-has-more" value="{{ $products->hasMorePages() ? 1 : 0 }}">
-
-            @if($products->hasPages())
-            <nav class="mt-2"><ul class="pagination justify-content-center">
-                <li class="page-item {{ $products->onFirstPage()?'disabled':'' }}">
-                    <a class="page-link" href="{{ $products->previousPageUrl() }}">‹</a></li>
-                @foreach($products->getUrlRange(1,$products->lastPage()) as $page=>$url)
-                <li class="page-item {{ $products->currentPage()==$page?'active':'' }}">
-                    <a class="page-link" href="{{ $url }}"
-                       style="{{ $products->currentPage()==$page?'background:var(--j-primary);border-color:var(--j-primary);':'' }}">{{ $page }}</a></li>
-                @endforeach
-                <li class="page-item {{ $products->hasMorePages()?'':'disabled' }}">
-                    <a class="page-link" href="{{ $products->nextPageUrl() }}">›</a></li>
-            </ul></nav>
-            @endif
+            <input type="hidden" id="products-next-page" value="{{ $products->hasMorePages() ? $products->currentPage() + 1 : '' }}">
+            <input type="hidden" id="products-has-more"  value="{{ $products->hasMorePages() ? 1 : 0 }}">
         </div>
     </div>
 </div>
 
 @push('scripts')
 <script>
-(function(){
-    var sentinel=document.getElementById('products-scroll-sentinel'),
-        container=document.getElementById('products-container'),
-        nextPageInput=document.getElementById('products-next-page'),
-        hasMoreInput=document.getElementById('products-has-more'),
-        loading=false;
-    if(!sentinel||!container) return;
-    var base='{{ url("/products/ajax") }}';
-    function loadMore(){
-        if(String(hasMoreInput.value)!=='1'||loading) return;
-        var nextPage=parseInt(nextPageInput.value,10); if(!nextPage) return;
-        loading=true;
-        var params=new URL(window.location.href).searchParams;
-        params.set('page',String(nextPage));
-        fetch(base+'?'+params.toString(),{headers:{'X-Requested-With':'XMLHttpRequest','Accept':'application/json'}})
-        .then(function(r){return r.json();}).then(function(data){
-            if(data&&data.html) container.insertAdjacentHTML('beforeend',data.html);
-            hasMoreInput.value=data.hasMore?'1':'0';
-            nextPageInput.value=data.nextPage?String(data.nextPage):'';
-            if(!data.hasMore) sentinel.innerHTML='';
-        }).catch(function(e){console.error(e);}).finally(function(){loading=false;});
+(function () {
+    'use strict';
+
+    var AJAX_URL   = '{{ url("/products/ajax") }}';
+    var sentinel   = document.getElementById('products-scroll-sentinel');
+    var container  = document.getElementById('products-container');
+    var nextPageEl = document.getElementById('products-next-page');
+    var hasMoreEl  = document.getElementById('products-has-more');
+
+    if (!sentinel || !container || !nextPageEl || !hasMoreEl) return;
+
+    var loading = false;
+
+    /* ── Show / hide sentinel states ── */
+    function showLoading() {
+        sentinel.innerHTML =
+            '<div class="spinner-border spinner-border-sm" style="color:var(--j-primary);" role="status" aria-label="Loading"></div>' +
+            '<span class="text-muted ml-2 small">Loading more products…</span>';
     }
-    new IntersectionObserver(function(e){if(e.some(function(x){return x.isIntersecting;}))loadMore();},{rootMargin:'200px'}).observe(sentinel);
+    function showEnd() {
+        sentinel.innerHTML = '<p class="text-muted small mb-0" style="opacity:.6;">— You\'ve seen all products —</p>';
+    }
+    function showError() {
+        sentinel.innerHTML =
+            '<span class="text-danger small">Failed to load more products. ' +
+            '<a href="#" id="retry-load" style="color:var(--j-primary);">Retry</a></span>';
+        var retryLink = document.getElementById('retry-load');
+        if (retryLink) retryLink.addEventListener('click', function (e) { e.preventDefault(); loadMore(); });
+    }
+
+    /* ── Fetch next batch ── */
+    function loadMore() {
+        if (hasMoreEl.value !== '1' || loading) return;
+        var nextPage = parseInt(nextPageEl.value, 10);
+        if (!nextPage) return;
+
+        loading = true;
+        showLoading();
+
+        var params = new URLSearchParams(window.location.search);
+        params.set('page', String(nextPage));
+
+        fetch(AJAX_URL + '?' + params.toString(), {
+            headers: { 'X-Requested-With': 'XMLHttpRequest', 'Accept': 'application/json' }
+        })
+        .then(function (r) {
+            if (!r.ok) throw new Error('HTTP ' + r.status);
+            return r.json();
+        })
+        .then(function (data) {
+            if (data && data.html) {
+                container.insertAdjacentHTML('beforeend', data.html);
+            }
+            hasMoreEl.value  = data.hasMore  ? '1' : '0';
+            nextPageEl.value = data.nextPage  ? String(data.nextPage) : '';
+
+            if (!data.hasMore) {
+                showEnd();
+            } else {
+                /* Reset sentinel to blank so the observer can re-trigger */
+                sentinel.innerHTML = '';
+            }
+        })
+        .catch(function (err) {
+            console.error('[InfiniteScroll]', err);
+            showError();
+        })
+        .finally(function () {
+            loading = false;
+        });
+    }
+
+    /* ── IntersectionObserver — trigger 300px before sentinel enters viewport ── */
+    var observer = new IntersectionObserver(function (entries) {
+        if (entries.some(function (e) { return e.isIntersecting; })) {
+            loadMore();
+        }
+    }, { rootMargin: '300px' });
+
+    observer.observe(sentinel);
 })();
 </script>
 @endpush
