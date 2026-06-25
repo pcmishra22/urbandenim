@@ -68,8 +68,21 @@ class Product extends Model
     protected static function booted(): void
     {
         static::creating(function ($product) {
-            if (empty($product->slug) && !empty($product->title)) {
-                $product->slug = Str::slug($product->title);
+            if (empty($product->slug) && !empty($product->name)) {
+                $base = Str::slug($product->name);
+                $slug = $base;
+                $i    = 1;
+                while (static::where('slug', $slug)->exists()) {
+                    $slug = $base . '-' . $i++;
+                }
+                $product->slug = $slug;
+            }
+        });
+
+        static::saving(function ($product) {
+            // Fix any existing bad slug (spaces, capitals, encoded chars)
+            if (!empty($product->slug)) {
+                $product->slug = Str::slug(urldecode($product->slug));
             }
         });
     }

@@ -335,10 +335,10 @@
 
     .whatsapp-float-link i{ font-size: 24px; }
 
-    @media (max-width: 480px){
+    @media (max-width: 768px){
         .whatsapp-float-wrap{ right: 12px; bottom: 12px; }
         .whatsapp-float-link{ width: 52px; height: 52px; }
-        .whatsapp-help-text{ padding: 9px 10px; font-size: 11.5px; max-width: 200px; }
+        .whatsapp-help-text{ display: none; }
     }
 
     </style>
@@ -347,13 +347,13 @@
 
     @php
         $whatsappPhone = '7340753780'; // from WhatsApp E.164 digits without +
-        $whatsappText = 'Need help choosing your size?';
+        $whatsappText = 'Hi! I need help.';
         $whatsappUrl  = 'https://wa.me/' . $whatsappPhone . '?text=' . urlencode($whatsappText);
     @endphp
 
     <div class="whatsapp-float-wrap" aria-label="Chat on WhatsApp">
         <div class="whatsapp-help-text">
-            <strong>Need help choosing your size?</strong>
+            <strong>Help?</strong>
             <span>Chat on WhatsApp</span>
         </div>
         <a class="whatsapp-float-link" href="{{ $whatsappUrl }}" target="_blank" rel="noopener" aria-label="Chat on WhatsApp">
