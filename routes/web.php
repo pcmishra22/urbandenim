@@ -366,7 +366,7 @@ Route::get('/products/category/{slug}', [\App\Http\Controllers\Front\CategoryPro
 // Clean SEO category URL: /{category-slug}
 // Excludes all reserved top-level paths so they don't get swallowed
 Route::get('/{categorySlug}', [\App\Http\Controllers\Front\ProductsController::class, 'bySlug'])
-    ->where('categorySlug', '^(?!about|blog|cart|checkout|email|faq|help|products|robots\.txt|sitemap\.xml|privacy\-policy|shipping\-policy|return\-refund\-policy|cancellation\-policy|terms\-and\-conditions|payment|wishlist|profile|account|login|register|vendor|admin)[a-z][a-z0-9\-]+$')
+    ->where('categorySlug', '^(?!about|blog|cart|checkout|contact|email|faq|help|products|robots\.txt|sitemap\.xml|privacy\-policy|shipping\-policy|return\-refund\-policy|cancellation\-policy|terms\-and\-conditions|payment|wishlist|profile|account|login|register|vendor|admin)[a-z][a-z0-9\-]+$')
     ->name('products.bySlug');
 
 Route::get('/products/{slug}', [\App\Http\Controllers\Front\ProductDetailController::class, 'show'])
