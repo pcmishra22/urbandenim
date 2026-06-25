@@ -627,9 +627,28 @@
                     <p style="font-size:.8rem; color:#6b7280; margin:0 0 4px; font-weight:500; letter-spacing:.06em; text-transform:uppercase;">
                         {{ $product->brand->name ?? 'Jeanzo' }}
                     </p>
-                    <h1 style="font-size:1.75rem; font-weight:800; line-height:1.2; margin:0 0 12px; color:#111;">
+                    <h1 style="font-size:1.75rem; font-weight:800; line-height:1.2; margin:0 0 8px; color:#111;">
                         {{ $product->name }}
                     </h1>
+
+                    {{-- Sold by vendor badge --}}
+                    @if($product->vendor)
+                        @php $vendorSlug = \Illuminate\Support\Str::slug($product->vendor->shop_name); @endphp
+                        <div style="margin-bottom:10px;">
+                            <span style="font-size:.8rem; color:#6b7280;">Sold by</span>
+                            <a href="{{ route('brands.show', $vendorSlug) }}"
+                               style="font-size:.8rem; font-weight:700; color:var(--site-primary, #D19C97); text-decoration:none; margin-left:4px;">
+                                {{ $product->vendor->shop_name }}
+                            </a>
+                            @if($vendorAvgRating > 0)
+                                <span style="font-size:.75rem; color:#6b7280; margin-left:8px;">
+                                    <i class="fas fa-star" style="color:#f59e0b; font-size:.7rem;"></i>
+                                    {{ number_format($vendorAvgRating, 1) }}
+                                    ({{ $vendorReviewCount }})
+                                </span>
+                            @endif
+                        </div>
+                    @endif
 
                     {{-- FIX #4: Rating stars — always visible --}}
                     <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap; font-size:.875rem; margin-bottom:0;">

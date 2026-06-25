@@ -366,7 +366,7 @@ Route::get('/products/category/{slug}', [\App\Http\Controllers\Front\CategoryPro
 // Clean SEO category URL: /{category-slug}
 // Excludes all reserved top-level paths so they don't get swallowed
 Route::get('/{categorySlug}', [\App\Http\Controllers\Front\ProductsController::class, 'bySlug'])
-    ->where('categorySlug', '^(?!about|blog|cart|checkout|contact|email|faq|help|products|robots\.txt|sitemap\.xml|privacy\-policy|shipping\-policy|return\-refund\-policy|cancellation\-policy|terms\-and\-conditions|payment|wishlist|profile|account|login|register|vendor|admin)[a-z][a-z0-9\-]+$')
+    ->where('categorySlug', '^(?!about|blog|brands|cart|checkout|contact|email|faq|help|products|robots\.txt|sitemap\.xml|privacy\-policy|shipping\-policy|return\-refund\-policy|cancellation\-policy|terms\-and\-conditions|payment|wishlist|profile|account|login|register|vendor|admin)[a-z][a-z0-9\-]+$')
     ->name('products.bySlug');
 
 Route::get('/products/{slug}', [\App\Http\Controllers\Front\ProductDetailController::class, 'show'])
@@ -427,6 +427,9 @@ Route::get('/cancellation-policy',  fn() => view('front.legal.cancellation'))->n
 Route::get('/about', function () {
     return view('front.about');
 })->name('about');
+
+// ── Vendor storefront pages (/brands/{slug}) ───────────────────────────────
+Route::get('/brands/{slug}', [\App\Http\Controllers\Front\VendorStorefrontController::class, 'show'])->name('brands.show');
 
 Route::post('/products/{id}/review', [\App\Http\Controllers\Front\ProductDetailController::class, 'storeReview'])->middleware('auth')->name('products.review');
 Route::post('/vendor/{vendor}/review', [\App\Http\Controllers\Front\VendorReviewController::class, 'store'])->middleware('auth')->name('vendor.review.store');

@@ -463,15 +463,12 @@ section, .jz-section, .gender-grid, .collection-grid, .fit-grid, .products-grid,
      ═══════════════════════════════════════════════════════════ --}}
 <div class="offer-strip">
     <div class="offer-strip-inner">
-        <div class="offer-badge">10%<br><span>OFF</span></div>
+       <!-- <div class="offer-badge">10%<br><span>OFF</span></div>-->
         <div class="offer-text">
             <h3>Celebrate Our Launch with a Special Discount</h3>
             <p>Join the Jeanzo family — exclusive deals, new arrivals &amp; style tips.</p>
         </div>
-        <div class="offer-input-wrap">
-            <input type="email" placeholder="Your email address" id="offer-email">
-            <button type="button" onclick="handleOfferSignup()">Get 10% Off</button>
-        </div>
+  
     </div>
 </div>
 <script>

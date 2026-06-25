@@ -44,6 +44,19 @@
             <a href="{{ $detailUrl }}" class="text-dark text-decoration-none">
                 <h6 class="text-truncate mb-2 jz-prod-name">{{ $product->name }}</h6>
             </a>
+            @php
+                $sellerName = $product->vendor->shop_name ?? ($product->brand->name ?? null);
+                $sellerSlug = $sellerName ? \Illuminate\Support\Str::slug($sellerName) : null;
+            @endphp
+            @if($sellerName)
+                <div class="jz-sold-by mb-1">
+                    <a href="{{ $sellerSlug ? route('brands.show', $sellerSlug) : '#' }}"
+                       class="jz-seller-link"
+                       onclick="event.stopPropagation();">
+                        by {{ $sellerName }}
+                    </a>
+                </div>
+            @endif
             <div class="d-flex justify-content-center align-items-baseline flex-wrap jz-prod-price">
                 <span class="jz-price-main">₹{{ number_format($product->jeanzo_price ?: ($product->sale_price ?? $product->price), 0) }}</span>
                 @if(($product->jeanzo_price ?: $product->sale_price) && ($product->jeanzo_price ?: $product->sale_price) < $product->price)
@@ -120,3 +133,17 @@
 }
 </style>
 
+
+<style>
+.jz-sold-by { font-size: .72rem; line-height: 1; }
+.jz-seller-link {
+    color: #6b7280;
+    text-decoration: none;
+    font-weight: 500;
+    transition: color .15s;
+}
+.jz-seller-link:hover { color: var(--j-primary, #D19C97); text-decoration: underline; }
+@media (max-width: 575px) {
+    .jz-sold-by { font-size: .65rem; }
+}
+</style>
