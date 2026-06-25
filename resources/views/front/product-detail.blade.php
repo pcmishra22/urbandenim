@@ -604,6 +604,54 @@
                     .pd-thumb-strip-wrap.has-arrows #pd-thumb-next { display:flex !important; }
                 </style>
                 @endif
+
+                {{-- ── Vendor / Sold By Card ── --}}
+                @php
+                    $sellerName = $product->vendor->shop_name ?? ($product->brand->name ?? 'Jeanzo');
+                    $sellerSlug = \Illuminate\Support\Str::slug($sellerName);
+                    $isJeanzo   = !$product->vendor;
+                    $sellerUrl  = $isJeanzo ? url('/') : route('brands.show', $sellerSlug);
+                @endphp
+                <div style="margin-top:14px; border:1.5px solid #d1fae5; border-radius:14px; padding:14px; background:linear-gradient(135deg,#f0fdf4 0%,#ecfdf5 100%);">
+                    <div style="font-size:.72rem; font-weight:700; color:#6b7280; text-transform:uppercase; letter-spacing:.07em; margin-bottom:8px;">Sold by</div>
+                    <div style="display:flex; align-items:center; gap:10px; margin-bottom:10px;">
+                        <div style="width:38px; height:38px; border-radius:50%; background:var(--site-primary,#D19C97); display:flex; align-items:center; justify-content:center; font-weight:800; font-size:.95rem; color:#fff; flex-shrink:0;">
+                            {{ strtoupper(substr($sellerName, 0, 1)) }}
+                        </div>
+                        <div>
+                            <div style="font-weight:800; font-size:.95rem; color:#111; line-height:1.2;">{{ $sellerName }}</div>
+                            @if(!$isJeanzo && $vendorAvgRating > 0)
+                                <div style="font-size:.75rem; color:#6b7280; margin-top:2px;">
+                                    <span style="color:#f59e0b;">★</span> {{ number_format($vendorAvgRating, 1) }}
+                                    <span style="color:#9ca3af;">({{ $vendorReviewCount }} reviews)</span>
+                                </div>
+                            @elseif($isJeanzo)
+                                <div style="font-size:.75rem; color:#6b7280; margin-top:2px;">Official Jeanzo Store</div>
+                            @endif
+                        </div>
+                    </div>
+                    <div style="display:flex; flex-direction:column; gap:5px; margin-bottom:10px; font-size:.78rem; color:#374151;">
+                        @if(!$isJeanzo)
+                            <div style="display:flex; align-items:center; gap:6px;">
+                                <i class="fas fa-box-open" style="color:#10b981; width:14px;"></i>
+                                <span>{{ $product->vendor->products()->where('is_active', true)->count() }} products on Jeanzo</span>
+                            </div>
+                        @endif
+                        <div style="display:flex; align-items:center; gap:6px;">
+                            <i class="fas fa-check-circle" style="color:#10b981; width:14px;"></i>
+                            <span>Verified Seller</span>
+                        </div>
+                        <div style="display:flex; align-items:center; gap:6px;">
+                            <i class="fas fa-shield-alt" style="color:#10b981; width:14px;"></i>
+                            <span>Jeanzo Buyer Protection</span>
+                        </div>
+                    </div>
+                    @if(!$isJeanzo)
+                        <a href="{{ $sellerUrl }}" style="display:block; text-align:center; padding:7px 12px; background:#fff; border:1.5px solid #10b981; border-radius:8px; font-size:.8rem; font-weight:700; color:#065f46; text-decoration:none; transition:background .2s;">
+                            View All {{ $sellerName }} Products →
+                        </a>
+                    @endif
+                </div>
             </div>
 
             {{-- ════ RIGHT: Product Info ════ --}}
@@ -627,28 +675,9 @@
                     <p style="font-size:.8rem; color:#6b7280; margin:0 0 4px; font-weight:500; letter-spacing:.06em; text-transform:uppercase;">
                         {{ $product->brand->name ?? 'Jeanzo' }}
                     </p>
-                    <h1 style="font-size:1.75rem; font-weight:800; line-height:1.2; margin:0 0 8px; color:#111;">
+                    <h1 style="font-size:1.75rem; font-weight:800; line-height:1.2; margin:0 0 12px; color:#111;">
                         {{ $product->name }}
                     </h1>
-
-                    {{-- Sold by vendor badge --}}
-                    @if($product->vendor)
-                        @php $vendorSlug = \Illuminate\Support\Str::slug($product->vendor->shop_name); @endphp
-                        <div style="margin-bottom:10px;">
-                            <span style="font-size:.8rem; color:#6b7280;">Sold by</span>
-                            <a href="{{ route('brands.show', $vendorSlug) }}"
-                               style="font-size:.8rem; font-weight:700; color:var(--site-primary, #D19C97); text-decoration:none; margin-left:4px;">
-                                {{ $product->vendor->shop_name }}
-                            </a>
-                            @if($vendorAvgRating > 0)
-                                <span style="font-size:.75rem; color:#6b7280; margin-left:8px;">
-                                    <i class="fas fa-star" style="color:#f59e0b; font-size:.7rem;"></i>
-                                    {{ number_format($vendorAvgRating, 1) }}
-                                    ({{ $vendorReviewCount }})
-                                </span>
-                            @endif
-                        </div>
-                    @endif
 
                     {{-- FIX #4: Rating stars — always visible --}}
                     <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap; font-size:.875rem; margin-bottom:0;">
@@ -1017,95 +1046,95 @@
                     </button>
                 </div>
 
-                {{-- ── FIX #12: Accordions — proper box design ── --}}
-                <div>
-                    {{-- Description --}}
-                    <div class="pd-accordion">
-                        <button class="pd-acc-btn" type="button">
-                            <span style="font-weight:700; font-size:.95rem; color:#111;">Description</span>
-                            <i class="fas fa-chevron-down pd-acc-icon"></i>
-                        </button>
-                        <div class="pd-accordion-content">
-                            <div style="font-size:.875rem; color:#4b5563; line-height:1.8;">
-                                {!! $product->description ?? '<p>No description available.</p>' !!}
+                {{-- ── 2x2 Info Cards Grid ── --}}
+                <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-top:4px;">
+
+                    {{-- Card 1: Description --}}
+                    <div style="border:1.5px solid #e5e7eb; border-radius:12px; padding:14px; background:#fff;">
+                        <div style="display:flex; align-items:center; gap:7px; margin-bottom:8px;">
+                            <i class="fas fa-align-left" style="color:var(--site-primary,#D19C97); font-size:.9rem;"></i>
+                            <span style="font-weight:700; font-size:.88rem; color:#111;">Description</span>
+                        </div>
+                        <div style="font-size:.8rem; color:#4b5563; line-height:1.7; max-height:100px; overflow:hidden; position:relative;" id="pd-desc-short">
+                            {!! $product->description ?? '<p style="margin:0;">Premium quality denim jeans.</p>' !!}
+                        </div>
+                        @if(strlen(strip_tags($product->description ?? '')) > 120)
+                            <button onclick="document.getElementById('pd-desc-short').style.maxHeight='none'; this.style.display='none';"
+                                    style="background:none; border:none; padding:4px 0 0; font-size:.75rem; color:var(--site-primary,#D19C97); font-weight:700; cursor:pointer;">
+                                Read more →
+                            </button>
+                        @endif
+                    </div>
+
+                    {{-- Card 2: Size & Fit --}}
+                    <div style="border:1.5px solid #e5e7eb; border-radius:12px; padding:14px; background:#fff;">
+                        <div style="display:flex; align-items:center; gap:7px; margin-bottom:8px;">
+                            <i class="fas fa-ruler" style="color:var(--site-primary,#D19C97); font-size:.9rem;"></i>
+                            <span style="font-weight:700; font-size:.88rem; color:#111;">Size &amp; Fit</span>
+                        </div>
+                        <div style="display:flex; flex-direction:column; gap:4px;">
+                            @foreach([
+                                ['Fit',    $product->fit_type ?? null],
+                                ['Rise',   $product->waist_rise ?? null],
+                                ['Stretch',$product->stretch ?? null],
+                                ['Gender', ucfirst($product->gender ?? '')],
+                                ['Brand',  $product->brand->name ?? null],
+                            ] as [$label, $val])
+                                @if($val)
+                                    <div style="display:flex; justify-content:space-between; font-size:.78rem; border-bottom:1px solid #f3f4f6; padding:3px 0;">
+                                        <span style="color:#9ca3af;">{{ $label }}</span>
+                                        <span style="color:#111; font-weight:600;">{{ $val }}</span>
+                                    </div>
+                                @endif
+                            @endforeach
+                        </div>
+                    </div>
+
+                    {{-- Card 3: Material & Care --}}
+                    <div style="border:1.5px solid #e5e7eb; border-radius:12px; padding:14px; background:#fff;">
+                        <div style="display:flex; align-items:center; gap:7px; margin-bottom:8px;">
+                            <i class="fas fa-tshirt" style="color:var(--site-primary,#D19C97); font-size:.9rem;"></i>
+                            <span style="font-weight:700; font-size:.88rem; color:#111;">Material &amp; Care</span>
+                        </div>
+                        <div style="font-size:.8rem; color:#4b5563; line-height:1.7;">
+                            @if($product->fabric)
+                                <div style="margin-bottom:4px;"><strong style="color:#111;">Fabric:</strong> {{ $product->fabric }}</div>
+                            @endif
+                            @if($product->wash)
+                                <div><strong style="color:#111;">Wash:</strong> {{ $product->wash }}</div>
+                            @else
+                                <div>Machine wash cold. Tumble dry low.</div>
+                                <div>Do not bleach. Iron medium heat.</div>
+                            @endif
+                        </div>
+                    </div>
+
+                    {{-- Card 4: Shipping & Returns --}}
+                    <div style="border:1.5px solid #e5e7eb; border-radius:12px; padding:14px; background:#fff;">
+                        <div style="display:flex; align-items:center; gap:7px; margin-bottom:8px;">
+                            <i class="fas fa-truck" style="color:var(--site-primary,#D19C97); font-size:.9rem;"></i>
+                            <span style="font-weight:700; font-size:.88rem; color:#111;">Shipping &amp; Returns</span>
+                        </div>
+                        <div style="display:flex; flex-direction:column; gap:6px; font-size:.78rem; color:#374151;">
+                            <div style="display:flex; gap:6px; align-items:flex-start;">
+                                <i class="fas fa-check-circle" style="color:#10b981; margin-top:2px; flex-shrink:0;"></i>
+                                <span>Free shipping on orders above ₹999</span>
+                            </div>
+                            <div style="display:flex; gap:6px; align-items:flex-start;">
+                                <i class="fas fa-check-circle" style="color:#10b981; margin-top:2px; flex-shrink:0;"></i>
+                                <span>7-day easy returns &amp; exchanges</span>
+                            </div>
+                            <div style="display:flex; gap:6px; align-items:flex-start;">
+                                <i class="fas fa-check-circle" style="color:#10b981; margin-top:2px; flex-shrink:0;"></i>
+                                <span>COD available (+₹50 fee)</span>
+                            </div>
+                            <div style="display:flex; gap:6px; align-items:flex-start;">
+                                <i class="fas fa-check-circle" style="color:#10b981; margin-top:2px; flex-shrink:0;"></i>
+                                <span>Delivery in 3–5 business days</span>
                             </div>
                         </div>
                     </div>
 
-                    {{-- Material & Care --}}
-                    <div class="pd-accordion">
-                        <button class="pd-acc-btn" type="button">
-                            <span style="font-weight:700; font-size:.95rem; color:#111;">Material &amp; Care</span>
-                            <i class="fas fa-chevron-down pd-acc-icon"></i>
-                        </button>
-                        <div class="pd-accordion-content">
-                            <div style="font-size:.875rem; color:#4b5563; line-height:1.8;">
-                                @if($product->fabric)
-                                    <p style="margin:0 0 8px;"><strong>Fabric:</strong> {{ $product->fabric }}</p>
-                                @endif
-                                @if($product->wash)
-                                    <p style="margin:0 0 8px;"><strong>Wash Care:</strong> {{ $product->wash }}</p>
-                                @endif
-                                @if(!$product->fabric && !$product->wash)
-                                    <p style="margin:0;">Machine wash cold. Tumble dry low. Do not bleach. Iron on medium heat.</p>
-                                @endif
-                            </div>
-                        </div>
-                    </div>
-
-                    {{-- Size & Fit --}}
-                    <div class="pd-accordion">
-                        <button class="pd-acc-btn" type="button">
-                            <span style="font-weight:700; font-size:.95rem; color:#111;">Size &amp; Fit</span>
-                            <i class="fas fa-chevron-down pd-acc-icon"></i>
-                        </button>
-                        <div class="pd-accordion-content">
-                            <div style="font-size:.875rem; color:#4b5563; line-height:1.8;">
-                                <div style="display:grid; grid-template-columns:1fr 1fr; gap:0;">
-                                    @foreach([
-                                        ['Fit Type',   $product->fit_type ?? null],
-                                        ['Stretch',    $product->stretch ?? null],
-                                        ['Waist Rise', $product->waist_rise ?? null],
-                                        ['Gender',     ucfirst($product->gender ?? '')],
-                                        ['SKU',        $product->sku ?? null],
-                                        ['Brand',      $product->brand->name ?? null],
-                                        ['Country',    $product->country_of_origin ?? null],
-                                    ] as [$label, $val])
-                                        @if($val)
-                                            <div style="padding:8px 0; border-bottom:1px solid #f3f4f6; font-size:.82rem;">
-                                                <span style="color:#9ca3af; display:block; margin-bottom:2px;">{{ $label }}</span>
-                                                <span style="color:#111; font-weight:600;">{{ $val }}</span>
-                                            </div>
-                                        @endif
-                                    @endforeach
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    {{-- Shipping & Returns --}}
-                    <div class="pd-accordion">
-                        <button class="pd-acc-btn" type="button">
-                            <span style="font-weight:700; font-size:.95rem; color:#111;">Shipping &amp; Returns</span>
-                            <i class="fas fa-chevron-down pd-acc-icon"></i>
-                        </button>
-                        <div class="pd-accordion-content">
-                            <div style="font-size:.875rem; color:#4b5563; line-height:1.8; display:flex; flex-direction:column; gap:12px;">
-                                <div>
-                                    <p style="font-weight:700; color:#111; margin:0 0 4px;"><i class="fas fa-truck" style="color:var(--site-primary);margin-right:5px;"></i>Free Shipping</p>
-                                    <p style="margin:0;">Free standard shipping on orders above ₹999. Delivery in 3–5 business days.</p>
-                                </div>
-                                <div>
-                                    <p style="font-weight:700; color:#111; margin:0 0 4px;"><i class="fas fa-undo" style="color:var(--site-primary);margin-right:5px;"></i>Easy Returns</p>
-                                    <p style="margin:0;">7-day return policy. Free returns &amp; exchanges. Item must be unworn with tags attached.</p>
-                                </div>
-                                <div>
-                                    <p style="font-weight:700; color:#111; margin:0 0 4px;"><i class="fas fa-money-bill" style="color:var(--site-primary);margin-right:5px;"></i>COD Available</p>
-                                    <p style="margin:0;">Cash on Delivery available on all orders. Additional ₹50 COD fee applies.</p>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
                 </div>
             </div>{{-- end right col --}}
         </div>{{-- end main grid --}}
