@@ -36,48 +36,46 @@
             'item'     => url('/' . $seoCategory->slug),
         ];
     }
+
+    $breadcrumbList = array_map(fn($b) => [
+        '@type'    => 'ListItem',
+        'position' => $b['position'],
+        'name'     => $b['name'],
+        'item'     => $b['item'],
+    ], $breadcrumbItems);
+
+    $schemaData = [
+        '@context' => 'https://schema.org',
+        '@graph'   => [
+            [
+                '@type'           => 'BreadcrumbList',
+                'itemListElement' => $breadcrumbList,
+            ],
+            [
+                '@type'       => 'CollectionPage',
+                'name'        => $pageTitle,
+                'description' => $pageDescription,
+                'url'         => $pageCanonical,
+                'isPartOf'    => ['@id' => url('/') . '#website'],
+                'breadcrumb'  => [
+                    '@type'           => 'BreadcrumbList',
+                    'itemListElement' => $breadcrumbList,
+                ],
+                'inLanguage'  => 'en-IN',
+            ],
+        ],
+    ];
+
+    if ($seoCategory) {
+        $schemaData['@graph'][] = [
+            '@type'       => 'ItemList',
+            'name'        => $seoCategory->name . ' Jeans Collection',
+            'description' => $pageDescription,
+            'url'         => $pageCanonical,
+        ];
+    }
 @endphp
-<script type="application/ld+json">
-{
-    "@context": "https://schema.org",
-    "@graph": [
-        {
-            "@type": "BreadcrumbList",
-            "itemListElement": @json(array_map(fn($b) => [
-                '@type'  => 'ListItem',
-                'position' => $b['position'],
-                'name'   => $b['name'],
-                'item'   => $b['item']
-            ], $breadcrumbItems))
-        },
-        {
-            "@type": "CollectionPage",
-            "name": "{{ $pageTitle }}",
-            "description": "{{ $pageDescription }}",
-            "url": "{{ $pageCanonical }}",
-            "isPartOf": { "@id": "{{ url('/') }}#website" },
-            "breadcrumb": {
-                "@type": "BreadcrumbList",
-                "itemListElement": @json(array_map(fn($b) => [
-                    '@type'  => 'ListItem',
-                    'position' => $b['position'],
-                    'name'   => $b['name'],
-                    'item'   => $b['item']
-                ], $breadcrumbItems))
-            },
-            "inLanguage": "en-IN"
-        }
-        @if($seoCategory)
-        ,{
-            "@type": "ItemList",
-            "name": "{{ $seoCategory->name }} Jeans Collection",
-            "description": "{{ $pageDescription }}",
-            "url": "{{ $pageCanonical }}"
-        }
-        @endif
-    ]
-}
-</script>
+<script type="application/ld+json">{!! json_encode($schemaData, JSON_UNESCAPED_SLASHES|JSON_UNESCAPED_UNICODE) !!}</script>
 @endpush
 
 @push('styles')

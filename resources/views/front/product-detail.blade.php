@@ -55,19 +55,20 @@
         'name'     => $product->name,
         'item'     => route('products.detail', $product->slug),
     ];
+    $breadcrumbSchema = [
+        '@context'        => 'https://schema.org',
+        '@type'           => 'BreadcrumbList',
+        'itemListElement' => array_map(function($b) {
+            return [
+                '@type'    => 'ListItem',
+                'position' => $b['position'],
+                'name'     => $b['name'],
+                'item'     => $b['item'],
+            ];
+        }, $pdBreadcrumbs),
+    ];
 @endphp
-<script type="application/ld+json">
-{
-    "@context": "https://schema.org",
-    "@type": "BreadcrumbList",
-    "itemListElement": {{ json_encode(array_map(fn($b) => [
-        '@type'    => 'ListItem',
-        'position' => $b['position'],
-        'name'     => $b['name'],
-        'item'     => $b['item'],
-    ], $pdBreadcrumbs), JSON_UNESCAPED_SLASHES|JSON_UNESCAPED_UNICODE) }}
-}
-</script>
+<script type="application/ld+json">{!! json_encode($breadcrumbSchema, JSON_UNESCAPED_SLASHES|JSON_UNESCAPED_UNICODE) !!}</script>
 @endpush
 @section('meta_keywords', $product->name . ', buy ' . $product->name . ' online, ' . (optional($product->category)->name ?? 'denim jeans') . ' india, jeanzo jeans, premium denim india')
 
