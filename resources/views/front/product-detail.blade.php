@@ -38,7 +38,38 @@
     }
 @endphp
 <script type="application/ld+json">{{ json_encode($jsonld, JSON_UNESCAPED_SLASHES|JSON_UNESCAPED_UNICODE) }}</script>
+@php
+    $pdBreadcrumbs = [
+        ['position' => 1, 'name' => 'Home', 'item' => url('/')],
+        ['position' => 2, 'name' => 'Shop', 'item' => route('products.index')],
+    ];
+    if (optional($product->category)->slug) {
+        $pdBreadcrumbs[] = [
+            'position' => 3,
+            'name'     => $product->category->name,
+            'item'     => url('/' . $product->category->slug),
+        ];
+    }
+    $pdBreadcrumbs[] = [
+        'position' => count($pdBreadcrumbs) + 1,
+        'name'     => $product->name,
+        'item'     => route('products.detail', $product->slug),
+    ];
+@endphp
+<script type="application/ld+json">
+{
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    "itemListElement": {{ json_encode(array_map(fn($b) => [
+        '@type'    => 'ListItem',
+        'position' => $b['position'],
+        'name'     => $b['name'],
+        'item'     => $b['item'],
+    ], $pdBreadcrumbs), JSON_UNESCAPED_SLASHES|JSON_UNESCAPED_UNICODE) }}
+}
+</script>
 @endpush
+@section('meta_keywords', $product->name . ', buy ' . $product->name . ' online, ' . (optional($product->category)->name ?? 'denim jeans') . ' india, jeanzo jeans, premium denim india')
 
 @push('styles')
 <link rel="preconnect" href="https://fonts.googleapis.com">

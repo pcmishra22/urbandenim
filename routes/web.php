@@ -23,8 +23,11 @@ Route::get('/', function () {
 });
 
 Route::get('/sitemap.xml', function () {
-    $products   = \App\Models\Product::where('is_active', true)->select('id', 'slug', 'name', 'updated_at')->get();
-    $categories = \App\Models\Category::where('is_active', true)->select('slug', 'updated_at')->get();
+    $products   = \App\Models\Product::where('is_active', true)
+                    ->select('id', 'slug', 'name', 'updated_at')
+                    ->with(['images' => fn($q) => $q->select('product_id', 'image')->limit(1)])
+                    ->get();
+    $categories = \App\Models\Category::where('is_active', true)->select('id', 'slug', 'name', 'updated_at')->get();
     $posts      = \App\Models\BlogPost::where('status', 'published')
                     ->select('slug', 'updated_at')
                     ->latest('updated_at')

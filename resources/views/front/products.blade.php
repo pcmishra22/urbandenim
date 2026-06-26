@@ -11,6 +11,9 @@
     $pageCanonical   = $seoCategory
         ? url('/' . $seoCategory->slug)
         : route('products.index');
+    $pageKeywords    = $seoCategory
+        ? $seoCategory->name . ', buy ' . $seoCategory->name . ' online india, ' . $seoCategory->name . ' jeanzo, premium denim jeans india, jeans online'
+        : 'jeans for women, jeans for men, denim jeans online india, slim fit jeans, straight fit jeans, high waist jeans, buy jeans online, jeanzo jeans';
 @endphp
 
 @section('title', $pageTitle)
@@ -18,6 +21,64 @@
 @section('canonical', $pageCanonical)
 @section('og_title', $pageTitle)
 @section('og_description', $pageDescription)
+@section('meta_keywords', $pageKeywords)
+
+@push('json_ld')
+@php
+    $breadcrumbItems = [
+        ['position' => 1, 'name' => 'Home', 'item' => url('/')],
+        ['position' => 2, 'name' => 'Shop', 'item' => route('products.index')],
+    ];
+    if ($seoCategory) {
+        $breadcrumbItems[] = [
+            'position' => 3,
+            'name'     => $seoCategory->name,
+            'item'     => url('/' . $seoCategory->slug),
+        ];
+    }
+@endphp
+<script type="application/ld+json">
+{
+    "@context": "https://schema.org",
+    "@graph": [
+        {
+            "@type": "BreadcrumbList",
+            "itemListElement": @json(array_map(fn($b) => [
+                '@type'  => 'ListItem',
+                'position' => $b['position'],
+                'name'   => $b['name'],
+                'item'   => $b['item']
+            ], $breadcrumbItems))
+        },
+        {
+            "@type": "CollectionPage",
+            "name": "{{ $pageTitle }}",
+            "description": "{{ $pageDescription }}",
+            "url": "{{ $pageCanonical }}",
+            "isPartOf": { "@id": "{{ url('/') }}#website" },
+            "breadcrumb": {
+                "@type": "BreadcrumbList",
+                "itemListElement": @json(array_map(fn($b) => [
+                    '@type'  => 'ListItem',
+                    'position' => $b['position'],
+                    'name'   => $b['name'],
+                    'item'   => $b['item']
+                ], $breadcrumbItems))
+            },
+            "inLanguage": "en-IN"
+        }
+        @if($seoCategory)
+        ,{
+            "@type": "ItemList",
+            "name": "{{ $seoCategory->name }} Jeans Collection",
+            "description": "{{ $pageDescription }}",
+            "url": "{{ $pageCanonical }}"
+        }
+        @endif
+    ]
+}
+</script>
+@endpush
 
 @push('styles')
 <style>

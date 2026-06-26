@@ -9,27 +9,25 @@
         <priority>1.0</priority>
     </url>
 
-    {{-- ── Shop / Products ── --}}
+    {{-- ── Shop All ── --}}
     <url>
         <loc>{{ route('products.index') }}</loc>
         <changefreq>daily</changefreq>
         <priority>0.95</priority>
     </url>
 
-    {{-- ── Category / Fit pages ── --}}
-    @foreach(['Slim Fit','Straight Fit','Regular Fit','Wide Leg','Bootcut','Skinny'] as $fit)
+    {{-- ── Dynamic category pages — clean SEO slug URLs ── --}}
+    @foreach($categories as $cat)
     <url>
-        <loc>{{ route('products.index', ['category_name' => $fit]) }}</loc>
+        <loc>{{ url('/' . $cat->slug) }}</loc>
+        <lastmod>{{ $cat->updated_at->tz('UTC')->toAtomString() }}</lastmod>
         <changefreq>weekly</changefreq>
-        <priority>0.85</priority>
+        <priority>0.90</priority>
     </url>
-    @endforeach
-
-    {{-- ── Dynamic category pages ── --}}
-    @foreach($categories as $category)
+    {{-- Also include the /products/category/{slug} canonical --}}
     <url>
-        <loc>{{ route('products.category', $category->slug) }}</loc>
-        <lastmod>{{ $category->updated_at->tz('UTC')->toAtomString() }}</lastmod>
+        <loc>{{ route('products.category', $cat->slug) }}</loc>
+        <lastmod>{{ $cat->updated_at->tz('UTC')->toAtomString() }}</lastmod>
         <changefreq>weekly</changefreq>
         <priority>0.80</priority>
     </url>
@@ -59,7 +57,7 @@
         <priority>0.60</priority>
     </url>
 
-    {{-- ── Legal / Policy pages ── --}}
+    {{-- ── Legal pages ── --}}
     <url>
         <loc>{{ route('legal.terms') }}</loc>
         <changefreq>yearly</changefreq>
@@ -89,8 +87,8 @@
     {{-- ── Product pages (with image tags) ── --}}
     @foreach($products as $product)
     @php
-        $img = $product->images->first();
-        $imgUrl = $img ? asset('storage/products/'.$product->id.'/images/'.($img->image ?? '')) : null;
+        $img    = $product->images->first();
+        $imgUrl = $img ? asset('storage/products/' . $product->id . '/images/' . ($img->image ?? '')) : null;
     @endphp
     <url>
         <loc>{{ route('products.detail', $product->slug) }}</loc>
