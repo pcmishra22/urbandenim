@@ -14,6 +14,47 @@ class ProductsController extends Controller
     /** Number of products per page / per infinite-scroll batch */
     private const PER_PAGE = 15;
 
+    /**
+     * Same keyword map as CategoryProductsController.
+     * When resolving a category by slug, products are included if they
+     * belong to the category by ID *or* their name contains one of these
+     * keywords — so "Women's Wide Leg Jeans" shows all wide-leg products
+     * regardless of which category they were assigned to.
+     */
+    private const NAME_SEARCH_MAP = [
+        'womens-wide-leg-jeans'       => ['Wide-Leg', 'Wide Leg'],
+        'womens-flared-jeans'         => ['Flared', 'Flare'],
+        'womens-bootcut-jeans'        => ['Bootcut', 'Boot-Cut', 'Boot Cut'],
+        'womens-boyfriend-jeans'      => ['Boyfriend'],
+        'womens-girlfriend-jeans'     => ['Girlfriend'],
+        'womens-mom-jeans'            => ['Mom Jeans', 'Mom Jean'],
+        'womens-relaxed-fit-jeans'    => ['Relaxed Fit', 'Relaxed-Fit'],
+        'womens-skinny-jeans'         => ['Skinny', 'Skin Fit'],
+        'womens-slim-fit-jeans'       => ['Slim Fit', 'Slim-Fit'],
+        'womens-straight-leg-jeans'   => ['Straight Leg', 'Straight-Leg', 'Straight Fit'],
+        'womens-low-rise-jeans'       => ['Low Rise', 'Low-Rise'],
+        'womens-mid-rise-jeans'       => ['Mid Rise', 'Mid-Rise'],
+        'womens-high-rise-jeans'      => ['High-Rise', 'High Rise'],
+        'womens-distressed-jeans'     => ['Distressed'],
+        'womens-ripped-jeans'         => ['Ripped'],
+        'womens-stretch-jeans'        => ['Stretch'],
+        'womens-jeggings'             => ['Jegging'],
+        'womens-cropped-jeans'        => ['Cropped'],
+        'womens-vintage-jeans'        => ['Vintage'],
+        'womens-cargo-jeans'          => ['Cargo'],
+        'mens-wide-leg-jeans'         => ['Wide-Leg', 'Wide Leg'],
+        'mens-relaxed-fit-jeans'      => ['Relaxed Fit', 'Relaxed-Fit'],
+        'mens-bootcut-jeans'          => ['Bootcut', 'Boot Cut'],
+        'mens-slim-fit-jeans'         => ['Slim Fit', 'Slim-Fit'],
+        'mens-skinny-fit-jeans'       => ['Skinny'],
+        'mens-straight-fit-jeans'     => ['Straight Fit', 'Straight-Leg'],
+        'mens-regular-fit-jeans'      => ['Regular Fit', 'Regular-Fit'],
+        'mens-tapered-fit-jeans'      => ['Tapered', 'Tapered Fit'],
+        'mens-loose-fit-jeans'        => ['Loose Fit', 'Loose-Fit'],
+        'mens-athletic-fit-jeans'     => ['Athletic Fit', 'Athletic-Fit'],
+        'mens-cargo-jeans'            => ['Cargo'],
+    ];
+
     // ─────────────────────────────────────────────────────────────────────────
     // Full page load  →  /products
     // ─────────────────────────────────────────────────────────────────────────
@@ -22,8 +63,9 @@ class ProductsController extends Controller
         $products   = $this->buildQuery($request)->paginate(self::PER_PAGE)->withQueryString();
         $brands     = Brand::has('products')->get();
         $categories = Category::where('is_active', true)->withCount('products')->get();
+        $smartProductCountBycat = $this->buildSmartCountMap();
 
-        return view('front.products', compact('products', 'brands', 'categories'));
+        return view('front.products', compact('products', 'brands', 'categories', 'smartProductCountBycat'));
     }
 
     // ─────────────────────────────────────────────────────────────────────────
@@ -43,8 +85,10 @@ class ProductsController extends Controller
 
     // ─────────────────────────────────────────────────────────────────────────
     // Shared filter + sort query  (single source of truth)
+    // $forceCategoryIds  – pre-expanded list of category IDs (set by bySlug)
+    // $forceNameKeywords – name keywords to OR-match  (set by bySlug)
     // ─────────────────────────────────────────────────────────────────────────
-    private function buildQuery(Request $request): Builder
+    private function buildQuery(Request $request, array $forceCategoryIds = [], array $forceNameKeywords = []): Builder
     {
         $query = Product::where('is_active', true)
             ->with(['category', 'images', 'brand', 'variants'])
@@ -68,20 +112,28 @@ class ProductsController extends Controller
         if ($request->filled('price_min')) $query->where('price', '>=', (float) $request->price_min);
         if ($request->filled('price_max')) $query->where('price', '<=', (float) $request->price_max);
 
-        // ── Category (supports parent → children expansion) ───────────────────
-        if ($request->filled('category')) {
+        // ── Category ──────────────────────────────────────────────────────────
+        if (!empty($forceCategoryIds)) {
+            // Called from bySlug: IDs already expanded, keywords already resolved
+            $allIds       = $forceCategoryIds;
+            $nameKeywords = $forceNameKeywords;
+            $query->where(function ($q) use ($allIds, $nameKeywords) {
+                $q->whereIn('category_id', $allIds);
+                foreach ($nameKeywords as $keyword) {
+                    $q->orWhere('name', 'like', "%{$keyword}%");
+                }
+            });
+        } elseif ($request->filled('category')) {
+            // Called from index/ajaxLoad: expand top-level → children
             $requestedIds  = array_map('intval', (array) $request->category);
             $allIds        = collect($requestedIds);
-
             $topCategories = Category::whereIn('id', $requestedIds)
                 ->whereNull('parent_id')
                 ->pluck('id');
-
             if ($topCategories->isNotEmpty()) {
                 $childIds = Category::whereIn('parent_id', $topCategories)->pluck('id');
                 $allIds   = $allIds->merge($childIds);
             }
-
             $query->whereIn('category_id', $allIds->unique()->values()->all());
         }
 
@@ -117,14 +169,81 @@ class ProductsController extends Controller
             ->where('is_active', true)
             ->firstOrFail();
 
-        // Inject the category ID into the request so buildQuery picks it up
-        $request->merge(['category' => $category->id]);
+        // Collect this category + children + grandchildren IDs
+        $categoryIds = collect([$category->id]);
+        $childIds    = Category::where('parent_id', $category->id)->pluck('id');
+        $categoryIds = $categoryIds->merge($childIds);
+        if ($childIds->isNotEmpty()) {
+            $grandChildIds = Category::whereIn('parent_id', $childIds)->pluck('id');
+            $categoryIds   = $categoryIds->merge($grandChildIds);
+        }
+        $categoryIds = $categoryIds->unique()->values()->all();
 
-        $products   = $this->buildQuery($request)->paginate(self::PER_PAGE)->withQueryString();
+        // Name keywords for this slug (empty array if not in map)
+        $nameKeywords = self::NAME_SEARCH_MAP[$categorySlug] ?? [];
+
+        // Pass IDs and keywords directly — do NOT merge into $request to avoid
+        // array values being serialized into query strings by withQueryString()
+        $products   = $this->buildQuery($request, $categoryIds, $nameKeywords)
+                           ->paginate(self::PER_PAGE)
+                           ->withQueryString();
         $brands     = Brand::has('products')->get();
         $categories = Category::where('is_active', true)->withCount('products')->get();
+        $smartProductCountBycat = $this->buildSmartCountMap();
 
-        // Pass category info so the view can set proper SEO tags & page title
-        return view('front.products', compact('products', 'brands', 'categories', 'category'));
+        return view('front.products', compact('products', 'brands', 'categories', 'category', 'smartProductCountBycat'));
+    }
+
+    // ─────────────────────────────────────────────────────────────────────────
+    // Build a category_id → product_count map that respects NAME_SEARCH_MAP.
+    //
+    // For categories that have name keywords defined, the count includes ALL
+    // active products whose name matches those keywords (across any category),
+    // not just products directly assigned by category_id.
+    // ─────────────────────────────────────────────────────────────────────────
+    private function buildSmartCountMap(): array
+    {
+        // Base: direct count by category_id
+        $directCounts = \App\Models\Product::where('is_active', true)
+            ->whereNotNull('category_id')
+            ->selectRaw('category_id, count(*) as total')
+            ->groupBy('category_id')
+            ->pluck('total', 'category_id')
+            ->toArray();
+
+        // Build a slug → category_id lookup
+        $slugToId = Category::where('is_active', true)
+            ->pluck('id', 'slug')
+            ->toArray();
+
+        // For each slug that has name keywords, compute the true count
+        foreach (self::NAME_SEARCH_MAP as $slug => $keywords) {
+            if (!isset($slugToId[$slug])) continue;
+            $catId = $slugToId[$slug];
+
+            // Collect all category IDs in this subtree
+            $subtreeIds = collect([$catId]);
+            $childIds   = Category::where('parent_id', $catId)->pluck('id');
+            $subtreeIds = $subtreeIds->merge($childIds);
+            if ($childIds->isNotEmpty()) {
+                $grandChildIds = Category::whereIn('parent_id', $childIds)->pluck('id');
+                $subtreeIds    = $subtreeIds->merge($grandChildIds);
+            }
+            $subtreeIds = $subtreeIds->unique()->values()->all();
+
+            // Count: in subtree by ID OR name matches keyword
+            $count = \App\Models\Product::where('is_active', true)
+                ->where(function ($q) use ($subtreeIds, $keywords) {
+                    $q->whereIn('category_id', $subtreeIds);
+                    foreach ($keywords as $kw) {
+                        $q->orWhere('name', 'like', "%{$kw}%");
+                    }
+                })
+                ->count();
+
+            $directCounts[$catId] = $count;
+        }
+
+        return $directCounts;
     }
 }

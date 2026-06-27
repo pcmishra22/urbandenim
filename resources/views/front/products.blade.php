@@ -370,13 +370,15 @@
                         ->toArray();
                     $catsWithProductsSet = array_flip($catsWithProducts);
 
-                    // Count direct products per category
-                    $productCountBycat = \App\Models\Product::where('is_active', true)
-                        ->whereNotNull('category_id')
-                        ->selectRaw('category_id, count(*) as total')
-                        ->groupBy('category_id')
-                        ->pluck('total', 'category_id')
-                        ->toArray();
+                    // Use smart count map from controller (respects name-keyword matching)
+                    // Fall back to a direct DB count if not passed (e.g. vendor pages)
+                    $productCountBycat = $smartProductCountBycat
+                        ?? \App\Models\Product::where('is_active', true)
+                            ->whereNotNull('category_id')
+                            ->selectRaw('category_id, count(*) as total')
+                            ->groupBy('category_id')
+                            ->pluck('total', 'category_id')
+                            ->toArray();
 
                     // Check if a category or any descendant has products
                     $catHasAnyProducts = function(\App\Models\Category $cat) use (&$catHasAnyProducts, $catsWithProductsSet) {
