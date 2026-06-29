@@ -7,13 +7,14 @@
 
 @push('json_ld')
 <script type="application/ld+json">
+@verbatim
 {
     "@context": "https://schema.org",
     "@graph": [
         {
             "@type": "AboutPage",
-            "@id": "{{ route('about') }}#webpage",
-            "url": "{{ route('about') }}",
+            "@id": "https://jeanzo.in/about#webpage",
+            "url": "https://jeanzo.in/about",
             "name": "About Jeanzo — Premium Denim Jeans Brand India",
             "description": "Jeanzo is India's premium denim brand for men and women.",
             "isPartOf": { "@id": "https://jeanzo.in/#website" },
@@ -23,28 +24,19 @@
                 "@type": "BreadcrumbList",
                 "itemListElement": [
                     { "@type": "ListItem", "position": 1, "name": "Home",     "item": "https://jeanzo.in/" },
-                    { "@type": "ListItem", "position": 2, "name": "About Us", "item": "{{ route('about') }}" }
+                    { "@type": "ListItem", "position": 2, "name": "About Us", "item": "https://jeanzo.in/about" }
                 ]
             }
         }
     ]
 }
+@endverbatim
 </script>
 @endpush
 
 @section('content')
-    <!-- Page Header Start -->
-    <div class="container-fluid bg-secondary mb-5">
-        <div class="d-flex flex-column align-items-center justify-content-center" style="min-height: 300px">
-            <h1 class="font-weight-semi-bold text-uppercase mb-3">About Us</h1>
-            <div class="d-inline-flex">
-                <p class="m-0"><a href="{{ url('/') }}">Home</a></p>
-                <p class="m-0 px-2">-</p>
-                <p class="m-0">About Us</p>
-            </div>
-        </div>
-    </div>
-    <!-- Page Header End -->
+@include('front.partials.design-system')
+@include('front.partials.page-banner', ['title' => 'About Us', 'breadcrumb' => 'About Us', 'showCategories' => false])
 
     <!-- About Start -->
     <div class="container-fluid pt-5">

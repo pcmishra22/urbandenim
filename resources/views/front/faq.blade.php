@@ -7,11 +7,12 @@
 
 @push('json_ld')
 <script type="application/ld+json">
+@verbatim
 {
     "@context": "https://schema.org",
     "@type": "FAQPage",
     "name": "Frequently Asked Questions — Jeanzo India",
-    "url": "{{ route('faq') }}",
+    "url": "https://jeanzo.in/faq",
     "mainEntity": [
         {
             "@type": "Question",
@@ -50,6 +51,7 @@
         }
     ]
 }
+@endverbatim
 </script>
 @endpush
 

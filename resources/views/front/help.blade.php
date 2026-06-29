@@ -5,15 +5,17 @@
 @section('og_title', 'Help Center — Jeanzo')
 @section('og_description', 'Find answers to common questions about orders, sizing, delivery, returns and payment at Jeanzo.')
 @section('content')
+@include('front.partials.design-system')
+@include('front.partials.page-banner', ['title' => 'Help Center', 'breadcrumb' => 'Help', 'showCategories' => false])
 
-@include('front.partials.page-banner', ['title' => 'Help Center', 'breadcrumb' => 'Help'])
+<div class="container-fluid pb-5" style="background:#faf8f8;padding-top:28px;">
 
-<div class="container-fluid pt-5 pb-5">
+    <div class="text-center mb-5 pt-2">
+        <h2 class="font-weight-bold" style="color:#2d2d2d;">How can we help you?</h2>
+        <div class="mx-auto" style="width:50px;height:3px;background:var(--j-primary);border-radius:2px;margin-top:8px;"></div>
+    </div>
+
     <div class="row px-xl-5">
-        <div class="col-12 text-center mb-5">
-            <h2 class="section-title px-5"><span class="px-2">How can we help you?</span></h2>
-        </div>
-
         {{-- Help Categories --}}
         <div class="col-lg-4 col-md-6 mb-4">
             <div class="border rounded p-4 text-center h-100">
