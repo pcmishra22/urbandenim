@@ -459,16 +459,158 @@ section, .jz-section, .gender-grid, .collection-grid, .fit-grid, .products-grid,
 </div>
 
 {{-- ═══════════════════════════════════════════════════════════
-     2. OFFER STRIP
+     1b. SHOP MEN'S / WOMEN'S — GENDER ENTRY SECTIONS
+     ═══════════════════════════════════════════════════════════ --}}
+<style>
+/* ── Gender Entry Grid ── */
+.gender-entry-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0;
+    margin-top: 0;
+}
+.gender-entry-card {
+    position: relative;
+    height: 480px;
+    overflow: hidden;
+    display: block;
+    text-decoration: none;
+    background: #111;
+}
+.gender-entry-card img {
+    width: 100%; height: 100%;
+    object-fit: cover; object-position: center top;
+    transition: transform .7s ease;
+    filter: brightness(.58);
+}
+.gender-entry-card:hover img {
+    transform: scale(1.04);
+    filter: brightness(.42);
+}
+.gender-entry-body {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: 20px;
+}
+.gender-tag {
+    font-size: .62rem;
+    font-weight: 800;
+    letter-spacing: 4px;
+    text-transform: uppercase;
+    color: #D19C97;
+    margin-bottom: 10px;
+}
+.gender-entry-body h2 {
+    font-size: clamp(1.6rem, 3.5vw, 2.8rem);
+    font-weight: 900;
+    color: #fff;
+    text-transform: uppercase;
+    letter-spacing: -0.5px;
+    margin-bottom: 10px;
+    line-height: 1.05;
+}
+.gender-entry-body p {
+    font-size: .88rem;
+    color: rgba(255,255,255,.72);
+    margin-bottom: 28px;
+    max-width: 300px;
+    line-height: 1.6;
+}
+.btn-gender {
+    display: inline-block;
+    background: #fff;
+    color: #1a1a1a;
+    font-size: .72rem;
+    font-weight: 800;
+    letter-spacing: 2.5px;
+    text-transform: uppercase;
+    padding: 13px 36px;
+    border: 2px solid #fff;
+    text-decoration: none;
+    transition: all .2s;
+}
+.btn-gender:hover {
+    background: transparent;
+    color: #fff;
+    text-decoration: none;
+}
+.gender-divider {
+    position: absolute;
+    top: 0; bottom: 0;
+    right: 0;
+    width: 1px;
+    background: rgba(255,255,255,.18);
+    z-index: 5;
+}
+/* Value proposition badge on card */
+.gender-value-pill {
+    display: inline-block;
+    background: #D19C97;
+    color: #fff;
+    font-size: .6rem;
+    font-weight: 800;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    padding: 5px 14px;
+    margin-bottom: 18px;
+}
+
+@media (max-width: 767px) {
+    .gender-entry-grid { grid-template-columns: 1fr; }
+    .gender-entry-card { height: 300px; }
+    .gender-divider { display: none; }
+}
+@media (max-width: 480px) {
+    .gender-entry-card { height: 240px; }
+    .gender-entry-body h2 { font-size: 1.6rem; }
+}
+</style>
+
+@php
+    $mensCat = "Men's Jeans";
+    $womensCat = "Women's Denim";
+@endphp
+<div class="gender-entry-grid">
+    {{-- Men's Side --}}
+    <a href="{{ route('products.index', ['category_name' => $mensCat]) }}" class="gender-entry-card">
+        <img src="https://images.unsplash.com/photo-1542272604-787c3835535d?w=800&q=80" alt="Shop Men's Jeans" loading="eager">
+        <div class="gender-divider"></div>
+        <div class="gender-entry-body">
+            <div class="gender-tag">For Him</div>
+            <h2>Men's<br>Denim</h2>
+            <p>Slim fit, straight fit, relaxed fit — factory-direct denim built to last.</p>
+            <div class="gender-value-pill">Starting ₹987 · Factory Direct</div>
+            <span class="btn-gender">Shop Men's</span>
+        </div>
+    </a>
+    {{-- Women's Side --}}
+    <a href="{{ route('products.index', ['category_name' => $womensCat]) }}" class="gender-entry-card">
+        <img src="https://images.unsplash.com/photo-1541099649105-f69ad21f3246?w=800&q=80" alt="Shop Women's Jeans" loading="eager">
+        <div class="gender-entry-body">
+            <div class="gender-tag">For Her</div>
+            <h2>Women's<br>Denim</h2>
+            <p>Wide leg, high-rise, skinny & bootcut — every shape, every occasion.</p>
+            <div class="gender-value-pill">Starting ₹987 · Factory Direct</div>
+            <span class="btn-gender">Shop Women's</span>
+        </div>
+    </a>
+</div>
+
+{{-- ═══════════════════════════════════════════════════════════
+     2. OFFER STRIP — value-driven positioning
      ═══════════════════════════════════════════════════════════ --}}
 <div class="offer-strip">
     <div class="offer-strip-inner">
-       <!-- <div class="offer-badge">10%<br><span>OFF</span></div>-->
+        <div class="offer-badge">₹987<span>onwards</span></div>
         <div class="offer-text">
-            <h3>Celebrate Our Launch with a Special Discount</h3>
-            <p>Join the Jeanzo family — exclusive deals, new arrivals &amp; style tips.</p>
+            <h3>Factory-Direct Premium Denim — Starting at ₹987</h3>
+            <p>No middlemen. No markups. Real denim quality, straight to your door with FREE shipping &amp; COD.</p>
         </div>
-  
     </div>
 </div>
 <script>
@@ -699,10 +841,17 @@ function handleOfferSignup(){
         </div>
         <div class="prod-info">
             @if($catName)<div class="prod-cat">{{ $catName }}</div>@endif
+            {{-- Only show stars when product has approved reviews --}}
+            @if(($product->rev_count ?? 0) > 0)
             <div class="prod-stars">
                 @for($s=1;$s<=5;$s++)<i class="{{ $s<=$stars?'fas':'far' }} fa-star"></i>@endfor
-                @if($product->rev_count > 0)<small class="text-muted ml-1" style="font-size:.62rem;">({{ $product->rev_count }})</small>@endif
+                <small class="text-muted ml-1" style="font-size:.62rem;">({{ $product->rev_count }})</small>
             </div>
+            @else
+            <div class="prod-stars" style="min-height:16px;">
+                {{-- Stars shown only after real reviews are collected --}}
+            </div>
+            @endif
             <a href="{{ route('products.detail', $product->slug) }}" class="prod-name">{{ $product->name }}</a>
             <div class="prod-price">
                 ₹{{ number_format($hasSale ? $product->sale_price : $product->price, 0) }}
@@ -728,6 +877,123 @@ function handleOfferSignup(){
     </a>
 </div>
 @endif
+
+{{-- ═══════════════════════════════════════════════════════════
+     6b. EARLY BUYER INCENTIVE — ₹100 Review Coupon
+     ═══════════════════════════════════════════════════════════ --}}
+<style>
+.review-incentive-band {
+    background: linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%);
+    padding: 52px 20px;
+    margin-top: 20px;
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+}
+.review-incentive-band::before {
+    content: '';
+    position: absolute;
+    top: -60px; right: -60px;
+    width: 220px; height: 220px;
+    border-radius: 50%;
+    background: rgba(209,156,151,.08);
+}
+.review-incentive-band::after {
+    content: '';
+    position: absolute;
+    bottom: -80px; left: -40px;
+    width: 280px; height: 280px;
+    border-radius: 50%;
+    background: rgba(209,156,151,.05);
+}
+.ri-eyebrow {
+    font-size: .65rem;
+    font-weight: 800;
+    letter-spacing: 3.5px;
+    text-transform: uppercase;
+    color: #D19C97;
+    margin-bottom: 12px;
+    position: relative; z-index: 1;
+}
+.review-incentive-band h3 {
+    font-size: clamp(1.3rem,3vw,1.9rem);
+    font-weight: 900;
+    color: #fff;
+    text-transform: uppercase;
+    margin-bottom: 10px;
+    position: relative; z-index: 1;
+}
+.ri-amount {
+    display: inline-block;
+    background: #D19C97;
+    color: #fff;
+    font-size: clamp(2rem, 5vw, 3rem);
+    font-weight: 900;
+    padding: 6px 28px;
+    margin: 14px 0;
+    position: relative; z-index: 1;
+    letter-spacing: -1px;
+}
+.ri-steps {
+    display: flex;
+    justify-content: center;
+    gap: 40px;
+    flex-wrap: wrap;
+    margin: 24px 0 28px;
+    position: relative; z-index: 1;
+}
+.ri-step {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    color: rgba(255,255,255,.75);
+    font-size: .82rem;
+    max-width: 130px;
+}
+.ri-step-num {
+    width: 36px; height: 36px;
+    border-radius: 50%;
+    border: 2px solid #D19C97;
+    color: #D19C97;
+    font-size: .82rem;
+    font-weight: 800;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+.ri-sub {
+    color: rgba(255,255,255,.45);
+    font-size: .78rem;
+    margin-bottom: 0;
+    position: relative; z-index: 1;
+}
+@media (max-width: 480px) {
+    .ri-steps { gap: 24px; }
+    .ri-step { font-size: .76rem; max-width: 100px; }
+}
+</style>
+<div class="review-incentive-band">
+    <div class="ri-eyebrow">🎉 Early Buyer Offer</div>
+    <h3>Share Your Experience, Get Rewarded</h3>
+    <div class="ri-amount">₹100 OFF</div>
+    <p style="color:rgba(255,255,255,.65);font-size:.88rem;margin-bottom:0;position:relative;z-index:1;">Leave a review after your order and get a ₹100 coupon on your next purchase.</p>
+    <div class="ri-steps">
+        <div class="ri-step">
+            <div class="ri-step-num">1</div>
+            <span>Buy any Jeanzo product</span>
+        </div>
+        <div class="ri-step">
+            <div class="ri-step-num">2</div>
+            <span>Leave an honest review with a photo</span>
+        </div>
+        <div class="ri-step">
+            <div class="ri-step-num">3</div>
+            <span>Get ₹100 coupon via email</span>
+        </div>
+    </div>
+    <p class="ri-sub">Coupon code sent to your email within 48 hours of review approval. Valid 30 days.</p>
+</div>
 
 {{-- ═══════════════════════════════════════════════════════════
      7. NEWSLETTER

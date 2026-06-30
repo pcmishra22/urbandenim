@@ -43,10 +43,11 @@
                         <span class="text-primary font-weight-bold border border-dark px-2 mr-1">J</span>eanzo
                     </h2>
                 </a>
-                <p class="mb-2 small" itemprop="description">India's premium denim brand for men. Shop slim fit, straight fit, wide leg, bootcut, skinny and regular fit jeans. Fast delivery across India.</p>
+                <p class="mb-2 small" itemprop="description">India's premium factory-direct denim brand for men &amp; women. Shop slim fit, straight fit, wide leg, bootcut &amp; skinny jeans. Free delivery · COD · 7-day returns.</p>
                 <p class="mb-1 small"><i class="fa fa-envelope text-primary mr-2"></i><a href="mailto:{{ $s['store_email'] ?? 'support@jeanzo.in' }}" class="text-dark" itemprop="email">{{ $s['store_email'] ?? 'support@jeanzo.in' }}</a></p>
                 <p class="mb-1 small"><i class="fa fa-phone-alt text-primary mr-2"></i><a href="tel:{{ preg_replace('/\D/','',$s['store_phone'] ?? '') }}" class="text-dark" itemprop="telephone">{{ $s['store_phone'] ?? '+91 73407 53780' }}</a></p>
-                <p class="mb-3 small"><i class="fa fa-map-marker-alt text-primary mr-2"></i><span itemprop="address">{{ $s['store_address'] ?? 'India' }}</span></p>
+                <p class="mb-1 small"><i class="fa fa-map-marker-alt text-primary mr-2"></i><span itemprop="address">{{ $s['store_address'] ?? 'India' }}</span></p>
+                <p class="mb-3 small text-muted"><i class="fa fa-file-invoice text-primary mr-2"></i>GST No: <strong>{{ $s['gst_number'] ?? '03BHHPS7451G1ZL' }}</strong></p>
                 <div class="d-flex mt-2" style="gap:8px;">
                     @if(!empty($s['instagram_url']))<a class="btn btn-primary btn-square" href="{{ $s['instagram_url'] }}" target="_blank" rel="noopener" aria-label="Jeanzo on Instagram"><i class="fab fa-instagram"></i></a>@endif
                     @if(!empty($s['facebook_url']))<a class="btn btn-primary btn-square" href="{{ $s['facebook_url'] }}" target="_blank" rel="noopener" aria-label="Jeanzo on Facebook"><i class="fab fa-facebook-f"></i></a>@endif
@@ -82,6 +83,7 @@
                         <a class="text-dark mb-2 small" href="{{ route('faq') }}"><i class="fa fa-angle-right mr-2"></i>FAQs</a>
                         <a class="text-dark mb-2 small" href="{{ route('help') }}"><i class="fa fa-angle-right mr-2"></i>Help Center</a>
                         <a class="text-dark mb-2 small" href="{{ route('contact') }}"><i class="fa fa-angle-right mr-2"></i>Contact Us</a>
+                        <a class="text-dark mb-2 small" href="{{ route('profile.orders') }}"><i class="fa fa-angle-right mr-2"></i>Track My Order</a>
                         <a class="text-dark small" href="/sitemap.xml" rel="nofollow"><i class="fa fa-angle-right mr-2"></i>Sitemap</a>
                     </div>
                 </nav>
