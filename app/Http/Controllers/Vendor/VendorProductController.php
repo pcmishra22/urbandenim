@@ -128,8 +128,8 @@ class VendorProductController extends Controller
         // Save images
         if ($request->hasFile('images')) {
             foreach ($request->file('images') as $index => $file) {
-                $stored   = $file->store('products/' . $product->id . '/images', 'public');
-                $filename = basename($stored);
+                $filename = seo_image_filename($product, $index + 1, $file->getClientOriginalExtension());
+                $file->storeAs('products/' . $product->id . '/images', $filename, 'public');
                 ProductImage::create([
                     'product_id' => $product->id,
                     'image'      => $filename,
@@ -230,12 +230,13 @@ class VendorProductController extends Controller
         if ($request->hasFile('images')) {
             $lastOrder = $product->images()->max('sort_order') ?? 0;
             foreach ($request->file('images') as $index => $file) {
-                $stored   = $file->store('products/' . $product->id . '/images', 'public');
-                $filename = basename($stored);
+                $seq      = $lastOrder + $index + 1;
+                $filename = seo_image_filename($product, $seq, $file->getClientOriginalExtension());
+                $file->storeAs('products/' . $product->id . '/images', $filename, 'public');
                 ProductImage::create([
                     'product_id' => $product->id,
                     'image'      => $filename,
-                    'sort_order' => $lastOrder + $index + 1,
+                    'sort_order' => $seq,
                 ]);
             }
         }

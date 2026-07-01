@@ -60,6 +60,85 @@
                 @enderror
             </div>
 
+            <div class="row">
+                <div class="col-md-6 mb-3">
+                    <label for="model_info" class="form-label">Model Info <small class="text-muted">(shown on product page)</small></label>
+                    <input type="text" class="form-control @error('model_info') is-invalid @enderror"
+                           id="model_info" name="model_info"
+                           placeholder="e.g. Model is 5'5&quot;, wearing size 30"
+                           value="{{ old('model_info') }}">
+                    @error('model_info')
+                        <div class="invalid-feedback">{{ $message }}</div>
+                    @enderror
+                </div>
+                <div class="col-md-6 mb-3">
+                    <label for="fabric_info" class="form-label">Fabric Info <small class="text-muted">(shown on product page)</small></label>
+                    <input type="text" class="form-control @error('fabric_info') is-invalid @enderror"
+                           id="fabric_info" name="fabric_info"
+                           placeholder="e.g. 98% Cotton, 2% Elastane — Medium Stretch"
+                           value="{{ old('fabric_info') }}">
+                    @error('fabric_info')
+                        <div class="invalid-feedback">{{ $message }}</div>
+                    @enderror
+                </div>
+            </div>
+
+            <div class="row">
+                <div class="col-md-4 mb-3">
+                    <label for="fabric_weight" class="form-label">Fabric Weight</label>
+                    <input type="text" class="form-control @error('fabric_weight') is-invalid @enderror"
+                           id="fabric_weight" name="fabric_weight"
+                           placeholder="e.g. 12 oz denim"
+                           value="{{ old('fabric_weight') }}">
+                    @error('fabric_weight')
+                        <div class="invalid-feedback">{{ $message }}</div>
+                    @enderror
+                </div>
+                <div class="col-md-4 mb-3">
+                    <label for="wash" class="form-label">Wash Care</label>
+                    <input type="text" class="form-control @error('wash') is-invalid @enderror"
+                           id="wash" name="wash"
+                           placeholder="e.g. Machine wash cold, inside out"
+                           value="{{ old('wash') }}">
+                    @error('wash')
+                        <div class="invalid-feedback">{{ $message }}</div>
+                    @enderror
+                </div>
+                <div class="col-md-4 mb-3">
+                    <label for="waist_rise" class="form-label">Waist Rise</label>
+                    <input type="text" class="form-control @error('waist_rise') is-invalid @enderror"
+                           id="waist_rise" name="waist_rise"
+                           placeholder="e.g. Mid Rise"
+                           value="{{ old('waist_rise') }}">
+                    @error('waist_rise')
+                        <div class="invalid-feedback">{{ $message }}</div>
+                    @enderror
+                </div>
+            </div>
+
+            <div class="row">
+                <div class="col-md-6 mb-3">
+                    <label for="fit_type" class="form-label">Fit Type</label>
+                    <input type="text" class="form-control @error('fit_type') is-invalid @enderror"
+                           id="fit_type" name="fit_type"
+                           placeholder="e.g. Slim Fit"
+                           value="{{ old('fit_type') }}">
+                    @error('fit_type')
+                        <div class="invalid-feedback">{{ $message }}</div>
+                    @enderror
+                </div>
+                <div class="col-md-6 mb-3">
+                    <label for="stretch" class="form-label">Stretch Level</label>
+                    <input type="text" class="form-control @error('stretch') is-invalid @enderror"
+                           id="stretch" name="stretch"
+                           placeholder="e.g. Medium Stretch"
+                           value="{{ old('stretch') }}">
+                    @error('stretch')
+                        <div class="invalid-feedback">{{ $message }}</div>
+                    @enderror
+                </div>
+            </div>
+
             <div class="mb-3">
                 <label for="description" class="form-label">Description</label>
                 <textarea class="form-control @error('description') is-invalid @enderror"

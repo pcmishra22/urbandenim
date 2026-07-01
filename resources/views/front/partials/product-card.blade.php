@@ -31,7 +31,7 @@
                 @endphp
                 <img style="width:100%;height:100%;object-fit:cover;object-position:top;"
                      src="{{ $cardImgSrc }}"
-                     alt="{{ $product->name }}"
+                     alt="{{ product_image_alt($product, 0) }}"
                      onerror="this.onerror=null;this.src='{{ asset('storage/default.jpg') }}';"
                      loading="lazy">
             </a>
@@ -52,6 +52,7 @@
 
         {{-- Footer: Star rating + review count (no Add to Cart) --}}
         <div class="card-footer d-flex justify-content-between align-items-center bg-light border">
+            @if($reviewCount >= 5)
             {{-- Stars --}}
             <div class="text-warning" style="font-size:13px; letter-spacing:1px;">
                 @for($s = 1; $s <= 5; $s++)
@@ -66,14 +67,14 @@
             </div>
             {{-- Review count --}}
             <small class="text-muted">
-                @if($reviewCount > 0)
-                    <a href="{{ $detailUrl }}#reviews" class="text-muted text-decoration-none">
-                        {{ $reviewCount }} {{ Str::plural('review', $reviewCount) }}
-                    </a>
-                @else
-                    No reviews yet
-                @endif
+                <a href="{{ $detailUrl }}#reviews" class="text-muted text-decoration-none">
+                    {{ $reviewCount }} {{ Str::plural('review', $reviewCount) }}
+                </a>
             </small>
+            @else
+            <div></div>
+            <small class="text-muted">No reviews yet</small>
+            @endif
         </div>
 
     </div>

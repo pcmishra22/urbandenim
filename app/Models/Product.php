@@ -25,6 +25,7 @@ class Product extends Model
         'gender', 'age_group', 'color_family',
         'is_featured', 'is_active',
         'model_info', 'fabric_info',
+        'fit_type', 'stretch', 'fabric_weight', 'wash', 'waist_rise',
     ];
 
     /**

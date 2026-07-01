@@ -34,7 +34,7 @@
     <div class="card product-item border-0 mb-4 jz-prod-card">
         <div class="card-header product-img position-relative overflow-hidden bg-transparent border p-0">
             <a href="{{ $detailUrl }}" class="d-block jz-prod-img-wrap">
-                <img class="jz-prod-img" src="{{ $imgSrc }}" alt="{{ $product->name }}"
+                <img class="jz-prod-img" src="{{ $imgSrc }}" alt="{{ product_image_alt($product, 0) }}"
                      onerror="this.onerror=null;this.src='{{ asset('storage/default.jpg') }}';"
                      loading="lazy">
             </a>
@@ -66,6 +66,7 @@
         </div>
 
         <div class="card-footer d-flex justify-content-between align-items-center bg-light border jz-prod-footer">
+            @if($reviewCount >= 5)
             <div class="text-warning jz-stars">
                 @for($s = 1; $s <= 5; $s++)
                     @if($avgRating >= $s)<i class="fas fa-star"></i>
@@ -75,14 +76,14 @@
                 @endfor
             </div>
             <small class="text-muted jz-review-count">
-                @if($reviewCount > 0)
-                    <a href="{{ $detailUrl }}#reviews" class="text-muted text-decoration-none">
-                        {{ $reviewCount }} {{ \Str::plural('review', $reviewCount) }}
-                    </a>
-                @else
-                    No reviews
-                @endif
+                <a href="{{ $detailUrl }}#reviews" class="text-muted text-decoration-none">
+                    {{ $reviewCount }} {{ \Str::plural('review', $reviewCount) }}
+                </a>
             </small>
+            @else
+            <div class="jz-stars"></div>
+            <small class="text-muted jz-review-count">No reviews yet</small>
+            @endif
         </div>
     </div>
 </div>

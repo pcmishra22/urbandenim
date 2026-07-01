@@ -578,7 +578,7 @@
                             $firstRel = $firstImg ? 'products/'.$product->id.'/images/'.($firstImg->image ?? '') : '';
                             $firstUrl = $firstRel ? (file_exists(public_path('storage/'.$firstRel)) ? asset('storage/'.$firstRel) : asset('storage/default.jpeg')) : asset('storage/default.jpeg');
                         @endphp
-                        <img id="pd-main-img" src="{{ $firstUrl }}" alt="{{ $product->name }}"
+                        <img id="pd-main-img" src="{{ $firstUrl }}" alt="{{ product_image_alt($product, 0) }}"
                              style="width:100%; height:100%; object-fit:cover;">
                     </div>
                 </div>
@@ -609,7 +609,7 @@
                                     style="flex:0 0 calc(20% - 7px); min-width:52px; max-width:80px;
                                            border:none; padding:0; background:none;
                                            aspect-ratio:1; scroll-snap-align:start; border-radius:8px; overflow:hidden;">
-                                <img src="{{ $url }}" alt="{{ $product->name }} - image {{ $i+1 }}"
+                                <img src="{{ $url }}" alt="{{ product_image_alt($product, $i) }}"
                                      style="width:100%; height:100%; object-fit:cover; border-radius:8px; display:block;">
                             </button>
                         @endforeach
@@ -1129,8 +1129,11 @@
                             <span style="font-weight:700; font-size:.88rem; color:#111;">Material &amp; Care</span>
                         </div>
                         <div style="font-size:.8rem; color:#4b5563; line-height:1.7;">
-                            @if($product->fabric)
-                                <div style="margin-bottom:4px;"><strong style="color:#111;">Fabric:</strong> {{ $product->fabric }}</div>
+                            @if($product->fabric_info)
+                                <div style="margin-bottom:4px;"><strong style="color:#111;">Fabric:</strong> {{ $product->fabric_info }}</div>
+                            @endif
+                            @if($product->fabric_weight)
+                                <div style="margin-bottom:4px;"><strong style="color:#111;">Weight:</strong> {{ $product->fabric_weight }}</div>
                             @endif
                             @if($product->wash)
                                 <div><strong style="color:#111;">Wash:</strong> {{ $product->wash }}</div>
@@ -1429,6 +1432,37 @@
                         <i class="fas fa-lightbulb" style="display:inline-block;"></i> Fit Tip
                     </p>
                     <p style="font-size:.825rem; color:#374151; margin:0;">For a snug fit, size down. For a relaxed fit, size up. Our denim has stretch for comfort.</p>
+                </div>
+
+                {{-- How to Measure --}}
+                <div style="margin-top:20px; border-top:1px solid #e5e7eb; padding-top:18px;">
+                    <p style="font-size:.95rem; font-weight:700; color:#111; margin:0 0 12px;">
+                        <i class="fas fa-tape" style="color:var(--site-primary); margin-right:6px;"></i>How to Measure
+                    </p>
+                    <div style="display:grid; grid-template-columns:1fr; gap:10px;">
+                        <div style="display:flex; gap:12px; align-items:flex-start; background:#f9fafb; border-radius:10px; padding:12px 14px;">
+                            <div style="flex-shrink:0; width:32px; height:32px; border-radius:50%; background:var(--site-primary); color:#fff; display:flex; align-items:center; justify-content:center; font-weight:700; font-size:.85rem;">1</div>
+                            <div>
+                                <p style="font-weight:700; font-size:.85rem; color:#111; margin:0 0 2px;">Waist</p>
+                                <p style="font-size:.8rem; color:#4b5563; margin:0;">Wrap a measuring tape around your natural waistline, just above the hip bone. Keep the tape snug but not tight.</p>
+                            </div>
+                        </div>
+                        <div style="display:flex; gap:12px; align-items:flex-start; background:#f9fafb; border-radius:10px; padding:12px 14px;">
+                            <div style="flex-shrink:0; width:32px; height:32px; border-radius:50%; background:var(--site-primary); color:#fff; display:flex; align-items:center; justify-content:center; font-weight:700; font-size:.85rem;">2</div>
+                            <div>
+                                <p style="font-weight:700; font-size:.85rem; color:#111; margin:0 0 2px;">Hip</p>
+                                <p style="font-size:.8rem; color:#4b5563; margin:0;">Measure around the fullest part of your hips, keeping the tape parallel to the floor.</p>
+                            </div>
+                        </div>
+                        <div style="display:flex; gap:12px; align-items:flex-start; background:#f9fafb; border-radius:10px; padding:12px 14px;">
+                            <div style="flex-shrink:0; width:32px; height:32px; border-radius:50%; background:var(--site-primary); color:#fff; display:flex; align-items:center; justify-content:center; font-weight:700; font-size:.85rem;">3</div>
+                            <div>
+                                <p style="font-weight:700; font-size:.85rem; color:#111; margin:0 0 2px;">Inseam</p>
+                                <p style="font-size:.8rem; color:#4b5563; margin:0;">Measure from the top of your inner thigh down to your ankle along an existing well-fitting pair of jeans.</p>
+                            </div>
+                        </div>
+                    </div>
+                    <p style="font-size:.75rem; color:#9ca3af; margin:12px 0 0;">Tip: All jeans have 1–2% stretch, so if you're between sizes, go with the smaller size for a more tailored fit.</p>
                 </div>
             </div>
         </div>

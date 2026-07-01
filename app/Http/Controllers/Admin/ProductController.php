@@ -75,9 +75,28 @@ class ProductController extends Controller
                 'short_description' => 'nullable|string|max:500',
                 'model_info'        => 'nullable|string|max:100',
                 'fabric_info'       => 'nullable|string|max:150',
+                'fabric_weight'     => 'nullable|string|max:50',
+                'wash'              => 'nullable|string|max:100',
+                'waist_rise'        => 'nullable|string|max:50',
+                'fit_type'          => 'nullable|string|max:100',
+                'stretch'           => 'nullable|string|max:100',
                 'cost_price'        => 'nullable|numeric|min:0',
                 'courier_charge'    => 'nullable|numeric|min:0',
+                'description'       => 'nullable|string',
+                'gender'            => 'nullable|string',
+                'age_group'         => 'nullable|string',
+                'color_family'      => 'nullable|string',
+                'is_featured'       => 'nullable|boolean',
+                'is_active'         => 'nullable|boolean',
+                'images.*'          => 'nullable|image|mimes:jpg,jpeg,png,webp|max:2048',
         ]);
+
+        $validated['slug']         = $validated['slug'] ?? Str::slug($validated['name']);
+        $validated['is_featured']  = $request->boolean('is_featured');
+        $validated['is_active']    = $request->boolean('is_active');
+
+        $product = Product::create($validated);
+
         // Save Product Variants
         if ($request->has('variants')) {
             foreach ($request->variants as $variant) {
@@ -97,9 +116,10 @@ class ProductController extends Controller
 
         if ($request->hasFile('images')) {
             foreach ($request->file('images') as $index => $file) {
+                // SEO-friendly filename, e.g. womens-skinny-light-blue-jeans-1.jpg
+                $filename = seo_image_filename($product, $index + 1, $file->getClientOriginalExtension());
                 // Dynamically creates: storage/app/public/products/{id}/images/
-                $stored   = $file->store('products/' . $product->id . '/images', 'public');
-                $filename = basename($stored);
+                $file->storeAs('products/' . $product->id . '/images', $filename, 'public');
 
                 ProductImage::create([
                     'product_id' => $product->id,
@@ -142,6 +162,11 @@ class ProductController extends Controller
             'short_description' => 'nullable|string|max:500',
             'model_info'        => 'nullable|string|max:100',
             'fabric_info'       => 'nullable|string|max:150',
+            'fabric_weight'     => 'nullable|string|max:50',
+            'wash'              => 'nullable|string|max:100',
+            'waist_rise'        => 'nullable|string|max:50',
+            'fit_type'          => 'nullable|string|max:100',
+            'stretch'           => 'nullable|string|max:100',
             'cost_price'        => 'nullable|numeric|min:0',
             'courier_charge'    => 'nullable|numeric|min:0',
             'profit_margin'     => 'nullable|numeric|min:0|max:1000',
@@ -183,14 +208,15 @@ class ProductController extends Controller
             $lastOrder = $product->images()->max('sort_order') ?? 0;
 
             foreach ($request->file('images') as $index => $file) {
+                $seq      = $lastOrder + $index + 1;
+                $filename = seo_image_filename($product, $seq, $file->getClientOriginalExtension());
                 // Dynamically creates: storage/app/public/products/{id}/images/
-                $stored   = $file->store('products/' . $product->id . '/images', 'public');
-                $filename = basename($stored);
+                $file->storeAs('products/' . $product->id . '/images', $filename, 'public');
 
                 ProductImage::create([
                     'product_id' => $product->id,
                     'image'      => $filename,
-                    'sort_order' => $lastOrder + $index + 1,
+                    'sort_order' => $seq,
                 ]);
             }
         }

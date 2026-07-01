@@ -193,7 +193,7 @@ section, .jz-section, .gender-grid, .collection-grid, .fit-grid, .products-grid,
 /* ── Promise Strip ── */
 .promise-strip { background: #1a1a1a; padding: 48px 0; margin-top: 20px; }
 .promise-grid {
-    display: grid; grid-template-columns: repeat(4, 1fr);
+    display: grid; grid-template-columns: repeat(6, 1fr);
     max-width: 1140px; margin: 0 auto;
 }
 .promise-item {
@@ -290,7 +290,7 @@ section, .jz-section, .gender-grid, .collection-grid, .fit-grid, .products-grid,
     .products-grid    { grid-template-columns: repeat(2, 1fr); }
 
     .promise-grid     { grid-template-columns: repeat(2, 1fr); }
-    .promise-item:nth-child(2) { border-right: none; }
+    .promise-item:nth-child(2n) { border-right: none; }
 
     .offer-input-wrap input { min-width: 160px; }
 }
@@ -770,6 +770,16 @@ function handleOfferSignup(){
             <h5>24/7 Support</h5>
             <p>Our team is always here for you, day or night.</p>
         </div>
+        <div class="promise-item">
+            <div class="promise-icon"><i class="fas fa-money-bill-wave"></i></div>
+            <h5>Cash on Delivery</h5>
+            <p>Pay when your order arrives. No advance payment needed.</p>
+        </div>
+        <div class="promise-item">
+            <div class="promise-icon"><i class="fas fa-lock"></i></div>
+            <h5>Secure Payments</h5>
+            <p>100% safe checkout with trusted, encrypted payment gateways.</p>
+        </div>
     </div>
 </div>
 
@@ -828,7 +838,7 @@ function handleOfferSignup(){
                 <span class="prod-badge" style="background:#1a1a1a;">Hot</span>
             @endif
             <a href="{{ route('products.detail', $product->slug) }}" title="{{ $product->name }}">
-                <img src="{{ $imgUrl }}" alt="{{ $product->name }}" loading="lazy"
+                <img src="{{ $imgUrl }}" alt="{{ product_image_alt($product, 0) }}" loading="lazy"
                      onerror="this.onerror=null;this.src='{{ asset('storage/default.jpeg') }}'">
             </a>
             <div class="prod-hover">
@@ -841,15 +851,15 @@ function handleOfferSignup(){
         </div>
         <div class="prod-info">
             @if($catName)<div class="prod-cat">{{ $catName }}</div>@endif
-            {{-- Only show stars when product has approved reviews --}}
-            @if(($product->rev_count ?? 0) > 0)
+            {{-- Only show stars once a product has 5+ approved reviews — small counts with no visible text read as fake --}}
+            @if(($product->rev_count ?? 0) >= 5)
             <div class="prod-stars">
                 @for($s=1;$s<=5;$s++)<i class="{{ $s<=$stars?'fas':'far' }} fa-star"></i>@endfor
                 <small class="text-muted ml-1" style="font-size:.62rem;">({{ $product->rev_count }})</small>
             </div>
             @else
             <div class="prod-stars" style="min-height:16px;">
-                {{-- Stars shown only after real reviews are collected --}}
+                {{-- Stars hidden until 5+ real reviews are collected --}}
             </div>
             @endif
             <a href="{{ route('products.detail', $product->slug) }}" class="prod-name">{{ $product->name }}</a>
