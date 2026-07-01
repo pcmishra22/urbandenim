@@ -14,6 +14,9 @@ class ProductsController extends Controller
     /** Number of products per page / per infinite-scroll batch */
     private const PER_PAGE = 15;
 
+    /** Set by bySlug() for the duration of the request; used by buildQuery() */
+    private ?string $forceGender = null;
+
     /**
      * Same keyword map as CategoryProductsController.
      * When resolving a category by slug, products are included if they
@@ -123,6 +126,12 @@ class ProductsController extends Controller
                     $q->orWhere('name', 'like', "%{$keyword}%");
                 }
             });
+            // Gender guard: prevents the name-keyword OR-match above from
+            // pulling in the opposite gender's products (e.g. "Slim Fit"
+            // matching both "Men's Slim Fit Jeans" and "Women's Slim Fit Jeans").
+            if ($this->forceGender) {
+                $query->where('gender', $this->forceGender);
+            }
         } elseif ($request->filled('category')) {
             // Called from index/ajaxLoad: expand top-level → children
             $requestedIds  = array_map('intval', (array) $request->category);
@@ -182,6 +191,16 @@ class ProductsController extends Controller
         // Name keywords for this slug (empty array if not in map)
         $nameKeywords = self::NAME_SEARCH_MAP[$categorySlug] ?? [];
 
+        // Derive gender strictly from the slug prefix so a keyword like
+        // "Slim Fit" can never leak across men's/women's pages.
+        if (str_starts_with($categorySlug, 'mens-')) {
+            $this->forceGender = 'men';
+        } elseif (str_starts_with($categorySlug, 'womens-')) {
+            $this->forceGender = 'women';
+        } else {
+            $this->forceGender = null;
+        }
+
         // Pass IDs and keywords directly — do NOT merge into $request to avoid
         // array values being serialized into query strings by withQueryString()
         $products   = $this->buildQuery($request, $categoryIds, $nameKeywords)
@@ -231,6 +250,15 @@ class ProductsController extends Controller
             }
             $subtreeIds = $subtreeIds->unique()->values()->all();
 
+            // Gender guard: same fix as bySlug() — a keyword like "Slim Fit"
+            // must not count opposite-gender products.
+            $slugGender = null;
+            if (str_starts_with($slug, 'mens-')) {
+                $slugGender = 'men';
+            } elseif (str_starts_with($slug, 'womens-')) {
+                $slugGender = 'women';
+            }
+
             // Count: in subtree by ID OR name matches keyword
             $count = \App\Models\Product::where('is_active', true)
                 ->where(function ($q) use ($subtreeIds, $keywords) {
@@ -239,6 +267,7 @@ class ProductsController extends Controller
                         $q->orWhere('name', 'like', "%{$kw}%");
                     }
                 })
+                ->when($slugGender, fn($q) => $q->where('gender', $slugGender))
                 ->count();
 
             $directCounts[$catId] = $count;

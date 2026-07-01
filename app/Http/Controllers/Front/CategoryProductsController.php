@@ -79,6 +79,15 @@ class CategoryProductsController extends Controller
         // Name keywords defined for this slug (may be empty)
         $nameKeywords = self::NAME_SEARCH_MAP[$slug] ?? [];
 
+        // Derive gender strictly from the slug prefix so a keyword like
+        // "Slim Fit" can never leak across men's/women's pages.
+        $genderFilter = null;
+        if (str_starts_with($slug, 'mens-')) {
+            $genderFilter = 'men';
+        } elseif (str_starts_with($slug, 'womens-')) {
+            $genderFilter = 'women';
+        }
+
         // ── Base product query ────────────────────────────────────────────────
         $query = Product::where('is_active', true)
             ->with(['category', 'images', 'brand', 'variants'])
@@ -90,7 +99,11 @@ class CategoryProductsController extends Controller
                 foreach ($nameKeywords as $keyword) {
                     $q->orWhere('name', 'like', "%{$keyword}%");
                 }
-            });
+            })
+            // Gender guard: prevents the name-keyword OR-match above from
+            // pulling in the opposite gender's products (e.g. "Slim Fit"
+            // matching both "Men's Slim Fit Jeans" and "Women's Slim Fit Jeans").
+            ->when($genderFilter, fn($q) => $q->where('gender', $genderFilter));
 
         // ── Sorting ───────────────────────────────────────────────────────────
         $sortBy = $request->get('sort_by', 'newest');
@@ -138,6 +151,7 @@ class CategoryProductsController extends Controller
                     $q->orWhere('name', 'like', "%{$keyword}%");
                 }
             })
+            ->when($genderFilter, fn($q) => $q->where('gender', $genderFilter))
             ->pluck('id');
 
         $sizes = DB::table('product_variants')
