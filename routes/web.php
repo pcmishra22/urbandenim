@@ -37,6 +37,15 @@ Route::get('/sitemap.xml', function () {
                      ->header('Content-Type', 'application/xml');
 });
 
+Route::get('/merchant-feed.xml', function () {
+    $products = \App\Models\Product::where('is_active', true)
+                    ->with(['images', 'variants', 'brand', 'category'])
+                    ->get();
+
+    return response()->view('front.merchant-feed', compact('products'))
+                     ->header('Content-Type', 'application/xml');
+});
+
 Route::get('/robots.txt', function () {
     $content = implode("\n", [
         'User-agent: *',

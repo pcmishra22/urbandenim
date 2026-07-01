@@ -6,6 +6,11 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0">
     <link href="{{ asset('eshopper/img/favicon.ico') }}" rel="icon">
 
+    {{-- Google Search Console verification — paste your verification code in .env as GSC_VERIFICATION --}}
+    @if(config('services.google.site_verification'))
+    <meta name="google-site-verification" content="{{ config('services.google.site_verification') }}">
+    @endif
+
     @hasSection('meta_description')<meta name="description" content="@yield('meta_description')">@endif
     @hasSection('meta_robots')<meta name="robots" content="@yield('meta_robots')">@else<meta name="robots" content="index, follow">@endif
     @hasSection('canonical')<link rel="canonical" href="@yield('canonical')">@endif

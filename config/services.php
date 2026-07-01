@@ -57,5 +57,12 @@ return [
         'token' => env('HUGGINGFACE_TOKEN'),
     ],
 
+    'google' => [
+        // Paste ONLY the content value from the meta tag Google Search Console
+        // gives you (Settings → Ownership verification → HTML tag method),
+        // e.g. GSC_VERIFICATION=abcXYZ123... — do not paste the full <meta> tag.
+        'site_verification' => env('GSC_VERIFICATION'),
+    ],
+
 ];
 
