@@ -9,18 +9,20 @@ class GenerateProductContent extends Command
 {
     /**
      * php artisan products:generate-content
-     *      → fills only EMPTY fields, for all active products
+     *      → runs on EVERY product. meta_title, meta_description,
+     *        canonical_url, color, short_description and description
+     *        are ALWAYS regenerated from the name/gender/color (they're
+     *        pure content, safe to recompute every run). model_info,
+     *        fabric_info, fabric_weight, wash, waist_rise, fit_type and
+     *        stretch are only filled if still EMPTY — real curated data
+     *        there is never touched.
      *
      * php artisan products:generate-content --id=209
      *      → just one product
      *
      * php artisan products:generate-content --force
-     *      → regenerate meta_title / meta_description / color /
-     *        short_description / description even if already set
-     *        (model_info / fabric_info / fabric_weight / wash /
-     *        waist_rise / fit_type / stretch are never touched by
-     *        --force if they already have a real value — those are
-     *        treated as curated data, not auto-fill data)
+     *      → also overwrites model_info / fabric_info / fabric_weight /
+     *        wash / waist_rise / fit_type / stretch even if already set
      *
      * php artisan products:generate-content --dry-run
      *      → preview only, nothing is saved
@@ -189,10 +191,10 @@ class GenerateProductContent extends Command
             . "Pair it with a plain tee for a casual day out or dress it up with a shirt for a smart-casual look.";
         $description = preg_replace('/\s+/', ' ', trim($description));
 
-        // ---- assemble: always-regenerate fields vs fill-if-empty fields ----
-        $data = [];
-
-        $alwaysRegen = [
+        // ---- assemble: content fields ALWAYS regenerate (deterministic from
+        // name/gender/color every run) vs technical fields that are only
+        // filled if still empty, to protect real curated data ----
+        $data = [
             'meta_title'        => $metaTitle,
             'meta_description'  => $metaDescription,
             'canonical_url'     => $canonicalUrl,
@@ -200,13 +202,6 @@ class GenerateProductContent extends Command
             'short_description' => $shortDescription,
             'description'       => $description,
         ];
-        foreach ($alwaysRegen as $field => $value) {
-            $current = $product->{$field};
-            $isThin  = empty($current) || $current === $name; // duplicate-of-name = thin content
-            if ($force || $isThin) {
-                $data[$field] = $value;
-            }
-        }
 
         $fillIfEmpty = [
             'model_info'    => $modelInfo,
@@ -234,7 +229,7 @@ class GenerateProductContent extends Command
                 $isStalePlaceholder = true;
             }
 
-            if (empty($current) || $isStalePlaceholder) {
+            if ($force || empty($current) || $isStalePlaceholder) {
                 $data[$field] = $value;
             }
         }
