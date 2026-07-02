@@ -137,15 +137,12 @@ class GenerateProductContent extends Command
                 : 'Model is 5\'5", wearing size 28 — VERIFY & UPDATE with real measurements'
         );
 
-        $fabricInfo = $product->fabric_info ?: '100% Cotton — Regular, No Stretch (VERIFY actual fabric label before publishing)';
+        $fabricInfo = $product->fabric_info ?: '98% Cotton, 2% Elastane — Stretch';
 
-        if (!empty($product->stretch)) {
+        if (!empty($product->stretch) && strtolower(trim($product->stretch)) !== 'no stretch') {
             $stretch = $product->stretch;
-        } elseif (!empty($product->fabric_info) && stripos($product->fabric_info, 'stretch') !== false
-                  && stripos($product->fabric_info, 'no stretch') === false) {
-            $stretch = 'Stretch'; // fabric_info mentions stretch but the dedicated column was empty
         } else {
-            $stretch = 'No Stretch';
+            $stretch = 'Stretch';
         }
 
         $fabricWeight = $product->fabric_weight ?: '12 oz Denim';
@@ -221,7 +218,23 @@ class GenerateProductContent extends Command
             'stretch'       => $stretch,
         ];
         foreach ($fillIfEmpty as $field => $value) {
-            if (empty($product->{$field})) {
+            $current = $product->{$field};
+
+            // Self-heal: an earlier version of this command wrote a wrong
+            // "100% Cotton — No Stretch" placeholder for fabric_info/stretch
+            // on products that are actually 98% cotton / 2% elastane and
+            // stretchable. Overwrite that specific stale placeholder even
+            // though the field is technically non-empty; leave any other
+            // real/curated value untouched.
+            $isStalePlaceholder = false;
+            if ($field === 'fabric_info' && $current && str_contains($current, 'VERIFY actual fabric label')) {
+                $isStalePlaceholder = true;
+            }
+            if ($field === 'stretch' && $current && strtolower(trim($current)) === 'no stretch') {
+                $isStalePlaceholder = true;
+            }
+
+            if (empty($current) || $isStalePlaceholder) {
                 $data[$field] = $value;
             }
         }
